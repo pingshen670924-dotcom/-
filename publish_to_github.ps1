@@ -44,10 +44,9 @@ if (-not $RepoExists) {
     git push -u origin main
 }
 
-try {
-    gh api --method POST "repos/$Owner/$RepoName/pages" -f build_type=workflow | Out-Null
-} catch {
-    gh api --method PATCH "repos/$Owner/$RepoName/pages" -f build_type=workflow | Out-Null
+gh api --method POST "repos/$Owner/$RepoName/pages" -f build_type=workflow *> $null
+if ($LASTEXITCODE -ne 0) {
+    gh api --method PATCH "repos/$Owner/$RepoName/pages" -f build_type=workflow *> $null
 }
 
 gh workflow run "Mark Six Mobile Cloud" --repo "$Owner/$RepoName"

@@ -1,0 +1,328 @@
+{
+  "generated_at": "2026-06-23T14:47:35+08:00",
+  "model_version": "marksix-core-2026.06.23-v5-mobile-cloud",
+  "draw_count": 2564,
+  "date_range": "2008-01-03 -> 2026-06-20",
+  "latest": {
+    "draw_no": "2026/066",
+    "date": "2026-06-20",
+    "main_numbers": [
+      5,
+      7,
+      10,
+      15,
+      16,
+      41
+    ],
+    "special": 46
+  },
+  "prediction": {
+    "run_id": 1,
+    "created_at": "2026-06-23T14:47:04+08:00",
+    "based_on_draw_no": "2026/066",
+    "based_on_draw_date": "2026-06-20",
+    "target_date": "2026-06-23",
+    "strategy": "auto",
+    "ticket_count": 20
+  },
+  "system": {
+    "status": "OK",
+    "risk_level": "中",
+    "release_level": "研究觀察，不列保證",
+    "completeness": "11/11",
+    "champion": "balanced",
+    "auto_weights": "balanced:1.47 / cold:0.25 / diversified:1.12 / hot:1.11 / trend:1.12",
+    "settled_status": "尚無可結算預測",
+    "consensus": 0.491
+  },
+  "accuracy": {
+    "sample": 120,
+    "top5_avg": 0.65,
+    "top5_random": 0.612,
+    "top5_edge": 0.038,
+    "top10_avg": 1.325,
+    "top10_random": 1.224,
+    "top10_edge": 0.101,
+    "top15_avg": 1.817,
+    "top15_random": 1.837,
+    "top15_edge": -0.02
+  },
+  "confidence_tickets": [
+    {
+      "rank": 1,
+      "numbers": [
+        2,
+        4,
+        11,
+        44,
+        46,
+        47
+      ],
+      "label": "高機率信心牌 96.0",
+      "strategy": "balanced",
+      "score": 2.908,
+      "reasons": "實戰成熟度 1.47；票組成熟分 0.88"
+    },
+    {
+      "rank": 2,
+      "numbers": [
+        11,
+        14,
+        20,
+        44,
+        46,
+        47
+      ],
+      "label": "高機率信心牌 91.9",
+      "strategy": "balanced",
+      "score": 2.67,
+      "reasons": "實戰成熟度 1.47；票組成熟分 0.87"
+    },
+    {
+      "rank": 3,
+      "numbers": [
+        7,
+        11,
+        12,
+        28,
+        34,
+        47
+      ],
+      "label": "高機率信心牌 88.8",
+      "strategy": "hot",
+      "score": 2.523,
+      "reasons": "實戰成熟度 1.11；票組成熟分 0.94"
+    },
+    {
+      "rank": 4,
+      "numbers": [
+        7,
+        10,
+        20,
+        28,
+        41,
+        47
+      ],
+      "label": "中高信心牌 87.4",
+      "strategy": "trend",
+      "score": 2.508,
+      "reasons": "實戰成熟度 1.12；票組成熟分 0.89"
+    },
+    {
+      "rank": 5,
+      "numbers": [
+        11,
+        20,
+        23,
+        28,
+        37,
+        46
+      ],
+      "label": "中高信心牌 86.2",
+      "strategy": "diversified",
+      "score": 2.501,
+      "reasons": "實戰成熟度 1.12；票組成熟分 0.87"
+    },
+    {
+      "rank": 6,
+      "numbers": [
+        7,
+        11,
+        28,
+        34,
+        46,
+        47
+      ],
+      "label": "中高信心牌 84.4",
+      "strategy": "diversified",
+      "score": 2.456,
+      "reasons": "實戰成熟度 1.12；票組成熟分 0.90"
+    }
+  ],
+  "top_numbers": [
+    {
+      "rank": 1,
+      "number": 47,
+      "confidence": "高信心（研究） 95.2",
+      "score": 0.999,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、時間動能"
+    },
+    {
+      "rank": 2,
+      "number": 28,
+      "confidence": "高信心（研究） 91.4",
+      "score": 0.892,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
+    },
+    {
+      "rank": 3,
+      "number": 44,
+      "confidence": "高信心（研究） 88.5",
+      "score": 0.824,
+      "reason": "核心高分、近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+    },
+    {
+      "rank": 4,
+      "number": 46,
+      "confidence": "高信心（研究） 88.4",
+      "score": 0.82,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+    },
+    {
+      "rank": 5,
+      "number": 2,
+      "confidence": "中高信心 87.8",
+      "score": 0.804,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+    },
+    {
+      "rank": 6,
+      "number": 34,
+      "confidence": "中高信心 86.9",
+      "score": 0.784,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+    },
+    {
+      "rank": 7,
+      "number": 4,
+      "confidence": "中高信心 87.3",
+      "score": 0.782,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、配對圖譜"
+    },
+    {
+      "rank": 8,
+      "number": 20,
+      "confidence": "中高信心 85.9",
+      "score": 0.759,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+    },
+    {
+      "rank": 9,
+      "number": 7,
+      "confidence": "中高信心 82.9",
+      "score": 0.688,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+    },
+    {
+      "rank": 10,
+      "number": 8,
+      "confidence": "中高信心 83.1",
+      "score": 0.682,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+    },
+    {
+      "rank": 11,
+      "number": 10,
+      "confidence": "中高信心 82.1",
+      "score": 0.671,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
+    },
+    {
+      "rank": 12,
+      "number": 27,
+      "confidence": "中高信心 82.0",
+      "score": 0.657,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+    },
+    {
+      "rank": 13,
+      "number": 11,
+      "confidence": "中高信心 82.1",
+      "score": 0.657,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+    },
+    {
+      "rank": 14,
+      "number": 14,
+      "confidence": "中高信心 81.7",
+      "score": 0.649,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+    },
+    {
+      "rank": 15,
+      "number": 23,
+      "confidence": "中高信心 80.5",
+      "score": 0.626,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
+    }
+  ],
+  "strong_packs": [
+    {
+      "title": "最強單支",
+      "numbers": [
+        47
+      ],
+      "target_hits": 1,
+      "probability": 0.122449
+    },
+    {
+      "title": "最強2中1",
+      "numbers": [
+        28,
+        47
+      ],
+      "target_hits": 1,
+      "probability": 0.232143
+    },
+    {
+      "title": "最強3中1",
+      "numbers": [
+        28,
+        44,
+        47
+      ],
+      "target_hits": 1,
+      "probability": 0.330167
+    },
+    {
+      "title": "最強6中2",
+      "numbers": [
+        2,
+        28,
+        34,
+        44,
+        46,
+        47
+      ],
+      "target_hits": 2,
+      "probability": 0.151016
+    },
+    {
+      "title": "最強9中3",
+      "numbers": [
+        2,
+        4,
+        7,
+        20,
+        28,
+        34,
+        44,
+        46,
+        47
+      ],
+      "target_hits": 3,
+      "probability": 0.066743
+    },
+    {
+      "title": "特別號候選",
+      "numbers": [
+        2,
+        7,
+        8,
+        13,
+        24,
+        27,
+        44,
+        46
+      ],
+      "target_hits": 1,
+      "probability": 0.678458
+    }
+  ],
+  "links": {
+    "battle_report": "latest_battle_report.html",
+    "prediction_report": "latest_prediction.html",
+    "system_report": "system_report.html",
+    "draws_csv": "draws.csv"
+  }
+}

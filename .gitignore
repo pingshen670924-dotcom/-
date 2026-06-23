@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+*.log
+*.tmp
+marksix_cloud.db
+logs/
+backups/

@@ -1,0 +1,11 @@
+{
+  "name": "香港六合彩手機雲端系統",
+  "short_name": "六合彩雲端",
+  "start_url": "./mobile.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f4ef",
+  "theme_color": "#b42318",
+  "description": "香港六合彩預測系統手機獨立入口",
+  "icons": []
+}

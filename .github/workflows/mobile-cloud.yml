@@ -1,0 +1,54 @@
+name: Mark Six Mobile Cloud
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 14 * * 2,4,6"
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build fresh mobile cloud
+        shell: pwsh
+        run: |
+          python "香港六合彩預測系統_20260623_第5版.py" init-db --db marksix_cloud.db
+          python "香港六合彩預測系統_20260623_第5版.py" import-csv --db marksix_cloud.db --csv data/marksix_full_history.csv
+          python "香港六合彩預測系統_20260623_第5版.py" fetch-hkjc --db marksix_cloud.db --last 20
+          python "香港六合彩預測系統_20260623_第5版.py" evaluate --db marksix_cloud.db --prediction-id all
+          python "香港六合彩預測系統_20260623_第5版.py" predict --db marksix_cloud.db --strategy auto --tickets 20 --html site/latest_prediction.html
+          python "香港六合彩預測系統_20260623_第5版.py" build-site --db marksix_cloud.db --site-dir site --report-dir reports
+          python "香港六合彩預測系統_20260623_第5版.py" mobile-cloud --db marksix_cloud.db --site-dir site --report-dir reports
+          Copy-Item -LiteralPath site/mobile.html -Destination site/index.html -Force
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Deploy Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

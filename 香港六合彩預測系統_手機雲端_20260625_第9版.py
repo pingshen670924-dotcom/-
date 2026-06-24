@@ -3,6 +3,9 @@
 import argparse
 import html
 import json
+import math
+import struct
+import zlib
 from pathlib import Path
 
 import importlib
@@ -14,6 +17,8 @@ MOBILE_REPORT = "香港六合彩預測系統_手機雲端.html"
 MOBILE_STATUS = "香港六合彩預測系統_手機狀態.json"
 MOBILE_MANIFEST = "香港六合彩預測系統_手機設定.json"
 MOBILE_SERVICE_WORKER = "香港六合彩預測系統_離線快取.js"
+MOBILE_ICON_192 = "香港六合彩預測系統_手機圖示192.png"
+MOBILE_ICON_512 = "香港六合彩預測系統_手機圖示512.png"
 
 
 def parse_args() -> argparse.Namespace:
@@ -41,12 +46,16 @@ def build_mobile_cloud_site(
         "status": site_dir / MOBILE_STATUS,
         "manifest": site_dir / MOBILE_MANIFEST,
         "service_worker": site_dir / MOBILE_SERVICE_WORKER,
+        "icon_192": site_dir / MOBILE_ICON_192,
+        "icon_512": site_dir / MOBILE_ICON_512,
         "report": report_dir / MOBILE_REPORT,
     }
     paths["mobile"].write_text(site_html, encoding="utf-8")
     paths["status"].write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     paths["manifest"].write_text(json.dumps(manifest(), ensure_ascii=False, indent=2), encoding="utf-8")
     paths["service_worker"].write_text(service_worker(), encoding="utf-8")
+    write_icon(paths["icon_192"], 192)
+    write_icon(paths["icon_512"], 512)
     paths["report"].write_text(report_html, encoding="utf-8")
     return paths
 
@@ -203,9 +212,39 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
     links = payload["links"]
     latest_balls = balls(latest["main_numbers"]) + " " + ball(int(latest["special"]), special=True)
     manifest_link = f'<link rel="manifest" href="./{MOBILE_MANIFEST}">' if pwa else ""
+    install_head = (
+        f"""
+  <link rel="apple-touch-icon" href="./{MOBILE_ICON_192}">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="香港六合彩預測系統">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        """
+        if pwa
+        else ""
+    )
     sw_script = (
         """
   <script>
+    let deferredInstallPrompt = null;
+    window.addEventListener("beforeinstallprompt", event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      const button = document.querySelector("[data-install-button]");
+      if (button) button.hidden = false;
+    });
+    async function installApp() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice.catch(() => {});
+      deferredInstallPrompt = null;
+      const button = document.querySelector("[data-install-button]");
+      if (button) button.hidden = true;
+    }
+    window.addEventListener("appinstalled", () => {
+      const button = document.querySelector("[data-install-button]");
+      if (button) button.hidden = true;
+    });
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("./香港六合彩預測系統_離線快取.js").catch(() => {});
     }
@@ -221,6 +260,7 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#b42318">
   {manifest_link}
+  {install_head}
   <title>香港六合彩預測系統</title>
   <style>
     :root {{
@@ -238,6 +278,8 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
     h2 {{ margin:0 0 12px; font-size:18px; line-height:1.2; }}
     .badge {{ display:inline-flex; align-items:center; min-height:28px; padding:4px 9px; border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--muted); font-size:12px; white-space:nowrap; }}
     .badge.hot {{ border-color:#f0b4ad; background:#fff1f0; color:var(--red); font-weight:800; }}
+    .install-button {{ width:100%; border:0; border-radius:8px; min-height:46px; margin:12px 0 0; background:var(--red); color:#fff; font-size:15px; font-weight:900; font-family:inherit; }}
+    .install-button[hidden] {{ display:none; }}
     .metrics {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:12px; }}
     .metric {{ border:1px solid var(--line); border-radius:8px; padding:11px; background:#fff; min-width:0; }}
     .metric span,.meta,.note {{ color:var(--muted); font-size:12px; line-height:1.5; }}
@@ -283,6 +325,7 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
       <div class="topline"><span>手機獨立入口</span><span class="badge hot">{e(system["risk_level"])}風險</span></div>
       <h1>香港六合彩預測系統</h1>
       <div class="meta">產生 {e(payload["generated_at"])} / 模型 {e(payload["model_version"])}</div>
+      <button class="install-button" data-install-button hidden onclick="installApp()">安裝到手機</button>
       <div class="metrics">
         <div class="metric"><span>最新期</span><strong>{e(latest["draw_no"])} / {e(latest["date"])}</strong></div>
         <div class="metric"><span>最新預測</span><strong>第 {prediction["run_id"] if prediction["run_id"] is not None else "-"} 筆</strong></div>
@@ -384,16 +427,30 @@ def manifest() -> dict:
         "start_url": f"./{MOBILE_HTML}",
         "scope": "./",
         "display": "standalone",
+        "orientation": "portrait",
         "background_color": "#f7f4ef",
         "theme_color": "#b42318",
         "description": "香港六合彩預測系統手機獨立入口",
-        "icons": [],
+        "icons": [
+            {
+                "src": f"./{MOBILE_ICON_192}",
+                "sizes": "192x192",
+                "type": "image/png",
+                "purpose": "any maskable",
+            },
+            {
+                "src": f"./{MOBILE_ICON_512}",
+                "sizes": "512x512",
+                "type": "image/png",
+                "purpose": "any maskable",
+            },
+        ],
     }
 
 
 def service_worker() -> str:
-    return f"""const CACHE_NAME = "香港六合彩預測系統-20260625-v9";
-const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
+    return f"""const CACHE_NAME = "香港六合彩預測系統-20260625-v9-install";
+const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{MOBILE_MANIFEST}","./{MOBILE_ICON_192}","./{MOBILE_ICON_512}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
 self.addEventListener("install", event => {{
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));
   self.skipWaiting();
@@ -410,6 +467,45 @@ self.addEventListener("fetch", event => {{
   }}).catch(() => caches.match(event.request).then(cached => cached || caches.match("./{MOBILE_HTML}"))));
 }});
 """
+
+
+def write_icon(path: Path, size: int) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    red = (180, 35, 24, 255)
+    gold = (247, 184, 76, 255)
+    white = (255, 255, 255, 255)
+    dark = (113, 29, 20, 255)
+    rows = []
+    center = (size - 1) / 2
+    radius = size * 0.31
+    ring = size * 0.39
+    for y in range(size):
+        row = bytearray([0])
+        for x in range(size):
+            dx = x - center
+            dy = y - center
+            distance = math.sqrt(dx * dx + dy * dy)
+            if distance <= radius:
+                color = white
+            elif distance <= ring:
+                color = gold
+            else:
+                color = red if (x + y) % 19 else dark
+            row.extend(color)
+        rows.append(bytes(row))
+    raw = b"".join(rows)
+    png = (
+        b"\x89PNG\r\n\x1a\n"
+        + png_chunk(b"IHDR", struct.pack(">IIBBBBB", size, size, 8, 6, 0, 0, 0))
+        + png_chunk(b"IDAT", zlib.compress(raw, 9))
+        + png_chunk(b"IEND", b"")
+    )
+    path.write_bytes(png)
+
+
+def png_chunk(kind: bytes, data: bytes) -> bytes:
+    checksum = zlib.crc32(kind + data) & 0xFFFFFFFF
+    return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", checksum)
 
 
 def ticket_cards(tickets: list[dict]) -> str:

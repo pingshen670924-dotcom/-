@@ -3,7 +3,7 @@ name: 香港六合彩預測系統手機雲端
 on:
   workflow_dispatch:
   schedule:
-    - cron: "45 14,15,16 * * 2,4,6"
+    - cron: "*/5 13-17 * * 2,4,6"
   push:
     branches:
       - main

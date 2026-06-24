@@ -5,6 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#b42318">
   <link rel="manifest" href="./香港六合彩預測系統_手機設定.json">
+  
+  <link rel="apple-touch-icon" href="./香港六合彩預測系統_手機圖示192.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="香港六合彩預測系統">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+        
   <title>香港六合彩預測系統</title>
   <style>
     :root {
@@ -22,6 +29,8 @@
     h2 { margin:0 0 12px; font-size:18px; line-height:1.2; }
     .badge { display:inline-flex; align-items:center; min-height:28px; padding:4px 9px; border:1px solid var(--line); border-radius:999px; background:#fff; color:var(--muted); font-size:12px; white-space:nowrap; }
     .badge.hot { border-color:#f0b4ad; background:#fff1f0; color:var(--red); font-weight:800; }
+    .install-button { width:100%; border:0; border-radius:8px; min-height:46px; margin:12px 0 0; background:var(--red); color:#fff; font-size:15px; font-weight:900; font-family:inherit; }
+    .install-button[hidden] { display:none; }
     .metrics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:12px; }
     .metric { border:1px solid var(--line); border-radius:8px; padding:11px; background:#fff; min-width:0; }
     .metric span,.meta,.note { color:var(--muted); font-size:12px; line-height:1.5; }
@@ -66,7 +75,8 @@
     <section class="hero" id="top">
       <div class="topline"><span>手機獨立入口</span><span class="badge hot">中風險</span></div>
       <h1>香港六合彩預測系統</h1>
-      <div class="meta">產生 2026-06-25T07:09:53+08:00 / 模型 香港六合彩預測系統_20260625_第9版</div>
+      <div class="meta">產生 2026-06-25T07:18:30+08:00 / 模型 香港六合彩預測系統_20260625_第9版</div>
+      <button class="install-button" data-install-button hidden onclick="installApp()">安裝到手機</button>
       <div class="metrics">
         <div class="metric"><span>最新期</span><strong>2026/067 / 2026-06-23</strong></div>
         <div class="metric"><span>最新預測</span><strong>第 8 筆</strong></div>
@@ -191,6 +201,25 @@
   </nav>
   
   <script>
+    let deferredInstallPrompt = null;
+    window.addEventListener("beforeinstallprompt", event => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      const button = document.querySelector("[data-install-button]");
+      if (button) button.hidden = false;
+    });
+    async function installApp() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice.catch(() => {});
+      deferredInstallPrompt = null;
+      const button = document.querySelector("[data-install-button]");
+      if (button) button.hidden = true;
+    }
+    window.addEventListener("appinstalled", () => {
+      const button = document.querySelector("[data-install-button]");
+      if (button) button.hidden = true;
+    });
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("./香港六合彩預測系統_離線快取.js").catch(() => {});
     }

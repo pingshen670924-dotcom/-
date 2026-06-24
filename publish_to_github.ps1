@@ -37,9 +37,15 @@ if ($LASTEXITCODE -ne 0) {
 
 $Visibility = if ($Private) { "--private" } else { "--public" }
 $RepoExists = $false
-gh repo view "$Owner/$RepoName" *> $null
-if ($LASTEXITCODE -eq 0) {
-    $RepoExists = $true
+$PreviousErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+    gh repo view "$Owner/$RepoName" *> $null
+    if ($LASTEXITCODE -eq 0) {
+        $RepoExists = $true
+    }
+} finally {
+    $ErrorActionPreference = $PreviousErrorActionPreference
 }
 
 if (-not $RepoExists) {
@@ -50,9 +56,15 @@ if (-not $RepoExists) {
     git push -u origin main
 }
 
-gh api --method POST "repos/$Owner/$RepoName/pages" -f build_type=workflow *> $null
-if ($LASTEXITCODE -ne 0) {
-    gh api --method PATCH "repos/$Owner/$RepoName/pages" -f build_type=workflow *> $null
+$PreviousErrorActionPreference = $ErrorActionPreference
+$ErrorActionPreference = "Continue"
+try {
+    gh api --method POST "repos/$Owner/$RepoName/pages" -f build_type=workflow *> $null
+    if ($LASTEXITCODE -ne 0) {
+        gh api --method PATCH "repos/$Owner/$RepoName/pages" -f build_type=workflow *> $null
+    }
+} finally {
+    $ErrorActionPreference = $PreviousErrorActionPreference
 }
 
 gh workflow run "香港六合彩預測系統手機雲端" --repo "$Owner/$RepoName"
@@ -63,5 +75,6 @@ Write-Host "香港六合彩預測系統手機獨立雲端網址:"
 Write-Host $Url
 Write-Host ""
 Write-Host "第一次部署通常需要 1-3 分鐘。GitHub Actions 完成後手機即可直接開，電腦關掉也能使用。"
+
 
 

@@ -29,9 +29,38 @@ DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
 MODEL_VERSION = "香港六合彩預測系統_20260624_第8版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
+SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
+SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
+SITE_LATEST_PREDICTION_NAME = "香港六合彩預測系統_最新預測.html"
+SITE_SYSTEM_REPORT_NAME = "香港六合彩預測系統_系統報告.html"
+SITE_DRAWS_CSV_NAME = "香港六合彩預測系統_歷史資料.csv"
+SITE_STATUS_NAME = "香港六合彩預測系統_系統狀態.txt"
+SITE_PREDICTION_RUNS_NAME = "香港六合彩預測系統_預測紀錄.json"
+BATTLE_REPORT_MARKDOWN_NAME = "香港六合彩預測系統_完整戰報.md"
+BATTLE_REPORT_TEXT_NAME = "香港六合彩預測系統_完整戰報.txt"
 ENHANCED_BATTLE_REPORT_NAME = "香港六合彩預測系統_最新強化戰報.html"
-MOBILE_CLOUD_HTML_NAME = "mobile.html"
+MOBILE_CLOUD_HTML_NAME = "香港六合彩預測系統_手機首頁.html"
 MOBILE_CLOUD_REPORT_NAME = "香港六合彩預測系統_手機雲端.html"
+LEGACY_SITE_OUTPUT_NAMES = [
+    "draws.csv",
+    "latest_battle_report.html",
+    "latest_prediction.html",
+    "mobile.html",
+    "mobile_manifest.json",
+    "mobile_service_worker.js",
+    "mobile_status.json",
+    "prediction_runs.json",
+    "status.txt",
+    "system_report.html",
+    "手機雲端網址.txt",
+]
+LEGACY_REPORT_OUTPUT_NAMES = [
+    "latest_battle_report.html",
+    "latest_battle_report.md",
+    "latest_battle_report.txt",
+    "六合彩手機雲端系統.html",
+    "六合彩最新強化戰報.html",
+]
 LOCAL_TZ = timezone(timedelta(hours=8))
 AUTO_BACKTEST_PERIODS = 120
 AUTO_MIN_STRATEGY_WEIGHT = 0.25
@@ -170,7 +199,7 @@ def parse_args() -> argparse.Namespace:
     predict.add_argument("--tickets", type=int, default=20)
     predict.add_argument("--recent-window", type=int, default=DEFAULT_RECENT_WINDOW)
     predict.add_argument("--seed", type=int, default=None)
-    predict.add_argument("--html", type=Path, default=Path("reports/latest_prediction.html"))
+    predict.add_argument("--html", type=Path, default=Path("reports") / SITE_LATEST_PREDICTION_NAME)
 
     evaluate = subparsers.add_parser("evaluate", help="用已開獎資料驗證預測命中")
     evaluate.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -178,7 +207,7 @@ def parse_args() -> argparse.Namespace:
 
     report = subparsers.add_parser("report", help="輸出最新系統 HTML 報告")
     report.add_argument("--db", type=Path, default=DEFAULT_DB)
-    report.add_argument("--html", type=Path, default=Path("reports/latest_report.html"))
+    report.add_argument("--html", type=Path, default=Path("reports") / SITE_SYSTEM_REPORT_NAME)
     report.add_argument("--recent-window", type=int, default=DEFAULT_RECENT_WINDOW)
 
     battle_report = subparsers.add_parser("battle-report", help="輸出539同規格強化戰報")
@@ -208,8 +237,8 @@ def parse_args() -> argparse.Namespace:
     cycle.add_argument("--tickets", type=int, default=20)
     cycle.add_argument("--recent-window", type=int, default=DEFAULT_RECENT_WINDOW)
     cycle.add_argument("--seed", type=int, default=None)
-    cycle.add_argument("--prediction-html", type=Path, default=Path("reports/latest_prediction.html"))
-    cycle.add_argument("--report-html", type=Path, default=Path("reports/latest_report.html"))
+    cycle.add_argument("--prediction-html", type=Path, default=Path("reports") / SITE_LATEST_PREDICTION_NAME)
+    cycle.add_argument("--report-html", type=Path, default=Path("reports") / SITE_SYSTEM_REPORT_NAME)
 
     daily = subparsers.add_parser("daily-update", help="完整日更：備份、更新、驗證、預測、報告、網站")
     daily.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -712,6 +741,19 @@ def write_draws_csv(draws: list[Draw], csv_path: Path) -> None:
         writer.writerow(["draw_date", "draw_id", "n1", "n2", "n3", "n4", "n5", "n6", "special"])
         for draw in sort_draws(draws):
             writer.writerow([draw.draw_date, draw.draw_no, *draw.main_numbers, draw.special])
+
+
+def cleanup_legacy_output_files(site_dir: Path | None = None, report_dir: Path | None = None) -> None:
+    for base_dir, names in ((site_dir, LEGACY_SITE_OUTPUT_NAMES), (report_dir, LEGACY_REPORT_OUTPUT_NAMES)):
+        if base_dir is None:
+            continue
+        for name in names:
+            path = base_dir / name
+            if path.exists() and path.is_file():
+                try:
+                    path.unlink()
+                except OSError:
+                    pass
 
 
 def build_scores(
@@ -1514,7 +1556,7 @@ def system_completeness_rows(
         (
             "網站輸出",
             Path("site").exists(),
-            "index/latest_prediction/system_report/draws",
+            f"{SITE_HOME_NAME}/{SITE_LATEST_PREDICTION_NAME}/{SITE_SYSTEM_REPORT_NAME}/{SITE_DRAWS_CSV_NAME}",
             "已補齊 build-site 同步",
         ),
         (
@@ -1524,10 +1566,10 @@ def system_completeness_rows(
             f"已接 {MODEL_VERSION}",
         ),
         (
-            "自動排程安裝",
-            Path("install_marksix_daily_task.ps1").exists() and Path("marksix_install_auto_task.bat").exists(),
-            "install_marksix_daily_task.ps1",
-            "安裝腳本存在",
+            "手機雲端同步",
+            Path("香港六合彩預測系統_同步手機雲端.ps1").exists(),
+            "香港六合彩預測系統_同步手機雲端.ps1",
+            "一鍵更新後同步",
         ),
         (
             "備份機制",
@@ -2262,12 +2304,13 @@ def save_battle_reports(
 ) -> dict[str, Path]:
     init_db(conn)
     report_dir.mkdir(parents=True, exist_ok=True)
+    cleanup_legacy_output_files(None, report_dir)
     markdown_text = build_battle_report_markdown(conn, recent_window)
     html_text = build_battle_report_html(markdown_text)
     paths = {
-        "md": report_dir / "latest_battle_report.md",
-        "txt": report_dir / "latest_battle_report.txt",
-        "html": report_dir / "latest_battle_report.html",
+        "md": report_dir / BATTLE_REPORT_MARKDOWN_NAME,
+        "txt": report_dir / BATTLE_REPORT_TEXT_NAME,
+        "html": report_dir / SITE_BATTLE_REPORT_NAME,
         "enhanced": report_dir / ENHANCED_BATTLE_REPORT_NAME,
     }
     paths["md"].write_text(markdown_text, encoding="utf-8")
@@ -2276,8 +2319,9 @@ def save_battle_reports(
     paths["enhanced"].write_text(html_text, encoding="utf-8")
     if site_dir is not None:
         site_dir.mkdir(parents=True, exist_ok=True)
+        (site_dir / SITE_HOME_NAME).write_text(html_text, encoding="utf-8")
+        (site_dir / SITE_BATTLE_REPORT_NAME).write_text(html_text, encoding="utf-8")
         (site_dir / "index.html").write_text(html_text, encoding="utf-8")
-        (site_dir / "latest_battle_report.html").write_text(html_text, encoding="utf-8")
     return paths
 
 
@@ -3943,20 +3987,21 @@ def build_site(
 ) -> dict[str, Path]:
     init_db(conn)
     site_dir.mkdir(parents=True, exist_ok=True)
-    render_full_report(site_dir / "system_report.html", conn, recent_window)
+    cleanup_legacy_output_files(site_dir, report_dir)
+    render_full_report(site_dir / SITE_SYSTEM_REPORT_NAME, conn, recent_window)
     draws = load_draws_from_db(conn)
     latest_run = latest_prediction_run(conn)
     if draws and latest_run is not None:
         package = package_from_run(conn, int(latest_run["id"]))
         render_prediction_html(
-            site_dir / "latest_prediction.html",
+            site_dir / SITE_LATEST_PREDICTION_NAME,
             package,
             draws,
             int(latest_run["id"]),
             title="香港六合彩最新預測",
         )
-    export_draws(conn, site_dir / "draws.csv")
-    (site_dir / "status.txt").write_text(status_text(conn), encoding="utf-8")
+    export_draws(conn, site_dir / SITE_DRAWS_CSV_NAME)
+    (site_dir / SITE_STATUS_NAME).write_text(status_text(conn), encoding="utf-8")
     runs = conn.execute(
         """
         SELECT id, created_at, based_on_draw_date, based_on_draw_no,
@@ -3967,7 +4012,7 @@ def build_site(
         """
     ).fetchall()
     payload = [dict(row) for row in runs]
-    (site_dir / "prediction_runs.json").write_text(
+    (site_dir / SITE_PREDICTION_RUNS_NAME).write_text(
         json.dumps(payload, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
@@ -4030,7 +4075,7 @@ def daily_update(args: argparse.Namespace) -> str:
         draws = load_draws_from_db(conn)
         lines.append(doctor_text(draws))
         if len(draws) >= 5:
-            prediction_html = args.site_dir / "latest_prediction.html"
+            prediction_html = args.site_dir / SITE_LATEST_PREDICTION_NAME
             should_refresh, refresh_reason = prediction_needs_refresh(conn, draws)
             if should_refresh:
                 package = generate_prediction_package(
@@ -4065,7 +4110,7 @@ def daily_update(args: argparse.Namespace) -> str:
             render_prediction_html(prediction_html, package, draws, run_id)
             battle_paths = build_site(conn, args.site_dir, args.recent_window, args.report_dir)
             lines.append(print_prediction(package, run_id))
-            lines.append(f"網站首頁: {args.site_dir / 'index.html'}")
+            lines.append(f"網站首頁: {args.site_dir / SITE_HOME_NAME}")
             lines.append(f"強化戰報: {battle_paths['enhanced']}")
             if "mobile_mobile" in battle_paths:
                 lines.append(f"手機雲端: {battle_paths['mobile_mobile']}")
@@ -4181,13 +4226,13 @@ def run() -> None:
         with connect(args.db) as conn:
             paths = save_battle_reports(conn, args.report_dir, args.site_dir, args.recent_window)
         print(f"強化戰報: {paths['enhanced']}")
-        print(f"網站首頁: {args.site_dir / 'index.html'}")
+        print(f"網站首頁: {args.site_dir / SITE_HOME_NAME}")
         return
 
     if args.command == "build-site":
         with connect(args.db) as conn:
             paths = build_site(conn, args.site_dir, args.recent_window, args.report_dir)
-        print(f"網站首頁: {args.site_dir / 'index.html'}")
+        print(f"網站首頁: {args.site_dir / SITE_HOME_NAME}")
         print(f"強化戰報: {paths['enhanced']}")
         if "mobile_mobile" in paths:
             print(f"手機雲端: {paths['mobile_mobile']}")

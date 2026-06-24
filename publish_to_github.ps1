@@ -1,5 +1,5 @@
 ﻿param(
-    [string]$RepoName = "香港六合彩預測系統",
+    [string]$RepoName = "-",
     [switch]$Private
 )
 
@@ -75,6 +75,7 @@ Write-Host "香港六合彩預測系統手機獨立雲端網址:"
 Write-Host $Url
 Write-Host ""
 Write-Host "第一次部署通常需要 1-3 分鐘。GitHub Actions 完成後手機即可直接開，電腦關掉也能使用。"
+
 
 
 

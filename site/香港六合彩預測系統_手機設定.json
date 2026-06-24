@@ -1,7 +1,7 @@
 {
   "name": "香港六合彩預測系統",
   "short_name": "香港六合彩預測系統",
-  "start_url": "./mobile.html",
+  "start_url": "./香港六合彩預測系統_手機首頁.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f7f4ef",

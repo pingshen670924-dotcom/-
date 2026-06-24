@@ -9,8 +9,11 @@ import importlib
 m = importlib.import_module("香港六合彩預測系統_20260624_第8版")
 
 
-MOBILE_HTML = "mobile.html"
+MOBILE_HTML = "香港六合彩預測系統_手機首頁.html"
 MOBILE_REPORT = "香港六合彩預測系統_手機雲端.html"
+MOBILE_STATUS = "香港六合彩預測系統_手機狀態.json"
+MOBILE_MANIFEST = "香港六合彩預測系統_手機設定.json"
+MOBILE_SERVICE_WORKER = "香港六合彩預測系統_離線快取.js"
 
 
 def parse_args() -> argparse.Namespace:
@@ -35,9 +38,9 @@ def build_mobile_cloud_site(
     report_html = render_mobile_html(payload, asset_prefix="../site/", pwa=False)
     paths = {
         "mobile": site_dir / MOBILE_HTML,
-        "status": site_dir / "mobile_status.json",
-        "manifest": site_dir / "mobile_manifest.json",
-        "service_worker": site_dir / "mobile_service_worker.js",
+        "status": site_dir / MOBILE_STATUS,
+        "manifest": site_dir / MOBILE_MANIFEST,
+        "service_worker": site_dir / MOBILE_SERVICE_WORKER,
         "report": report_dir / MOBILE_REPORT,
     }
     paths["mobile"].write_text(site_html, encoding="utf-8")
@@ -184,10 +187,10 @@ def build_payload(conn, recent_window: int) -> dict:
             for title, numbers, target_hits in m.strong_pack_specs(ranked_numbers, package)
         ],
         "links": {
-            "battle_report": "latest_battle_report.html",
-            "prediction_report": "latest_prediction.html",
-            "system_report": "system_report.html",
-            "draws_csv": "draws.csv",
+            "battle_report": m.SITE_BATTLE_REPORT_NAME,
+            "prediction_report": m.SITE_LATEST_PREDICTION_NAME,
+            "system_report": m.SITE_SYSTEM_REPORT_NAME,
+            "draws_csv": m.SITE_DRAWS_CSV_NAME,
         },
     }
 
@@ -199,12 +202,12 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
     accuracy = payload["accuracy"]
     links = payload["links"]
     latest_balls = balls(latest["main_numbers"]) + " " + ball(int(latest["special"]), special=True)
-    manifest_link = '<link rel="manifest" href="./mobile_manifest.json">' if pwa else ""
+    manifest_link = f'<link rel="manifest" href="./{MOBILE_MANIFEST}">' if pwa else ""
     sw_script = (
         """
   <script>
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./mobile_service_worker.js").catch(() => {});
+      navigator.serviceWorker.register("./香港六合彩預測系統_離線快取.js").catch(() => {});
     }
   </script>
         """
@@ -378,7 +381,7 @@ def manifest() -> dict:
     return {
         "name": "香港六合彩預測系統",
         "short_name": "香港六合彩預測系統",
-        "start_url": "./mobile.html",
+        "start_url": f"./{MOBILE_HTML}",
         "scope": "./",
         "display": "standalone",
         "background_color": "#f7f4ef",
@@ -389,23 +392,23 @@ def manifest() -> dict:
 
 
 def service_worker() -> str:
-    return """const CACHE_NAME = "香港六合彩預測系統-20260624-v8";
-const ASSETS = ["./mobile.html","./mobile_status.json","./latest_battle_report.html","./latest_prediction.html","./system_report.html","./draws.csv"];
-self.addEventListener("install", event => {
+    return f"""const CACHE_NAME = "香港六合彩預測系統-20260624-v8";
+const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
+self.addEventListener("install", event => {{
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));
   self.skipWaiting();
-});
-self.addEventListener("activate", event => {
+}});
+self.addEventListener("activate", event => {{
   event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key !== CACHE_NAME).map(key => caches.delete(key)))));
   self.clients.claim();
-});
-self.addEventListener("fetch", event => {
-  event.respondWith(fetch(event.request).then(response => {
+}});
+self.addEventListener("fetch", event => {{
+  event.respondWith(fetch(event.request).then(response => {{
     const copy = response.clone();
     caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)).catch(() => undefined);
     return response;
-  }).catch(() => caches.match(event.request).then(cached => cached || caches.match("./mobile.html"))));
-});
+  }}).catch(() => caches.match(event.request).then(cached => cached || caches.match("./{MOBILE_HTML}"))));
+}});
 """
 
 

@@ -1,5 +1,5 @@
 const CACHE_NAME = "香港六合彩預測系統-20260624-v8";
-const ASSETS = ["./mobile.html","./mobile_status.json","./latest_battle_report.html","./latest_prediction.html","./system_report.html","./draws.csv"];
+const ASSETS = ["./香港六合彩預測系統_手機首頁.html","./香港六合彩預測系統_手機狀態.json","./香港六合彩預測系統_完整戰報.html","./香港六合彩預測系統_最新預測.html","./香港六合彩預測系統_系統報告.html","./香港六合彩預測系統_歷史資料.csv"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));
   self.skipWaiting();
@@ -13,5 +13,5 @@ self.addEventListener("fetch", event => {
     const copy = response.clone();
     caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy)).catch(() => undefined);
     return response;
-  }).catch(() => caches.match(event.request).then(cached => cached || caches.match("./mobile.html"))));
+  }).catch(() => caches.match(event.request).then(cached => cached || caches.match("./香港六合彩預測系統_手機首頁.html"))));
 });

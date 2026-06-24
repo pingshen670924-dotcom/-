@@ -1,11 +1,38 @@
 [
   {
-    "id": 1,
-    "created_at": "2026-06-23T14:47:04+08:00",
+    "id": 5,
+    "created_at": "2026-06-24T08:48:55+08:00",
+    "based_on_draw_date": "2026-06-23",
+    "based_on_draw_no": "2026/067",
+    "strategy": "auto",
+    "ticket_count": 20,
+    "report_path": "site\\latest_prediction.html"
+  },
+  {
+    "id": 3,
+    "created_at": "2026-06-22T14:11:02+08:00",
     "based_on_draw_date": "2026-06-20",
     "based_on_draw_no": "2026/066",
     "strategy": "auto",
     "ticket_count": 20,
-    "report_path": "site\\cloud_test_prediction.html"
+    "report_path": "site\\latest_prediction.html"
+  },
+  {
+    "id": 2,
+    "created_at": "2026-06-22T14:05:49+08:00",
+    "based_on_draw_date": "2026-06-20",
+    "based_on_draw_no": "2026/066",
+    "strategy": "auto",
+    "ticket_count": 20,
+    "report_path": "site\\latest_prediction.html"
+  },
+  {
+    "id": 1,
+    "created_at": "2026-06-22T13:51:13+08:00",
+    "based_on_draw_date": "2026-06-20",
+    "based_on_draw_no": "2026/066",
+    "strategy": "auto",
+    "ticket_count": 20,
+    "report_path": "site\\latest_prediction.html"
   }
 ]

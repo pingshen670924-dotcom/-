@@ -1,27 +1,27 @@
 {
-  "generated_at": "2026-06-23T14:47:35+08:00",
+  "generated_at": "2026-06-24T08:49:33+08:00",
   "model_version": "marksix-core-2026.06.23-v5-mobile-cloud",
-  "draw_count": 2564,
-  "date_range": "2008-01-03 -> 2026-06-20",
+  "draw_count": 2565,
+  "date_range": "2008-01-03 -> 2026-06-23",
   "latest": {
-    "draw_no": "2026/066",
-    "date": "2026-06-20",
+    "draw_no": "2026/067",
+    "date": "2026-06-23",
     "main_numbers": [
-      5,
-      7,
-      10,
+      2,
       15,
-      16,
+      25,
+      34,
+      39,
       41
     ],
-    "special": 46
+    "special": 10
   },
   "prediction": {
-    "run_id": 1,
-    "created_at": "2026-06-23T14:47:04+08:00",
-    "based_on_draw_no": "2026/066",
-    "based_on_draw_date": "2026-06-20",
-    "target_date": "2026-06-23",
+    "run_id": 5,
+    "created_at": "2026-06-24T08:48:55+08:00",
+    "based_on_draw_no": "2026/067",
+    "based_on_draw_date": "2026-06-23",
+    "target_date": "2026-06-25",
     "strategy": "auto",
     "ticket_count": 20
   },
@@ -31,219 +31,219 @@
     "release_level": "研究觀察，不列保證",
     "completeness": "11/11",
     "champion": "balanced",
-    "auto_weights": "balanced:1.47 / cold:0.25 / diversified:1.12 / hot:1.11 / trend:1.12",
-    "settled_status": "尚無可結算預測",
-    "consensus": 0.491
+    "auto_weights": "balanced:1.33 / cold:0.25 / diversified:0.97 / hot:1.52 / trend:1.03",
+    "settled_status": "Run #3 -> 2026-06-23 2026/067: Top5/Top10/Top15 1/2/2",
+    "consensus": 0.509
   },
   "accuracy": {
     "sample": 120,
     "top5_avg": 0.65,
     "top5_random": 0.612,
     "top5_edge": 0.038,
-    "top10_avg": 1.325,
+    "top10_avg": 1.333,
     "top10_random": 1.224,
-    "top10_edge": 0.101,
-    "top15_avg": 1.817,
+    "top10_edge": 0.109,
+    "top15_avg": 1.8,
     "top15_random": 1.837,
-    "top15_edge": -0.02
+    "top15_edge": -0.037
   },
   "confidence_tickets": [
     {
       "rank": 1,
       "numbers": [
-        2,
-        4,
-        11,
-        44,
-        46,
+        7,
+        15,
+        20,
+        28,
+        34,
         47
       ],
       "label": "高機率信心牌 96.0",
-      "strategy": "balanced",
-      "score": 2.908,
-      "reasons": "實戰成熟度 1.47；票組成熟分 0.88"
+      "strategy": "hot",
+      "score": 2.997,
+      "reasons": "實戰成熟度 1.52；票組成熟分 0.95"
     },
     {
       "rank": 2,
       "numbers": [
+        2,
+        10,
         11,
-        14,
-        20,
-        44,
-        46,
+        28,
+        34,
         47
       ],
-      "label": "高機率信心牌 91.9",
-      "strategy": "balanced",
-      "score": 2.67,
-      "reasons": "實戰成熟度 1.47；票組成熟分 0.87"
+      "label": "高機率信心牌 94.5",
+      "strategy": "hot",
+      "score": 2.974,
+      "reasons": "實戰成熟度 1.52；票組成熟分 0.92"
     },
     {
       "rank": 3,
       "numbers": [
         7,
-        11,
-        12,
+        14,
+        20,
         28,
         34,
         47
       ],
-      "label": "高機率信心牌 88.8",
+      "label": "高機率信心牌 92.7",
       "strategy": "hot",
-      "score": 2.523,
-      "reasons": "實戰成熟度 1.11；票組成熟分 0.94"
+      "score": 2.919,
+      "reasons": "實戰成熟度 1.52；票組成熟分 0.90"
     },
     {
       "rank": 4,
       "numbers": [
+        2,
         7,
-        10,
-        20,
+        16,
         28,
-        41,
+        34,
         47
       ],
-      "label": "中高信心牌 87.4",
-      "strategy": "trend",
-      "score": 2.508,
-      "reasons": "實戰成熟度 1.12；票組成熟分 0.89"
+      "label": "中高信心牌 91.3",
+      "strategy": "hot",
+      "score": 2.906,
+      "reasons": "實戰成熟度 1.52；票組成熟分 0.91"
     },
     {
       "rank": 5,
       "numbers": [
-        11,
-        20,
-        23,
+        4,
+        7,
+        10,
         28,
-        37,
-        46
+        34,
+        47
       ],
-      "label": "中高信心牌 86.2",
-      "strategy": "diversified",
-      "score": 2.501,
-      "reasons": "實戰成熟度 1.12；票組成熟分 0.87"
+      "label": "中高信心牌 89.5",
+      "strategy": "hot",
+      "score": 2.858,
+      "reasons": "實戰成熟度 1.52；票組成熟分 0.89"
     },
     {
       "rank": 6,
       "numbers": [
+        4,
         7,
-        11,
-        28,
-        34,
+        8,
+        44,
         46,
         47
       ],
-      "label": "中高信心牌 84.4",
-      "strategy": "diversified",
-      "score": 2.456,
-      "reasons": "實戰成熟度 1.12；票組成熟分 0.90"
+      "label": "中高信心牌 86.9",
+      "strategy": "balanced",
+      "score": 2.738,
+      "reasons": "實戰成熟度 1.33；票組成熟分 0.85"
     }
   ],
   "top_numbers": [
     {
       "rank": 1,
       "number": 47,
-      "confidence": "高信心（研究） 95.2",
-      "score": 0.999,
+      "confidence": "高信心（研究） 95.4",
+      "score": 1.02,
       "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、時間動能"
     },
     {
       "rank": 2,
       "number": 28,
-      "confidence": "高信心（研究） 91.4",
-      "score": 0.892,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
+      "confidence": "高信心（研究） 91.6",
+      "score": 0.908,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、長期頻率"
     },
     {
       "rank": 3,
       "number": 44,
-      "confidence": "高信心（研究） 88.5",
-      "score": 0.824,
+      "confidence": "中高信心 86.4",
+      "score": 0.782,
       "reason": "核心高分、近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 4,
       "number": 46,
-      "confidence": "高信心（研究） 88.4",
-      "score": 0.82,
+      "confidence": "中高信心 86.4",
+      "score": 0.781,
       "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 5,
-      "number": 2,
-      "confidence": "中高信心 87.8",
-      "score": 0.804,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "number": 20,
+      "confidence": "中高信心 86.2",
+      "score": 0.777,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 6,
       "number": 34,
-      "confidence": "中高信心 86.9",
-      "score": 0.784,
+      "confidence": "中高信心 85.8",
+      "score": 0.77,
       "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 7,
       "number": 4,
-      "confidence": "中高信心 87.3",
-      "score": 0.782,
+      "confidence": "中高信心 85.8",
+      "score": 0.757,
       "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、配對圖譜"
     },
     {
       "rank": 8,
-      "number": 20,
-      "confidence": "中高信心 85.9",
-      "score": 0.759,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "number": 7,
+      "confidence": "中高信心 83.5",
+      "score": 0.713,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
     },
     {
       "rank": 9,
-      "number": 7,
-      "confidence": "中高信心 82.9",
-      "score": 0.688,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+      "number": 2,
+      "confidence": "中高信心 83.4",
+      "score": 0.712,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 10,
-      "number": 8,
-      "confidence": "中高信心 83.1",
-      "score": 0.682,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
-    },
-    {
-      "rank": 11,
       "number": 10,
-      "confidence": "中高信心 82.1",
-      "score": 0.671,
+      "confidence": "中高信心 82.8",
+      "score": 0.696,
       "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
     },
     {
+      "rank": 11,
+      "number": 11,
+      "confidence": "中高信心 82.3",
+      "score": 0.668,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+    },
+    {
       "rank": 12,
-      "number": 27,
-      "confidence": "中高信心 82.0",
-      "score": 0.657,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+      "number": 14,
+      "confidence": "中高信心 81.6",
+      "score": 0.656,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
     },
     {
       "rank": 13,
-      "number": 11,
-      "confidence": "中高信心 82.1",
-      "score": 0.657,
+      "number": 12,
+      "confidence": "中高信心 81.1",
+      "score": 0.643,
       "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 14,
-      "number": 14,
-      "confidence": "中高信心 81.7",
-      "score": 0.649,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+      "number": 27,
+      "confidence": "中高信心 80.8",
+      "score": 0.636,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
     },
     {
       "rank": 15,
-      "number": 23,
-      "confidence": "中高信心 80.5",
-      "score": 0.626,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
+      "number": 45,
+      "confidence": "中高信心 79.1",
+      "score": 0.588,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、配對圖譜"
     }
   ],
   "strong_packs": [
@@ -277,7 +277,7 @@
     {
       "title": "最強6中2",
       "numbers": [
-        2,
+        20,
         28,
         34,
         44,
@@ -306,14 +306,14 @@
     {
       "title": "特別號候選",
       "numbers": [
-        2,
         7,
-        8,
         13,
+        14,
         24,
         27,
         44,
-        46
+        46,
+        47
       ],
       "target_hits": 1,
       "probability": 0.678458

@@ -1,20 +1,21 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import argparse
 import html
 import json
 from pathlib import Path
 
-import marksix_predictor as m
+import importlib
+m = importlib.import_module("香港六合彩預測系統_20260624_第8版")
 
 
 MOBILE_HTML = "mobile.html"
-MOBILE_REPORT = "六合彩手機雲端系統.html"
+MOBILE_REPORT = "香港六合彩預測系統_手機雲端.html"
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="香港六合彩手機雲端系統")
-    parser.add_argument("--db", type=Path, default=Path("marksix.db"))
+    parser = argparse.ArgumentParser(description="香港六合彩預測系統")
+    parser.add_argument("--db", type=Path, default=Path("香港六合彩預測系統.db"))
     parser.add_argument("--site-dir", type=Path, default=Path("site"))
     parser.add_argument("--report-dir", type=Path, default=Path("reports"))
     parser.add_argument("--recent-window", type=int, default=m.DEFAULT_RECENT_WINDOW)
@@ -80,9 +81,9 @@ def build_payload(conn, recent_window: int) -> dict:
         max_periods=m.AUTO_BACKTEST_PERIODS,
     )
     completeness_passed, completeness_total, _ = m.system_completeness_rows(draws, package, conn)
-    top10_edge = float(rank_backtest.get("top10_edge", 0.0))
-    risk_level = "高" if len(draws) < 300 or top10_edge < 0.1 else "中"
-    release_level = "研究觀察，不列保證" if top10_edge < 0.25 else "研究級高關注"
+    top9_edge = float(rank_backtest.get("top9_edge", 0.0))
+    risk_level = "高" if len(draws) < 300 or top9_edge < 0.1 else "中"
+    release_level = "研究觀察，不列保證" if top9_edge < 0.25 else "研究級高關注"
     settled = m.latest_settled_prediction(conn)
 
     return {
@@ -102,15 +103,15 @@ def build_payload(conn, recent_window: int) -> dict:
             "based_on_draw_no": based_draw_no,
             "based_on_draw_date": based_draw_date,
             "target_date": m.next_marksix_draw_date(based_draw_date),
-            "strategy": package.strategy,
+            "strategy": m.strategy_label(package.strategy),
             "ticket_count": len(package.tickets),
         },
         "system": {
-            "status": "OK",
+            "status": "正常",
             "risk_level": risk_level,
             "release_level": release_level,
             "completeness": f"{completeness_passed}/{completeness_total}",
-            "champion": "balanced",
+            "champion": "均衡",
             "auto_weights": m.auto_weight_text(conn, draws, recent_window),
             "settled_status": m.settled_status_text(settled),
             "consensus": round(m.model_consensus_rate(package), 3),
@@ -120,9 +121,12 @@ def build_payload(conn, recent_window: int) -> dict:
             "top5_avg": round(float(rank_backtest.get("top5_avg", 0.0)), 3),
             "top5_random": round(m.random_expected_hits(5), 3),
             "top5_edge": round(float(rank_backtest.get("top5_edge", 0.0)), 3),
+            "top9_avg": round(float(rank_backtest.get("top9_avg", 0.0)), 3),
+            "top9_random": round(m.random_expected_hits(m.CORE_POOL_SIZE), 3),
+            "top9_edge": round(top9_edge, 3),
             "top10_avg": round(float(rank_backtest.get("top10_avg", 0.0)), 3),
             "top10_random": round(m.random_expected_hits(10), 3),
-            "top10_edge": round(top10_edge, 3),
+            "top10_edge": round(float(rank_backtest.get("top10_edge", 0.0)), 3),
             "top15_avg": round(float(rank_backtest.get("top15_avg", 0.0)), 3),
             "top15_random": round(m.random_expected_hits(15), 3),
             "top15_edge": round(float(rank_backtest.get("top15_edge", 0.0)), 3),
@@ -132,16 +136,38 @@ def build_payload(conn, recent_window: int) -> dict:
                 "rank": rank,
                 "numbers": list(ticket.numbers),
                 "label": m.ticket_confidence_label(ticket, max_ticket_score, rank),
-                "strategy": ticket.strategy,
+                "strategy": m.strategy_label(ticket.strategy),
                 "score": round(ticket.score, 3),
                 "reasons": "；".join(ticket.reasons[-2:]) if ticket.reasons else "成熟度校準",
             }
             for rank, ticket in enumerate(package.tickets[:6], start=1)
         ],
+        "super_picks": [
+            {
+                "label": item["label"],
+                "target": item["target"],
+                "numbers": list(item["numbers"]),
+                "confidence": item["confidence"],
+                "probability": item["probability"],
+                "reason": item["reason"],
+            }
+            for item in m.super_recommendation_items(package)
+        ],
+        "core_numbers": [
+            {
+                "rank": rank,
+                "number": row.number,
+                "confidence": m.confidence_label(row, max_number_score),
+                "score": round(row.score, 3),
+                "reason": m.number_reasons(row, rank),
+            }
+            for rank, row in enumerate(ranked_scores[:m.CORE_POOL_SIZE], start=1)
+        ],
         "top_numbers": [
             {
                 "rank": rank,
                 "number": row.number,
+                "bucket": "9隻內核心" if rank <= m.CORE_POOL_SIZE else "10-15補位",
                 "confidence": m.confidence_label(row, max_number_score),
                 "score": round(row.score, 3),
                 "reason": m.number_reasons(row, rank),
@@ -192,7 +218,7 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#b42318">
   {manifest_link}
-  <title>香港六合彩手機雲端系統</title>
+  <title>香港六合彩預測系統</title>
   <style>
     :root {{
       --red:#b42318; --blue:#2457a6; --green:#176b4d; --gold:#b7791f;
@@ -221,6 +247,11 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
     .ticket:first-of-type {{ border-top:0; padding-top:0; }}
     .ticket-head {{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }}
     .ticket-label {{ color:var(--red); font-weight:800; font-size:14px; line-height:1.3; overflow-wrap:anywhere; }}
+    .super {{ border:3px solid var(--red); background:#fff8f6; box-shadow:0 0 0 4px rgba(180,35,24,.10); }}
+    .super h2 {{ color:var(--red); }}
+    .super-card {{ border-top:1px solid #f0b4ad; padding:12px 0; }}
+    .super-card:first-of-type {{ border-top:0; padding-top:0; }}
+    .super-label {{ color:var(--red); font-weight:900; font-size:15px; line-height:1.3; }}
     .number-grid {{ display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }}
     .number-cell {{ border:1px solid var(--line); border-radius:8px; padding:9px 5px; text-align:center; background:#fff; min-width:0; }}
     .number-cell .ball {{ margin:0 auto 5px; }}
@@ -251,9 +282,9 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
       <div class="meta">產生 {e(payload["generated_at"])} / 模型 {e(payload["model_version"])}</div>
       <div class="metrics">
         <div class="metric"><span>最新期</span><strong>{e(latest["draw_no"])} / {e(latest["date"])}</strong></div>
+        <div class="metric"><span>最新預測</span><strong>第 {prediction["run_id"] if prediction["run_id"] is not None else "-"} 筆</strong></div>
         <div class="metric"><span>預測目標</span><strong>{e(prediction["target_date"])}</strong></div>
-        <div class="metric"><span>Top10 差值</span><strong>{accuracy["top10_edge"]:+.3f}</strong></div>
-        <div class="metric"><span>完整度</span><strong>{e(system["completeness"])}</strong></div>
+        <div class="metric"><span>9隻內差值</span><strong>{accuracy["top9_edge"]:+.3f}</strong></div>
       </div>
     </section>
 
@@ -263,19 +294,43 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
       <p class="note">歷史資料庫 {payload["draw_count"]} 期 / {e(payload["date_range"])}</p>
     </section>
 
+    <section class="section" id="prediction">
+      <h2>最新預測第 {prediction["run_id"] if prediction["run_id"] is not None else "-"} 筆</h2>
+      <div class="metrics">
+        <div class="metric"><span>預測基準期</span><strong>{e(prediction["based_on_draw_no"])} / {e(prediction["based_on_draw_date"])}</strong></div>
+        <div class="metric"><span>產生時間</span><strong>{e(prediction["created_at"])}</strong></div>
+        <div class="metric"><span>策略 / 組數</span><strong>{e(prediction["strategy"])} / {prediction["ticket_count"]} 組</strong></div>
+        <div class="metric"><span>預測目標</span><strong>{e(prediction["target_date"])}</strong></div>
+      </div>
+      <p class="note">下方高機率信心牌、9隻內核心池、Top 15 補位池、核心模型全部使用這一筆最新預測。</p>
+    </section>
+
     <section class="section" id="confidence">
       <h2>高機率信心牌</h2>
       {ticket_cards(payload["confidence_tickets"])}
     </section>
 
+    <section class="section super" id="super">
+      <h2>超強信心強推薦</h2>
+      {super_pick_cards(payload["super_picks"])}
+      <p class="note">獨隻、2碼、3碼獨立精算；屬研究強推薦，不保證開出。</p>
+    </section>
+
+    <section class="section" id="core">
+      <h2>9隻內核心命中池</h2>
+      <div class="number-grid">{number_grid(payload["core_numbers"])}</div>
+      <p class="note">高機率先看這 9 隻，10-15 只作防守補位。</p>
+    </section>
+
     <section class="section" id="numbers">
-      <h2>號碼池 Top 15</h2>
+      <h2>Top 15 詳表</h2>
       <div class="number-grid">{number_grid(payload["top_numbers"])}</div>
     </section>
 
     <section class="section" id="accuracy">
       <h2>運算精準度</h2>
       {accuracy_row("Top5", accuracy["top5_avg"], accuracy["top5_random"], accuracy["top5_edge"])}
+      {accuracy_row("9隻內", accuracy["top9_avg"], accuracy["top9_random"], accuracy["top9_edge"])}
       {accuracy_row("Top10", accuracy["top10_avg"], accuracy["top10_random"], accuracy["top10_edge"])}
       {accuracy_row("Top15", accuracy["top15_avg"], accuracy["top15_random"], accuracy["top15_edge"])}
       <p class="note">樣本 {accuracy["sample"]} 期 / 共識 {system["consensus"]:.3f} / {e(system["release_level"])}</p>
@@ -291,7 +346,7 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
       <div class="metrics">
         <div class="metric"><span>狀態</span><strong>{e(system["status"])}</strong></div>
         <div class="metric"><span>主力策略</span><strong>{e(system["champion"])}</strong></div>
-        <div class="metric"><span>結算</span><strong>{e(system["settled_status"])}</strong></div>
+        <div class="metric"><span>上期命中檢討</span><strong>{e(system["settled_status"])}</strong></div>
         <div class="metric"><span>權重</span><strong>{e(system["auto_weights"])}</strong></div>
       </div>
     </section>
@@ -309,8 +364,8 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
   </main>
   <nav class="bottom-nav">
     <a href="#top">總覽</a>
-    <a href="#confidence">信心</a>
-    <a href="#accuracy">精準</a>
+    <a href="#super">強推</a>
+    <a href="#core">核心</a>
     <a href="#reports">戰報</a>
   </nav>
   {sw_script}
@@ -321,8 +376,8 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
 
 def manifest() -> dict:
     return {
-        "name": "香港六合彩手機雲端系統",
-        "short_name": "六合彩雲端",
+        "name": "香港六合彩預測系統",
+        "short_name": "香港六合彩預測系統",
         "start_url": "./mobile.html",
         "scope": "./",
         "display": "standalone",
@@ -334,7 +389,7 @@ def manifest() -> dict:
 
 
 def service_worker() -> str:
-    return """const CACHE_NAME = "marksix-mobile-cloud-20260623-v1";
+    return """const CACHE_NAME = "香港六合彩預測系統-20260624-v8";
 const ASSETS = ["./mobile.html","./mobile_status.json","./latest_battle_report.html","./latest_prediction.html","./system_report.html","./draws.csv"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));
@@ -368,11 +423,27 @@ def ticket_cards(tickets: list[dict]) -> str:
     )
 
 
+def super_pick_cards(picks: list[dict]) -> str:
+    return "\n".join(
+        '<div class="super-card">'
+        '<div class="ticket-head">'
+        f'<div class="super-label">{e(pick["label"])} / {e(pick["target"])}</div>'
+        f'<span class="badge hot">信心 {e(pick["confidence"])}</span>'
+        '</div>'
+        f'<div class="draw-line">{balls(pick["numbers"])}</div>'
+        f'<div class="meta">{e(pick["probability"])}</div>'
+        f'<div class="meta">{e(pick["reason"])}</div>'
+        '</div>'
+        for pick in picks
+    )
+
+
 def number_grid(numbers: list[dict]) -> str:
     return "\n".join(
         '<div class="number-cell">'
         f'{ball(int(row["number"]))}'
-        f'<small>#{row["rank"]} {e(row["confidence"])}</small>'
+        f'<small>#{row["rank"]} {e(row.get("bucket", "核心"))}</small>'
+        f'<small>{e(row["confidence"])}</small>'
         '</div>'
         for row in numbers
     )
@@ -427,3 +498,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

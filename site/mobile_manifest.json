@@ -1,6 +1,6 @@
 {
-  "name": "香港六合彩手機雲端系統",
-  "short_name": "六合彩雲端",
+  "name": "香港六合彩預測系統",
+  "short_name": "香港六合彩預測系統",
   "start_url": "./mobile.html",
   "scope": "./",
   "display": "standalone",

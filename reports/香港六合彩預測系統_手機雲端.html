@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#b42318">
-  <link rel="manifest" href="./mobile_manifest.json">
+  
   <title>香港六合彩預測系統</title>
   <style>
     :root {
@@ -175,10 +175,10 @@
     <section class="section" id="reports">
       <h2>戰報入口</h2>
       <div class="link-grid">
-        <a class="action primary" href="./latest_battle_report.html">完整戰報</a>
-        <a class="action" href="./latest_prediction.html">最新預測</a>
-        <a class="action" href="./system_report.html">系統報告</a>
-        <a class="action" href="./draws.csv">歷史資料</a>
+        <a class="action primary" href="../site/latest_battle_report.html">完整戰報</a>
+        <a class="action" href="../site/latest_prediction.html">最新預測</a>
+        <a class="action" href="../site/system_report.html">系統報告</a>
+        <a class="action" href="../site/draws.csv">歷史資料</a>
       </div>
       <p class="note">本系統做統計、回測與紀錄管理，不保證開出。</p>
     </section>
@@ -190,11 +190,5 @@
     <a href="#reports">戰報</a>
   </nav>
   
-  <script>
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./mobile_service_worker.js").catch(() => {});
-    }
-  </script>
-        
 </body>
 </html>

@@ -1,9 +1,9 @@
-name: Mark Six Mobile Cloud
+name: 香港六合彩預測系統手機雲端
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 14 * * 2,4,6"
+    - cron: "45 14,15,16 * * 2,4,6"
   push:
     branches:
       - main
@@ -21,34 +21,28 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: 取出程式
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: 安裝 Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Build fresh mobile cloud
+      - name: 更新開獎並重新運算
         shell: pwsh
         run: |
-          python "香港六合彩預測系統_20260623_第5版.py" init-db --db marksix_cloud.db
-          python "香港六合彩預測系統_20260623_第5版.py" import-csv --db marksix_cloud.db --csv data/marksix_full_history.csv
-          python "香港六合彩預測系統_20260623_第5版.py" fetch-hkjc --db marksix_cloud.db --last 20
-          python "香港六合彩預測系統_20260623_第5版.py" evaluate --db marksix_cloud.db --prediction-id all
-          python "香港六合彩預測系統_20260623_第5版.py" predict --db marksix_cloud.db --strategy auto --tickets 20 --html site/latest_prediction.html
-          python "香港六合彩預測系統_20260623_第5版.py" build-site --db marksix_cloud.db --site-dir site --report-dir reports
-          python "香港六合彩預測系統_20260623_第5版.py" mobile-cloud --db marksix_cloud.db --site-dir site --report-dir reports
+          python "香港六合彩預測系統_20260624_第8版.py" daily-update --db "香港六合彩預測系統_雲端.db" --csv "data/香港六合彩預測系統_全歷史資料.csv" --fetch-hkjc --tickets 20 --site-dir site --report-dir reports --backup-dir backups
           Copy-Item -LiteralPath site/mobile.html -Destination site/index.html -Force
 
-      - name: Configure Pages
+      - name: 設定 Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload Pages Artifact
+      - name: 上傳網站
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
-      - name: Deploy Pages
+      - name: 發布到手機雲端
         id: deployment
         uses: actions/deploy-pages@v4

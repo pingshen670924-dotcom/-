@@ -2,6 +2,9 @@ __pycache__/
 *.pyc
 *.log
 *.tmp
+*.db
+.gitconfig_publish
 marksix_cloud.db
+香港六合彩預測系統_雲端.db
 logs/
 backups/

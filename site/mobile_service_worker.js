@@ -1,4 +1,4 @@
-const CACHE_NAME = "marksix-mobile-cloud-20260623-v1";
+const CACHE_NAME = "香港六合彩預測系統-20260624-v8";
 const ASSETS = ["./mobile.html","./mobile_status.json","./latest_battle_report.html","./latest_prediction.html","./system_report.html","./draws.csv"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));

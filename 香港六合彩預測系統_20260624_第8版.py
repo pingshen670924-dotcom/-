@@ -25,17 +25,19 @@ MIN_NUMBER = 1
 MAX_NUMBER = 49
 MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
-DEFAULT_DB = Path("marksix.db")
+DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "marksix-core-2026.06.23-v5-mobile-cloud"
-BUNDLED_SEED_CSV = Path("data/marksix_seed_20260622.csv")
-ENHANCED_BATTLE_REPORT_NAME = "六合彩最新強化戰報.html"
+MODEL_VERSION = "香港六合彩預測系統_20260624_第8版"
+BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
+ENHANCED_BATTLE_REPORT_NAME = "香港六合彩預測系統_最新強化戰報.html"
 MOBILE_CLOUD_HTML_NAME = "mobile.html"
-MOBILE_CLOUD_REPORT_NAME = "六合彩手機雲端系統.html"
+MOBILE_CLOUD_REPORT_NAME = "香港六合彩預測系統_手機雲端.html"
 LOCAL_TZ = timezone(timedelta(hours=8))
 AUTO_BACKTEST_PERIODS = 120
 AUTO_MIN_STRATEGY_WEIGHT = 0.25
 AUTO_MAX_STRATEGY_WEIGHT = 1.85
+CORE_POOL_SIZE = 9
+SUPPORT_POOL_SIZE = 15
 _SCORE_RANK_BACKTEST_CACHE: dict[tuple[int, str, str, str, int, int], dict[str, float | int]] = {}
 
 RED_WAVE = {1, 2, 7, 8, 12, 13, 18, 19, 23, 24, 29, 30, 34, 35, 40, 45, 46}
@@ -97,6 +99,18 @@ def strategy_names(include_auto: bool = False) -> tuple[str, ...]:
     return ("auto", *names) if include_auto else names
 
 
+def strategy_label(strategy: str) -> str:
+    labels = {
+        "auto": "自動融合",
+        "balanced": "均衡",
+        "hot": "熱度",
+        "cold": "冷遺漏",
+        "trend": "趨勢",
+        "diversified": "分散",
+    }
+    return labels.get(strategy, strategy)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="香港六合彩預測系統")
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -125,7 +139,7 @@ def parse_args() -> argparse.Namespace:
     build_history.add_argument("--pages", type=int, default=52)
     build_history.add_argument("--per-page", type=int, default=50)
     build_history.add_argument("--delay", type=float, default=0.35)
-    build_history.add_argument("--csv-out", type=Path, default=Path("data/marksix_full_history.csv"))
+    build_history.add_argument("--csv-out", type=Path, default=Path("data/香港六合彩預測系統_全歷史資料.csv"))
 
     status = subparsers.add_parser("status", help="顯示資料庫狀態")
     status.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -997,10 +1011,15 @@ def build_banker_drag_lists(
 ) -> tuple[tuple[int, ...], tuple[int, ...], tuple[int, ...], tuple[int, ...]]:
     ranked = sorted(scores.values(), key=lambda row: row.score, reverse=True)
     bankers = tuple(sorted(row.number for row in ranked[:3]))
-    drags = tuple(sorted(row.number for row in ranked[3:18]))
-    reserves = tuple(sorted(row.number for row in ranked[18:28]))
+    drags = tuple(sorted(row.number for row in ranked[3:CORE_POOL_SIZE]))
+    reserves = tuple(sorted(row.number for row in ranked[CORE_POOL_SIZE:18]))
     weak_numbers = tuple(sorted(row.number for row in ranked[-8:]))
     return bankers, drags, reserves, weak_numbers
+
+
+def rank_lookup(scores: dict[int, NumberScore]) -> dict[int, int]:
+    ranked = sorted(scores.values(), key=lambda row: row.score, reverse=True)
+    return {row.number: index for index, row in enumerate(ranked, start=1)}
 
 
 def build_special_candidates(scores: dict[int, NumberScore]) -> tuple[int, ...]:
@@ -1199,17 +1218,18 @@ def backtest_strategy_weights(draws: list[Draw], recent_window: int) -> dict[str
             weights[strategy] = 1.0
             continue
         top5_edge = float(summary.get("top5_edge", 0.0))
+        top9_edge = float(summary.get("top9_edge", 0.0))
         top10_edge = float(summary.get("top10_edge", 0.0))
         top15_edge = float(summary.get("top15_edge", 0.0))
-        ge2_bonus = (float(summary.get("top10_ge2", 0.0)) - 0.35) * 0.35
-        quality = 1.0 + top5_edge * 0.8 + top10_edge * 2.6 + top15_edge * 1.4 + ge2_bonus
-        if top10_edge < 0.0 and top15_edge < 0.0:
+        ge2_bonus = (float(summary.get("top9_ge2", 0.0)) - 0.35) * 0.42
+        quality = 1.0 + top5_edge * 0.8 + top9_edge * 3.2 + top10_edge * 1.2 + top15_edge * 0.55 + ge2_bonus
+        if top9_edge < 0.0 and top10_edge < 0.0:
             quality *= 0.35
-        elif top10_edge < 0.0:
+        elif top9_edge < 0.0:
             quality *= 0.55
-        elif top10_edge < 0.04:
+        elif top9_edge < 0.04:
             quality *= 0.75
-        elif top10_edge >= 0.09:
+        elif top9_edge >= 0.09:
             quality *= 1.15
         weights[strategy] = max(AUTO_MIN_STRATEGY_WEIGHT, min(AUTO_MAX_STRATEGY_WEIGHT, quality))
     return weights
@@ -1255,6 +1275,7 @@ def generate_tickets(
     rng = random.Random(seed)
     scores = build_scores(draws, recent_window=recent_window, strategy=strategy)
     bankers, drags, _, weak_numbers = build_banker_drag_lists(scores)
+    ranks = rank_lookup(scores)
     recent_sets = {draw.main_numbers for draw in draws[-20:]}
     candidates: dict[tuple[int, ...], Ticket] = {}
     attempts = max(2200, ticket_count * 500)
@@ -1268,7 +1289,7 @@ def generate_tickets(
             continue
         if len(set(numbers).intersection(weak_numbers)) > 2:
             continue
-        score = score_ticket(numbers, scores, strategy, bankers, drags)
+        score = score_ticket(numbers, scores, strategy, bankers, drags, ranks)
         profile = describe_ticket_profile(numbers)
         reasons = explain_ticket(numbers, scores, bankers, drags, strategy)
         current = candidates.get(numbers)
@@ -1291,12 +1312,22 @@ def weighted_sample_without_replacement(
     rng: random.Random,
 ) -> tuple[int, ...]:
     pool = list(scores.values())
+    ranks = rank_lookup(scores)
     selected = []
 
     while len(selected) < count:
         min_score = min(row.score for row in pool)
         offset = abs(min_score) + 0.01 if min_score <= 0 else 0.01
-        weights = [(row.score + offset) ** 2 for row in pool]
+        weights = []
+        for row in pool:
+            rank = ranks[row.number]
+            if rank <= CORE_POOL_SIZE:
+                rank_multiplier = 1.0 + (CORE_POOL_SIZE + 1 - rank) * 0.12
+            elif rank <= SUPPORT_POOL_SIZE:
+                rank_multiplier = 0.82
+            else:
+                rank_multiplier = 0.58
+            weights.append((row.score + offset) ** 2.35 * rank_multiplier)
         picked = rng.choices(pool, weights=weights, k=1)[0]
         selected.append(picked.number)
         pool = [row for row in pool if row.number != picked.number]
@@ -1338,15 +1369,42 @@ def score_ticket(
     strategy: str,
     bankers: tuple[int, ...],
     drags: tuple[int, ...],
+    ranks: dict[int, int] | None = None,
 ) -> float:
+    if ranks is None:
+        ranks = rank_lookup(scores)
     base = sum(scores[number].score for number in numbers)
     diversity_bonus = ticket_diversity_bonus(numbers)
     model_bonus = ticket_model_consensus_bonus(numbers, scores)
     banker_bonus = len(set(numbers).intersection(bankers)) * 0.18
     drag_bonus = min(len(set(numbers).intersection(drags)), 4) * 0.04
+    core_hits = sum(1 for number in numbers if ranks[number] <= CORE_POOL_SIZE)
+    support_hits = sum(1 for number in numbers if CORE_POOL_SIZE < ranks[number] <= SUPPORT_POOL_SIZE)
+    outside_hits = MAIN_COUNT - core_hits - support_hits
+    core_focus_bonus = core_hits * 0.16 + max(0, core_hits - 3) * 0.20
+    support_penalty = max(0, support_hits - 2) * 0.13
+    outside_penalty = max(0, outside_hits - 1) * 0.12
     if strategy == "diversified":
-        return base + diversity_bonus * 1.5 + model_bonus + banker_bonus + drag_bonus
-    return base + diversity_bonus + model_bonus + banker_bonus + drag_bonus
+        return (
+            base
+            + diversity_bonus * 1.5
+            + model_bonus
+            + banker_bonus
+            + drag_bonus
+            + core_focus_bonus
+            - support_penalty
+            - outside_penalty
+        )
+    return (
+        base
+        + diversity_bonus
+        + model_bonus
+        + banker_bonus
+        + drag_bonus
+        + core_focus_bonus
+        - support_penalty
+        - outside_penalty
+    )
 
 
 def ticket_model_consensus_bonus(
@@ -1389,7 +1447,7 @@ def confidence_ticket_rows(package: PredictionPackage, limit: int = 6) -> list[l
                 rank,
                 format_numbers(ticket.numbers),
                 ticket_confidence_label(ticket, max_score, rank),
-                ticket.strategy,
+                strategy_label(ticket.strategy),
                 f"{ticket.score:.3f}",
                 "；".join(ticket.reasons[-2:]) if ticket.reasons else "成熟度校準",
             ]
@@ -1430,9 +1488,9 @@ def system_completeness_rows(
             "已修正並接入一鍵更新",
         ),
         (
-            "預測 Run",
+            "預測紀錄",
             latest_run is not None and latest_ticket_count >= 20,
-            f"Run #{latest_run['id'] if latest_run else '-'} / {latest_ticket_count} 組",
+            f"第 {latest_run['id'] if latest_run else '-'} 筆 / {latest_ticket_count} 組",
             "可追蹤待結算",
         ),
         (
@@ -1461,9 +1519,9 @@ def system_completeness_rows(
         ),
         (
             "一鍵啟動",
-            Path("marksix_one_click.bat").exists() and Path("run_marksix_daily.ps1").exists(),
-            "marksix_one_click.bat",
-            "已接第4版主程式",
+            Path("香港六合彩預測系統_一鍵啟動.bat").exists() and Path("香港六合彩預測系統_一鍵更新.ps1").exists(),
+            "香港六合彩預測系統_一鍵啟動.bat",
+            f"已接 {MODEL_VERSION}",
         ),
         (
             "自動排程安裝",
@@ -1482,7 +1540,7 @@ def system_completeness_rows(
     passed = 0
     for name, ok, evidence, action in checks:
         passed += int(ok)
-        rows.append([name, "OK" if ok else "需補強", evidence, action])
+        rows.append([name, "通過" if ok else "需補強", evidence, action])
     return passed, len(checks), rows
 
 
@@ -1499,13 +1557,39 @@ def battle_summary_rows(
     top_confidence = [format_numbers(ticket.numbers) for ticket in package.tickets[:3]]
     return [
         ["最新開獎", f"{latest.draw_no} / {latest.draw_date}", f"{format_numbers(latest.main_numbers)} + {latest.special:02d}"],
-        ["預測目標", target_date, f"Run #{run_id if run_id is not None else '-'}"],
+        ["預測目標", target_date, f"第 {run_id if run_id is not None else '-'} 筆預測"],
         ["高信心主牌", "前三組", " / ".join(top_confidence)],
-        ["膽碼", "核心觀察", format_numbers(package.bankers)],
-        ["拖碼", "主力覆蓋", format_numbers(package.drags)],
+        ["膽碼", "Top9核心", format_numbers(package.bankers)],
+        ["拖碼", "Top9補強", format_numbers(package.drags)],
         ["特別號", "獨立候選", format_numbers(package.special_candidates)],
-        ["風險", risk_level, f"Top10 edge {release_edge:.3f}"],
+        ["風險", risk_level, f"Top9差值 {release_edge:.3f}"],
         ["完整度", f"{completeness_passed}/{completeness_total}", "資料、預測、戰報、網站、一鍵流程已檢查"],
+    ]
+
+
+def recent_prediction_history_rows(conn: sqlite3.Connection, limit: int = 12) -> list[list[object]]:
+    rows = conn.execute(
+        """
+        SELECT id, created_at, based_on_draw_date, based_on_draw_no,
+               strategy, ticket_count, model_version
+        FROM prediction_runs
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    if not rows:
+        return [["-", "-", "-", "-", "-", "-"]]
+    return [
+        [
+            f"第 {row['id']} 筆",
+            row["created_at"],
+            f"{row['based_on_draw_no'] or '-'} / {row['based_on_draw_date']}",
+            strategy_label(row["strategy"]),
+            row["ticket_count"],
+            row["model_version"],
+        ]
+        for row in rows
     ]
 
 
@@ -1544,11 +1628,15 @@ def explain_ticket(
     drags: tuple[int, ...],
     strategy: str,
 ) -> list[str]:
-    reasons = [f"{strategy} 策略"]
+    reasons = [f"{strategy_label(strategy)} 策略"]
     banker_hits = sorted(set(numbers).intersection(bankers))
     drag_hits = sorted(set(numbers).intersection(drags))
+    ranks = rank_lookup(scores)
+    core_hits = sorted(number for number in numbers if ranks[number] <= CORE_POOL_SIZE)
     if banker_hits:
         reasons.append(f"含膽碼 {format_numbers(banker_hits)}")
+    if core_hits:
+        reasons.append(f"Top9核心池 {format_numbers(core_hits)}")
     if drag_hits:
         reasons.append(f"拖碼覆蓋 {format_numbers(drag_hits[:4])}")
     high_gap = [number for number in numbers if scores[number].miss_gap >= 8]
@@ -1745,7 +1833,7 @@ def evaluate_predictions(conn: sqlite3.Connection, prediction_id: str) -> str:
         actual = next_draw_after(conn, int(run["based_on_draw_id"]))
         if actual is None:
             waiting += 1
-            lines.append(f"Run #{run['id']}: 等待下一期開獎")
+            lines.append(f"第 {run['id']} 筆: 等待下一期開獎")
             continue
 
         tickets = conn.execute(
@@ -1792,7 +1880,7 @@ def evaluate_predictions(conn: sqlite3.Connection, prediction_id: str) -> str:
                 )
         evaluated += 1
         lines.append(
-            f"Run #{run['id']} -> {actual.draw_date} {actual.draw_no}: {best_line or '未命中主號'}"
+            f"第 {run['id']} 筆 -> {actual.draw_date} {actual.draw_no}: {best_line or '未命中主號'}"
         )
     conn.commit()
     lines.append("")
@@ -2056,6 +2144,8 @@ def render_prediction_html(
     table {{ width: 100%; border-collapse: collapse; background: white; }}
     th, td {{ border-bottom: 1px solid #dfe5ec; padding: 9px; text-align: left; font-size: 14px; vertical-align: top; }}
     th {{ background: #e9eef5; }}
+    .super {{ border: 3px solid #b42318; box-shadow: 0 0 0 4px rgba(180,35,24,.10); background:#fff8f6; }}
+    .super h2 {{ color:#b42318; }}
     .confidence {{ border: 2px solid #b42318; box-shadow: 0 0 0 3px rgba(180,35,24,.08); }}
     .confidence h2 {{ color: #b42318; }}
     .muted {{ color: #5f6f82; font-size: 13px; }}
@@ -2065,7 +2155,7 @@ def render_prediction_html(
 <body>
   <header>
     <h1>{escape(title)}</h1>
-    <div>Run #{run_id if run_id is not None else "-"} | 模型 {MODEL_VERSION} | 產生時間 {escape(now_text())}</div>
+    <div>第 {run_id if run_id is not None else "-"} 筆預測 | 模型 {MODEL_VERSION} | 產生時間 {escape(now_text())}</div>
   </header>
   <main>
     <section class="grid">
@@ -2078,7 +2168,7 @@ def render_prediction_html(
       <div class="card">
         <h2>膽碼</h2>
         <div class="balls">{render_balls(package.bankers)}</div>
-        <p class="muted">最高綜合分，作為核心號碼。</p>
+        <p class="muted">最高綜合分，作為 Top9 核心號碼。</p>
       </div>
       <div class="card">
         <h2>拖碼</h2>
@@ -2096,6 +2186,15 @@ def render_prediction_html(
         <div class="balls">{render_balls(package.special_candidates)}</div>
         <p class="muted">依特別號頻率、綜合分數與遺漏期數混合排序。</p>
       </div>
+    </section>
+
+    <section class="card super">
+      <h2>超強信心高機率強推薦號碼</h2>
+      <p class="muted">獨隻、2碼、3碼獨立精算；屬研究強推薦，不保證開出。</p>
+      <table>
+        <thead><tr><th>類型</th><th>強推薦號碼</th><th>命中目標</th><th>信心指數</th><th>隨機基準</th><th>強化理由</th></tr></thead>
+        <tbody>{render_super_recommendation_rows(package)}</tbody>
+      </table>
     </section>
 
     <section class="card confidence">
@@ -2202,14 +2301,13 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     ranked_scores = sorted(package.scores.values(), key=lambda row: row.score, reverse=True)
     ranked_numbers = [row.number for row in ranked_scores]
     score_max = max((row.score for row in ranked_scores), default=1.0) or 1.0
-    top5 = ranked_numbers[:5]
-    top10 = ranked_numbers[:10]
-    top15 = ranked_numbers[:15]
+    top9 = ranked_numbers[:CORE_POOL_SIZE]
+    support_numbers = ranked_numbers[CORE_POOL_SIZE:SUPPORT_POOL_SIZE]
     weak_rows = sorted(package.scores.values(), key=lambda row: row.score)[:15]
     target_date = next_marksix_draw_date(based_draw_date)
     report_time = now_text()
     date_range = f"{draws[0].draw_date} -> {draws[-1].draw_date}"
-    freshness = "fresh" if latest.draw_date == based_draw_date else "updated"
+    freshness = "最新" if latest.draw_date == based_draw_date else "已更新"
     data_hash = hashlib.sha256(
         "\n".join(
             f"{draw.draw_date}|{draw.draw_no}|{format_numbers(draw.main_numbers)}|{draw.special:02d}"
@@ -2226,34 +2324,35 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     maturity_rows = strategy_maturity_rows(draws, recent_window, conn)
     completeness_passed, completeness_total, completeness_rows = system_completeness_rows(draws, package, conn)
     consensus = model_consensus_rate(package)
-    release_edge = rank_backtest.get("top10_edge", 0.0)
+    release_edge = float(rank_backtest.get("top9_edge", rank_backtest.get("top10_edge", 0.0)))
     release_level = "研究觀察，不列保證" if release_edge < 0.25 else "研究級高關注"
     risk_level = "高" if len(draws) < 300 or release_edge < 0.1 else "中"
     settled = latest_settled_prediction(conn)
 
     lines: list[str] = [
-        "# 香港六合彩開獎預測戰報",
+        "# 香港六合彩預測系統戰報",
         "",
         f"- 產生時間：{report_time}",
-        "- 系統狀態：ok",
+        "- 系統狀態：正常",
         f"- 資料新鮮度：{freshness} / 最新資料日 {latest.draw_date}",
         f"- 歷史資料庫：{len(draws)} 期 / {date_range}",
         f"- 最新期別：{latest.draw_no or '-'} ({latest.draw_date})",
         f"- 最新號碼：{format_numbers(latest.main_numbers)} + 特別號 {latest.special:02d}",
         f"- 預測基準期：{based_draw_no or '-'} ({based_draw_date})",
         f"- 預測目標日：{target_date}",
-        f"- 目前待結算追蹤記錄：Run #{run_id if run_id is not None else '-'} / 依據期 {based_draw_no or '-'}",
-        "- 運算模式：目前正式模式",
-        "- 重號政策：最新開獎號不硬性排除，依模型分數與結構風控軟性處理",
-        f"- 工業引擎：{MODEL_VERSION}_battle_report_539_spec",
+        f"- 目前待結算追蹤記錄：第 {run_id if run_id is not None else '-'} 筆 / 依據期 {based_draw_no or '-'}",
+        "- 運算模式：每期開獎後自動更新、自動結算、自動重新運算",
+        "- 重號政策：最新開獎號不硬性排除，依模型分數與 Top9 核心池風控軟性處理",
+        f"- 工業引擎：{MODEL_VERSION}",
         f"- 預測發布等級：{release_level}",
+        f"- Top9 核心池：{format_numbers(top9)}",
         f"- Top10 穩定共識率：{consensus:.3f}",
         f"- 風險等級：{risk_level}",
-        f"- 競賽冠軍：{champion}",
+        f"- 競賽冠軍：{strategy_label(champion)}",
         f"- 系統完整度：{completeness_passed}/{completeness_total}",
         "- 提醒：本戰報為歷史統計分析，不保證開出，請量力而為。",
         "",
-        "## A. 一眼看懂總覽",
+        "## 本期發布結論",
         markdown_table(
             ["分類", "重點", "內容"],
             battle_summary_rows(
@@ -2268,35 +2367,59 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             ),
         ),
         "",
-        "## B. 今日總判斷",
+        "## 今日總判斷",
         f"- 引擎評語：以 {len(draws)} 期資料、{len(package.tickets)} 組候選、{len(next(iter(package.scores.values())).model_scores)} 個子模型做本期運算。",
         "- 開獎型態：未見資料格式異常，波色、大小、尾數、區間皆納入風控。",
+        f"- 本期核心要求：命中壓在 9 隻內優先檢查，Top10-15 只作補位池，不列高機率主推來源。",
         f"- 隨機 Top10 基準：{random_expected_hits(10):.3f}",
         f"- 隨機 Top15 基準：{random_expected_hits(15):.3f}",
-        f"- 目前 Top10 回測差值：{release_edge:.3f}",
+        f"- 目前 Top9 回測差值：{release_edge:.3f}",
         "",
-        "## C. 高機率信心牌（特別標註）",
-        "- 標註規則：依本期成熟度校準分、策略回測權重、票組成熟分排序；屬研究高信心，不等於保證。",
+        "## 超強信心高機率強推薦號碼",
+        "- 精算規則：先取 Top9 核心池內最高分，再用模型共識、近期動能、配對圖譜、遺漏修正做二次校準。",
+        markdown_table(
+            ["類型", "強推薦號碼", "命中目標", "信心指數", "隨機基準", "強化理由"],
+            super_recommendation_rows(package),
+        ),
+        "",
+        "## 高機率信心牌（特別標註）",
+        "- 標註規則：依 Top9 核心池覆蓋、成熟度校準分、策略回測權重、票組成熟分排序；屬研究高信心，不等於保證。",
         markdown_table(
             ["優先", "號碼", "信心標籤", "策略", "成熟分", "註明"],
             confidence_ticket_rows(package, limit=6),
         ),
         "",
-        "## D. 今日觀察候選（不列保證）",
+        "## 9隻內核心命中池",
+        markdown_table(
+            ["排名", "號碼", "信心指數", "近期", "遺漏", "主要理由"],
+            [
+                [
+                    rank,
+                    f"{row.number:02d}",
+                    f"{confidence_index(row, score_max):.1f}",
+                    row.recent_frequency,
+                    row.miss_gap,
+                    number_reasons(row, rank),
+                ]
+                for rank, row in enumerate(ranked_scores[:CORE_POOL_SIZE], start=1)
+            ],
+        ),
+        "",
+        "## 今日觀察候選（不列正式主推）",
     ]
 
     for title, numbers, target_hits in strong_pack_specs(ranked_numbers, package):
         probability = probability_at_least_hits(len(numbers), target_hits)
         odds = (1.0 / probability) if probability else 0.0
         lines.append(
-            f"- {title}：{format_numbers(numbers)} / 狀態 research_prediction"
+            f"- {title}：{format_numbers(numbers)} / 狀態：研究觀察"
         )
         lines.append(f"  - 理論機率：{probability:.6f} / 1中{odds:.2f}")
 
     lines.extend(
         [
             "",
-            "## E. 日期基準",
+            "## 日期基準",
             markdown_table(
                 ["項目", "內容"],
                 [
@@ -2310,15 +2433,122 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ],
             ),
             "",
-            "## F. 上期命中檢討摘要",
+            "## 上期命中檢討",
         ]
     )
     lines.extend(settlement_summary_lines(conn, settled))
 
+    lines.extend(["", "## 昨日參考組合檢討"])
+    if settled is None:
+        lines.append("- 尚無已結算預測。下一期開獎更新後，本區會自動列出組合命中。")
+    else:
+        settled_run, actual = settled
+        lines.append(
+            markdown_table(
+                ["組別", "原預測組合", "命中數", "命中號", "未命中號"],
+                settled_ticket_rows(conn, int(settled_run["id"]), actual, limit=10),
+            )
+        )
+
+    lines.extend(["", "## 昨日強牌組成敗檢討"])
+    if settled is None:
+        lines.append("- 尚無強牌結算。")
+    else:
+        settled_run, actual = settled
+        rows = settled_ticket_rows(conn, int(settled_run["id"]), actual, limit=6)
+        lines.append(
+            markdown_table(
+                ["強牌", "號碼", "命中", "命中號", "修正動作"],
+                [
+                    [
+                        row[0],
+                        row[1],
+                        row[2],
+                        row[3],
+                        "命中保留權重" if int(row[2]) >= 2 else "降低同型組合權重",
+                    ]
+                    for row in rows
+                ],
+            )
+        )
+
+    lines.extend(["", "## 實際開出號碼漏抓檢討"])
+    if settled is None:
+        lines.append("- 尚無可檢討的實際開獎。")
+    else:
+        settled_run, actual = settled
+        settled_ranked = score_snapshot_ranked(settled_run)
+        rows = []
+        for number in actual.main_numbers:
+            rank = settled_ranked.index(number) + 1 if number in settled_ranked else "-"
+            if number in settled_ranked[:CORE_POOL_SIZE]:
+                bucket = "Top9核心池"
+                action = "保留主模型權重"
+            elif number in settled_ranked[:SUPPORT_POOL_SIZE]:
+                bucket = "補位池"
+                action = "往Top9前移"
+            else:
+                bucket = "核心池外"
+                action = "提高補抓模型權重"
+            rows.append([f"{number:02d}", rank, bucket, action])
+        lines.append(markdown_table(["開出號", "預測排名", "分類", "修正動作"], rows))
+
     lines.extend(
         [
             "",
-            f"## G. 模型檢查：研究命中 KPI（產生 {report_time}）",
+            "## 昨日正式預測逐號檢討",
+            markdown_table(
+                ["排名", "號碼", "分區", "信心", "主要模型", "檢核結果"],
+                [
+                    [
+                        rank,
+                        f"{row.number:02d}",
+                        "Top9核心" if rank <= CORE_POOL_SIZE else "Top10-15補位",
+                        confidence_label(row, score_max),
+                        top_model_text(row),
+                        "主推核心" if rank <= CORE_POOL_SIZE else "只作防守補位",
+                    ]
+                    for rank, row in enumerate(ranked_scores[:SUPPORT_POOL_SIZE], start=1)
+                ],
+            ),
+            "",
+            "## 候選 Top 15 詳表",
+            markdown_table(
+                ["排名", "號碼", "分區", "信心指數", "遺漏", "近期", "主要理由"],
+                [
+                    [
+                        rank,
+                        f"{row.number:02d}",
+                        "Top9核心池" if rank <= CORE_POOL_SIZE else "Top10-15補位池",
+                        f"{confidence_index(row, score_max):.1f}",
+                        row.miss_gap,
+                        row.recent_frequency,
+                        number_reasons(row, rank),
+                    ]
+                    for rank, row in enumerate(ranked_scores[:SUPPORT_POOL_SIZE], start=1)
+                ],
+            ),
+            "",
+            "## 牌型關聯",
+            markdown_table(["項目", "結果"], board_pattern_rows(draws)),
+            "",
+            "## 號碼關聯與連動精準分析",
+            "- 方法：延遲期重疊 + 高共現配對。",
+            "- 警示：關聯不等於因果，只允許作為輔助分與風控訊號。",
+            "",
+            "### 延遲期連動",
+            markdown_table(["延遲", "樣本", "實際平均重疊", "隨機期待", "差值"], lag_overlap_rows(draws)),
+            "",
+            "### 高共現配對",
+            markdown_table(["配對", "出現次數", "保守提升", "用途"], top_pair_lift_rows(draws)),
+            "",
+            "## 多模型競賽回測",
+            markdown_table(
+                ["模型", "Top5", "Top9", "Top10", "Top15", "Top9差值", "Top15差值", "樣本"],
+                strategy_rows,
+            ),
+            "",
+            f"## 研究命中 KPI 與禁止虛報門檻（樣本 {rank_backtest.get('sample', 0)} 期）",
             markdown_table(
                 ["KPI", "樣本", "平均命中", "隨機基準", "差值", "狀態"],
                 [
@@ -2331,12 +2561,20 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                         "研究觀察",
                     ],
                     [
+                        "Top9核心",
+                        rank_backtest.get("sample", 0),
+                        f"{rank_backtest.get('top9_avg', 0.0):.3f}",
+                        f"{random_expected_hits(CORE_POOL_SIZE):.3f}",
+                        f"{rank_backtest.get('top9_edge', 0.0):.3f}",
+                        "主檢查池",
+                    ],
+                    [
                         "Top10",
                         rank_backtest.get("sample", 0),
                         f"{rank_backtest.get('top10_avg', 0.0):.3f}",
                         f"{random_expected_hits(10):.3f}",
                         f"{rank_backtest.get('top10_edge', 0.0):.3f}",
-                        "未達保證門檻",
+                        "輔助比較",
                     ],
                     [
                         "Top15",
@@ -2344,112 +2582,42 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                         f"{rank_backtest.get('top15_avg', 0.0):.3f}",
                         f"{random_expected_hits(15):.3f}",
                         f"{rank_backtest.get('top15_edge', 0.0):.3f}",
-                        "未達保證門檻",
+                        "防守池，不准當高機率主推",
                     ],
                 ],
             ),
             "",
-            f"## H. 模型檢查：預測排名校準（樣本 {rank_backtest.get('sample', 0)} 期）",
+            "## 近期穩定度回測",
             markdown_table(
                 ["排名區間", "平均命中", ">=2命中率", "校準動作"],
                 [
                     ["Top5", f"{rank_backtest.get('top5_avg', 0.0):.3f}", f"{rank_backtest.get('top5_ge2', 0.0):.3f}", "保留核心但不放大保證"],
-                    ["Top10", f"{rank_backtest.get('top10_avg', 0.0):.3f}", f"{rank_backtest.get('top10_ge2', 0.0):.3f}", "作為本期主要觀察池"],
-                    ["Top15", f"{rank_backtest.get('top15_avg', 0.0):.3f}", f"{rank_backtest.get('top15_ge2', 0.0):.3f}", "作為防守與補位池"],
+                    ["Top9核心", f"{rank_backtest.get('top9_avg', 0.0):.3f}", f"{rank_backtest.get('top9_ge2', 0.0):.3f}", "本期主檢查池"],
+                    ["Top10", f"{rank_backtest.get('top10_avg', 0.0):.3f}", f"{rank_backtest.get('top10_ge2', 0.0):.3f}", "只作輔助比較"],
+                    ["Top15", f"{rank_backtest.get('top15_avg', 0.0):.3f}", f"{rank_backtest.get('top15_ge2', 0.0):.3f}", "防守與補位池"],
                 ],
             ),
             "",
-            "## I. 系統完整度總檢",
+            "## 工業級模型審計",
             markdown_table(
                 ["模組", "狀態", "證據", "補強狀態"],
                 completeness_rows,
             ),
             "",
-            f"## J. 風控與每日滾動調整（樣本 {rank_backtest.get('sample', 0)} 期）",
+            "## 風控與每日滾動調整",
             markdown_table(
                 ["滾動項目", "本次結果", "模型調整", "狀態"],
                 [
                     ["上期結算回饋", settled_status_text(settled), "命中來源保留，未命中來源降權", "已啟用"],
-                    ["回測差值", f"Top10 edge {release_edge:.3f}", "優勢不足時降為觀察等級", "已啟用"],
+                    ["Top9 回測差值", f"{release_edge:.3f}", "優勢不足時降為觀察等級", "已啟用"],
                     ["權重滾動", auto_weight_text(conn, draws, recent_window), "回測校準 + 實戰結算雙軌調整", "已啟用"],
-                    ["策略熔斷", "低效策略自動降權", "Top10/Top15 差值雙負時降到觀察", "已啟用"],
-                    ["票組成熟度", "同策略內標準化後再排序", "避免 hot 分數尺度洗版", "已啟用"],
-                    ["重複守門", "最新號碼軟性降權", "不硬刪號碼，只降低追高風險", "已啟用"],
-                    ["資料健檢", f"{len(draws)} 期 / 最新 {latest.draw_date}", "格式錯誤會在 doctor 區顯示", "已啟用"],
+                    ["策略熔斷", "低效策略自動降權", "Top9/Top10 差值雙負時降到觀察", "已啟用"],
+                    ["票組成熟度", "同策略內標準化後再排序", "避免單一策略分數洗版", "已啟用"],
+                    ["資料健檢", f"{len(draws)} 期 / 最新 {latest.draw_date}", "格式錯誤會在資料健檢區顯示", "已啟用"],
                 ],
             ),
             "",
-            "## K. 實戰準度校準器",
-            markdown_table(
-                ["項目", "數值", "規則", "結論"],
-                [
-                    ["發布狀態", release_level, "未達長期穩定門檻不准寫保證", "已降級治理"],
-                    ["Top10 穩定共識", f"{consensus:.3f}", "多模型重疊越高越穩", "已納入"],
-                    ["資料量", f"{len(draws)} 期", "資料不足時風險提高", risk_level],
-                    ["特別號", format_numbers(package.special_candidates), "特別號獨立候選，不混入主號保證", "已分離"],
-                ],
-            ),
-            "",
-            "## L. 核心專用模型：1中1 / 6中2 / 9中3",
-            markdown_table(
-                ["目標組", "號碼", "理論機率", "發布關卡", "說明"],
-                [
-                    [
-                        title,
-                        format_numbers(numbers),
-                        f"{probability_at_least_hits(len(numbers), target_hits):.6f}",
-                        "research_prediction",
-                        f"目標至少中 {target_hits}",
-                    ]
-                    for title, numbers, target_hits in strong_pack_specs(ranked_numbers, package)
-                ],
-            ),
-            "",
-            f"## M. 下期預測號碼池（目標開獎日 {target_date}）",
-            markdown_table(
-                ["組別", "號碼", "用途"],
-                [
-                    ["膽碼", format_numbers(package.bankers), "核心觀察"],
-                    ["拖碼", format_numbers(package.drags), "主力覆蓋"],
-                    ["防守碼", format_numbers(package.reserves), "補位與分散"],
-                    ["弱勢碼", format_numbers(package.weak_numbers), "低機率暫避"],
-                    ["特別號候選", format_numbers(package.special_candidates), "特碼獨立觀察"],
-                ],
-            ),
-            "",
-            f"## N. 候選 Top 15（目標 {target_date}）",
-            markdown_table(
-                ["排名", "號碼", "信心指數", "遺漏", "近期", "主要理由"],
-                [
-                    [
-                        rank,
-                        f"{row.number:02d}",
-                        f"{confidence_index(row, score_max):.1f}",
-                        row.miss_gap,
-                        row.recent_frequency,
-                        number_reasons(row, rank),
-                    ]
-                    for rank, row in enumerate(ranked_scores[:15], start=1)
-                ],
-            ),
-            "",
-            f"## O. 附錄：預測號碼逐號精算驗證（目標 {target_date}）",
-            markdown_table(
-                ["排名", "號碼", "信心", "波色", "模型共識", "檢核結果"],
-                [
-                    [
-                        rank,
-                        f"{row.number:02d}",
-                        confidence_label(row, score_max),
-                        row.color,
-                        top_model_text(row),
-                        "通過逐號理由檢定" if rank <= 15 else "觀察",
-                    ]
-                    for rank, row in enumerate(ranked_scores[:15], start=1)
-                ],
-            ),
-            "",
-            f"## P. 附錄：低機率暫避號碼（目標 {target_date}）",
+            "## 低機率暫避號碼（風控觀察）",
             markdown_table(
                 ["#", "號碼", "暫避指數", "候選排名", "暫避原因"],
                 [
@@ -2464,75 +2632,27 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ],
             ),
             "",
-            "## Q. 附錄：多模型競賽回測",
+            "## 全部正式預測歷史對比",
             markdown_table(
-                ["模型", "Top5", "Top10", "Top15", "Top10差值", "Top15差值", "樣本"],
-                strategy_rows,
+                ["預測", "產生時間", "依據期", "策略", "組數", "模型"],
+                recent_prediction_history_rows(conn),
             ),
             "",
-            "## R. 附錄：策略成熟度與熔斷控制",
+            "## 下期預測號碼池",
             markdown_table(
-                ["策略", "Top10差值", "Top15差值", "校準權重", "處理"],
-                maturity_rows,
-            ),
-            "",
-            "## S. 附錄：號碼關聯與連動精準分析",
-            "- 方法：lag_overlap_and_pair_lift",
-            "- 警示：關聯不等於因果，只允許作為輔助分與風控訊號。",
-            "",
-            "### 延遲期連動",
-            markdown_table(
-                ["延遲", "樣本", "實際平均重疊", "隨機期待", "差值"],
-                lag_overlap_rows(draws),
-            ),
-            "",
-            "### 高共現配對",
-            markdown_table(
-                ["配對", "出現次數", "保守提升", "用途"],
-                top_pair_lift_rows(draws),
-            ),
-            "",
-            "## T. 附錄：香港六合彩版路牌獨立分析",
-            markdown_table(
-                ["項目", "結果"],
-                board_pattern_rows(draws),
-            ),
-            "",
-            "## U. 附錄：候選組合戰鬥表",
-            markdown_table(
-                ["#", "號碼", "策略", "分數", "結構", "理由"],
+                ["組別", "號碼", "用途"],
                 [
-                    [
-                        index,
-                        format_numbers(ticket.numbers),
-                        ticket.strategy,
-                        f"{ticket.score:.3f}",
-                        ticket.profile,
-                        "；".join(ticket.reasons),
-                    ]
-                    for index, ticket in enumerate(package.tickets, start=1)
+                    ["膽碼", format_numbers(package.bankers), "Top9核心中的最高分"],
+                    ["拖碼", format_numbers(package.drags), "Top9核心補強"],
+                    ["Top9核心池", format_numbers(top9), "本期主檢查池"],
+                    ["Top10-15補位池", format_numbers(support_numbers), "只作防守補位"],
+                    ["防守碼", format_numbers(package.reserves), "補位與分散"],
+                    ["弱勢碼", format_numbers(package.weak_numbers), "低機率暫避"],
+                    ["特別號候選", format_numbers(package.special_candidates), "特碼獨立觀察"],
                 ],
             ),
             "",
-            "## V. 附錄：上期命中檢討專區",
-        ]
-    )
-    lines.extend(settlement_detail_lines(conn, settled))
-    lines.extend(
-        [
-            "",
-            "## W. 附錄：工業級模型審計",
-            markdown_table(
-                ["項目", "結果"],
-                [
-                    ["風險等級", risk_level],
-                    ["資料指紋 SHA-256", data_hash],
-                    ["模型版本", MODEL_VERSION],
-                    ["Top10 穩定共識", f"{consensus:.3f}"],
-                    ["回測 Top10 edge", f"{release_edge:.3f}"],
-                    ["開獎型態", "未見明顯異常型態"],
-                ],
-            ),
+            "## 運算保證審核",
         ]
     )
 
@@ -2540,12 +2660,11 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     output_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
     lines.extend(
         [
-            "",
-            "## X. 附錄：運算保證審核",
             "- 審核狀態：verified_for_research",
             f"- 資料指紋 SHA-256：{data_hash}",
             f"- 輸出指紋 SHA-256：{output_hash}",
             f"- 雙通道交叉驗證：Top10 穩定共識 {consensus:.3f}",
+            f"- Top9 核心池：{format_numbers(top9)}",
             f"- 發布治理：{release_level}",
         ]
     )
@@ -2554,6 +2673,24 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
 
 def latest_prediction_run(conn: sqlite3.Connection) -> sqlite3.Row | None:
     return conn.execute("SELECT * FROM prediction_runs ORDER BY id DESC LIMIT 1").fetchone()
+
+
+def prediction_needs_refresh(
+    conn: sqlite3.Connection,
+    draws: list[Draw],
+    model_version: str = MODEL_VERSION,
+) -> tuple[bool, str]:
+    if not draws:
+        return False, "資料庫沒有開獎資料"
+    latest = draws[-1]
+    latest_run = latest_prediction_run(conn)
+    if latest_run is None:
+        return True, "尚無預測紀錄"
+    if latest.row_id is not None and int(latest_run["based_on_draw_id"]) != int(latest.row_id):
+        return True, f"已有新開獎 {latest.draw_no or '-'}，必須重新運算"
+    if latest_run["model_version"] != model_version:
+        return True, f"模型版本已更新為 {model_version}"
+    return False, f"最新預測已對應 {latest.draw_no or '-'} / {model_version}"
 
 
 def latest_settled_prediction(conn: sqlite3.Connection) -> tuple[sqlite3.Row, Draw] | None:
@@ -2607,6 +2744,83 @@ def probability_at_least_hits(pool_size: int, target_hits: int) -> float:
     return favorable / total if total else 0.0
 
 
+def probability_exact_hits(pool_size: int, hits: int) -> float:
+    total = math.comb(MAX_NUMBER, MAIN_COUNT)
+    if hits < 0 or hits > pool_size or hits > MAIN_COUNT:
+        return 0.0
+    if MAIN_COUNT - hits > MAX_NUMBER - pool_size:
+        return 0.0
+    return math.comb(pool_size, hits) * math.comb(MAX_NUMBER - pool_size, MAIN_COUNT - hits) / total
+
+
+def probability_percent(value: float) -> str:
+    return f"{value * 100:.3f}%"
+
+
+def hit_probability_text(pool_size: int) -> str:
+    if pool_size == 1:
+        return f"1中1 {probability_percent(probability_exact_hits(1, 1))}"
+    if pool_size == 2:
+        return (
+            f"至少1中 {probability_percent(probability_at_least_hits(2, 1))}；"
+            f"2中2 {probability_percent(probability_exact_hits(2, 2))}"
+        )
+    if pool_size == 3:
+        return (
+            f"至少1中 {probability_percent(probability_at_least_hits(3, 1))}；"
+            f"2中以上 {probability_percent(probability_at_least_hits(3, 2))}；"
+            f"3中3 {probability_percent(probability_exact_hits(3, 3))}"
+        )
+    return f"至少1中 {probability_percent(probability_at_least_hits(pool_size, 1))}"
+
+
+def super_recommendation_items(package: PredictionPackage) -> list[dict[str, object]]:
+    ranked_scores = sorted(package.scores.values(), key=lambda row: row.score, reverse=True)
+    score_max = max((row.score for row in ranked_scores), default=1.0) or 1.0
+    specs = [
+        ("超強獨隻", "獨隻1中1", ranked_scores[:1]),
+        ("超強2碼", "2中1~2", ranked_scores[:2]),
+        ("超強3碼", "3中1~3", ranked_scores[:3]),
+    ]
+    items: list[dict[str, object]] = []
+    for label, target, rows in specs:
+        numbers = tuple(row.number for row in rows)
+        confidence = statistics.mean(confidence_index(row, score_max) for row in rows)
+        confidence += max(0, 4 - len(numbers)) * 0.8
+        confidence = min(99.0, confidence)
+        leader = rows[0]
+        reason_parts = [
+            f"Top{len(numbers)}核心",
+            top_model_text(leader, 3),
+            number_reasons(leader, 1),
+        ]
+        items.append(
+            {
+                "label": label,
+                "target": target,
+                "numbers": numbers,
+                "confidence": f"{confidence:.1f}",
+                "probability": hit_probability_text(len(numbers)),
+                "reason": "；".join(part for part in reason_parts if part),
+            }
+        )
+    return items
+
+
+def super_recommendation_rows(package: PredictionPackage) -> list[list[object]]:
+    return [
+        [
+            item["label"],
+            format_numbers(item["numbers"]),
+            item["target"],
+            item["confidence"],
+            item["probability"],
+            item["reason"],
+        ]
+        for item in super_recommendation_items(package)
+    ]
+
+
 def strong_pack_specs(
     ranked_numbers: list[int],
     package: PredictionPackage,
@@ -2652,6 +2866,7 @@ def score_rank_backtest(
         samples.append(
             {
                 "top5": len(set(ranked[:5]).intersection(actual)),
+                "top9": len(set(ranked[:CORE_POOL_SIZE]).intersection(actual)),
                 "top10": len(set(ranked[:10]).intersection(actual)),
                 "top15": len(set(ranked[:15]).intersection(actual)),
             }
@@ -2665,12 +2880,15 @@ def score_rank_backtest(
     result = {
         "sample": len(samples),
         "top5_avg": avg("top5"),
+        "top9_avg": avg("top9"),
         "top10_avg": avg("top10"),
         "top15_avg": avg("top15"),
         "top5_edge": avg("top5") - random_expected_hits(5),
+        "top9_edge": avg("top9") - random_expected_hits(CORE_POOL_SIZE),
         "top10_edge": avg("top10") - random_expected_hits(10),
         "top15_edge": avg("top15") - random_expected_hits(15),
         "top5_ge2": ge2("top5"),
+        "top9_ge2": ge2("top9"),
         "top10_ge2": ge2("top10"),
         "top15_ge2": ge2("top15"),
     }
@@ -2687,17 +2905,18 @@ def strategy_competition_rows(
     best_edge = -999.0
     for strategy in strategy_names():
         summary = score_rank_backtest(draws, strategy, recent_window, max_periods=120)
-        top10_edge = float(summary.get("top10_edge", 0.0))
-        if top10_edge > best_edge:
-            best_edge = top10_edge
+        top9_edge = float(summary.get("top9_edge", 0.0))
+        if top9_edge > best_edge:
+            best_edge = top9_edge
             best_name = strategy
         rows.append(
             [
-                strategy,
+                strategy_label(strategy),
                 f"{float(summary.get('top5_avg', 0.0)):.3f}",
+                f"{float(summary.get('top9_avg', 0.0)):.3f}",
                 f"{float(summary.get('top10_avg', 0.0)):.3f}",
                 f"{float(summary.get('top15_avg', 0.0)):.3f}",
-                f"{top10_edge:.3f}",
+                f"{float(summary.get('top9_edge', 0.0)):.3f}",
                 f"{float(summary.get('top15_edge', 0.0)):.3f}",
                 int(summary.get("sample", 0)),
             ]
@@ -2719,10 +2938,11 @@ def strategy_maturity_rows(
             recent_window,
             max_periods=AUTO_BACKTEST_PERIODS,
         )
+        top9_edge = float(summary.get("top9_edge", 0.0))
         top10_edge = float(summary.get("top10_edge", 0.0))
         top15_edge = float(summary.get("top15_edge", 0.0))
         weight = calibrated.get(strategy, 1.0)
-        if top10_edge < 0.0 and top15_edge < 0.0:
+        if top9_edge < 0.0 and top10_edge < 0.0:
             action = "熔斷降權"
         elif weight < 0.85:
             action = "降權觀察"
@@ -2732,7 +2952,8 @@ def strategy_maturity_rows(
             action = "正常輪替"
         rows.append(
             [
-                strategy,
+                strategy_label(strategy),
+                f"{top9_edge:.3f}",
                 f"{top10_edge:.3f}",
                 f"{top15_edge:.3f}",
                 f"{weight:.2f}",
@@ -2793,6 +3014,7 @@ def model_label(name: str) -> str:
         "momentum": "時間動能",
         "cycle": "週期回歸",
         "structure": "結構適配",
+        "auto_maturity": "實戰成熟度",
     }
     return labels.get(name, name)
 
@@ -2845,7 +3067,7 @@ def auto_weight_text(
         if draws
         else performance_strategy_weights(conn)
     )
-    return " / ".join(f"{name}:{weight:.2f}" for name, weight in sorted(weights.items()))
+    return " / ".join(f"{strategy_label(name)}:{weight:.2f}" for name, weight in sorted(weights.items()))
 
 
 def settled_status_text(settled: tuple[sqlite3.Row, Draw] | None) -> str:
@@ -2855,8 +3077,9 @@ def settled_status_text(settled: tuple[sqlite3.Row, Draw] | None) -> str:
     ranked = score_snapshot_ranked(run)
     actual_numbers = set(actual.main_numbers)
     return (
-        f"Run #{run['id']} -> {actual.draw_date} {actual.draw_no}: "
-        f"Top5/Top10/Top15 {hits_in_top(ranked, actual_numbers, 5)}/"
+        f"第 {run['id']} 筆 -> {actual.draw_date} {actual.draw_no}: "
+        f"Top5/Top9/Top10/Top15 {hits_in_top(ranked, actual_numbers, 5)}/"
+        f"{hits_in_top(ranked, actual_numbers, CORE_POOL_SIZE)}/"
         f"{hits_in_top(ranked, actual_numbers, 10)}/"
         f"{hits_in_top(ranked, actual_numbers, 15)}"
     )
@@ -2877,9 +3100,9 @@ def settlement_summary_lines(
     return [
         f"- 檢討對應：依據期 {run['based_on_draw_no']} -> 實際開獎期 {actual.draw_no}",
         f"- 實際開出：{format_numbers(actual.main_numbers)} + {actual.special:02d}",
-        f"- Top5 / Top10 / Top15 命中：{hits_in_top(ranked, actual_numbers, 5)} / {hits_in_top(ranked, actual_numbers, 10)} / {hits_in_top(ranked, actual_numbers, 15)}",
-        "- 診斷：以真實結算紀錄反推失敗來源，降低同一批錯號連續進入主推。",
-        "- 改善：提高中期均衡、遺漏補償、波色/尾數/區間分散。",
+        f"- Top5 / Top9 / Top10 / Top15 命中：{hits_in_top(ranked, actual_numbers, 5)} / {hits_in_top(ranked, actual_numbers, CORE_POOL_SIZE)} / {hits_in_top(ranked, actual_numbers, 10)} / {hits_in_top(ranked, actual_numbers, 15)}",
+        "- 診斷：以真實結算紀錄反推失敗來源，先檢查 Top9 核心池是否漏抓，再處理 Top10-15 補位池。",
+        "- 改善：提高 Top9 核心集中度，Top10-15 降為防守補位，不列為高機率主推來源。",
     ]
 
 
@@ -2906,8 +3129,8 @@ def settlement_detail_lines(
                 [
                     f"{number:02d}",
                     ranked.index(number) + 1 if number in ranked else "-",
-                    "已進Top15" if number in ranked[:15] else "Top15外",
-                    "模型有捕捉，檢查排名與強牌配置" if number in ranked[:15] else "有排名但信心不足，需提高補位權重",
+                    "已進Top9核心池" if number in ranked[:CORE_POOL_SIZE] else ("補位池" if number in ranked[:SUPPORT_POOL_SIZE] else "核心池外"),
+                    "核心池有捕捉，保留主推權重" if number in ranked[:CORE_POOL_SIZE] else ("只在補位池，需往Top9前移" if number in ranked[:SUPPORT_POOL_SIZE] else "核心池外，需提高補抓模型權重"),
                 ]
                 for number in actual.main_numbers
             ],
@@ -3020,7 +3243,7 @@ def build_battle_report_html(markdown_text: str) -> str:
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>香港六合彩開獎預測戰報</title>
+  <title>香港六合彩預測系統戰報</title>
   <style>
     body {{ margin: 0; font-family: Arial, "Microsoft JhengHei", sans-serif; background: #f4f6f8; color: #17202a; }}
     header {{ background: #102a43; color: white; padding: 22px 28px; }}
@@ -3078,7 +3301,7 @@ def build_battle_report_html(markdown_text: str) -> str:
       gap: 8px;
     }}
     .confidence-band h2::before {{
-      content: "HIGH";
+      content: "信心";
       display: inline-flex;
       align-items: center;
       justify-content: center;
@@ -3125,7 +3348,7 @@ def build_battle_report_html(markdown_text: str) -> str:
 </head>
 <body>
   <header>
-    <h1>香港六合彩開獎預測戰報</h1>
+    <h1>香港六合彩預測系統戰報</h1>
     <div class="meta">539同規格強化戰報 / 自動更新、自動結算、自動預測</div>
   </header>
   <main>
@@ -3194,15 +3417,15 @@ def markdown_to_html(markdown_text: str) -> str:
         if stripped.startswith("## "):
             close_section()
             title = stripped[3:]
-            if "高機率信心牌" in title:
+            if "高機率信心牌" in title or "超強信心" in title:
                 section_class = "band confidence-band"
-            elif title.startswith(("A.", "B.")):
+            elif title in {"本期發布結論", "今日總判斷", "日期基準"}:
                 section_class = "band overview-band"
-            elif title.startswith(("C.", "D.", "L.", "M.", "N.")):
+            elif any(key in title for key in ("9隻內核心", "今日觀察候選", "候選 Top 15", "下期預測號碼池")):
                 section_class = "band prediction-band"
-            elif title.startswith(("I.", "J.", "K.")):
+            elif any(key in title for key in ("命中檢討", "強牌組", "漏抓", "逐號檢討", "風控", "審計", "KPI", "穩定度")):
                 section_class = "band control-band"
-            elif title.startswith(("G.", "H.", "O.", "P.", "Q.", "R.", "S.", "T.", "U.", "V.", "W.", "X.")):
+            elif any(key in title for key in ("牌型", "連動", "競賽", "低機率", "歷史對比", "運算保證")):
                 section_class = "band appendix-band"
             else:
                 section_class = "band"
@@ -3293,7 +3516,7 @@ def render_ticket_rows(tickets: list[Ticket]) -> str:
             "<tr>"
             f"<td>{index:02d}</td>"
             f"<td><div class=\"balls\">{render_balls(ticket.numbers)}</div></td>"
-            f"<td>{escape(ticket.strategy)}</td>"
+            f"<td>{escape(strategy_label(ticket.strategy))}</td>"
             f"<td class=\"score\">{ticket.score:.3f}</td>"
             f"<td>{escape(ticket.profile)}</td>"
             f"<td>{escape('；'.join(ticket.reasons))}</td>"
@@ -3311,9 +3534,25 @@ def render_confidence_ticket_rows(package: PredictionPackage, limit: int = 6) ->
             f"<td>{index:02d}</td>"
             f"<td><div class=\"balls\">{render_balls(ticket.numbers)}</div></td>"
             f"<td><strong>{escape(ticket_confidence_label(ticket, max_score, index))}</strong></td>"
-            f"<td>{escape(ticket.strategy)}</td>"
+            f"<td>{escape(strategy_label(ticket.strategy))}</td>"
             f"<td class=\"score\">{ticket.score:.3f}</td>"
             f"<td>{escape('；'.join(ticket.reasons[-2:]) if ticket.reasons else '成熟度校準')}</td>"
+            "</tr>"
+        )
+    return "\n".join(rows)
+
+
+def render_super_recommendation_rows(package: PredictionPackage) -> str:
+    rows = []
+    for item in super_recommendation_items(package):
+        rows.append(
+            "<tr>"
+            f"<td><strong>{escape(item['label'])}</strong></td>"
+            f"<td><div class=\"balls\">{render_balls(item['numbers'])}</div></td>"
+            f"<td>{escape(item['target'])}</td>"
+            f"<td class=\"score\"><strong>{escape(item['confidence'])}</strong></td>"
+            f"<td>{escape(item['probability'])}</td>"
+            f"<td>{escape(item['reason'])}</td>"
             "</tr>"
         )
     return "\n".join(rows)
@@ -3384,8 +3623,8 @@ def print_prediction(package: PredictionPackage, run_id: int | None = None) -> s
     lines = [
         "香港六合彩預測",
         "=" * 24,
-        f"Run ID: {run_id if run_id is not None else '-'}",
-        f"策略: {package.strategy}",
+        f"預測編號: {run_id if run_id is not None else '-'}",
+        f"策略: {strategy_label(package.strategy)}",
         f"膽碼: {format_numbers(package.bankers)}",
         f"拖碼: {format_numbers(package.drags)}",
         f"防守碼: {format_numbers(package.reserves)}",
@@ -3399,7 +3638,7 @@ def print_prediction(package: PredictionPackage, run_id: int | None = None) -> s
         lines.append(
             f"{index:02d}. {format_numbers(ticket.numbers)}  "
             f"{ticket_confidence_label(ticket, max_score, index)}  "
-            f"{ticket.strategy}  score={ticket.score:.3f}"
+            f"{strategy_label(ticket.strategy)}  分數={ticket.score:.3f}"
         )
     lines.extend(
         [
@@ -3410,7 +3649,7 @@ def print_prediction(package: PredictionPackage, run_id: int | None = None) -> s
     for index, ticket in enumerate(package.tickets, start=1):
         lines.append(
             f"{index:02d}. {format_numbers(ticket.numbers)}  "
-            f"score={ticket.score:.3f}  {ticket.strategy}  {ticket.profile}"
+            f"分數={ticket.score:.3f}  {strategy_label(ticket.strategy)}  {ticket.profile}"
         )
         lines.append(f"    {'；'.join(ticket.reasons)}")
     return "\n".join(lines)
@@ -3442,7 +3681,7 @@ def status_text(conn: sqlite3.Connection) -> str:
     lines.append("")
     lines.append("策略權重:")
     for name, weight in sorted(performance_strategy_weights(conn).items()):
-        lines.append(f"{name}: {weight:.2f}")
+        lines.append(f"{strategy_label(name)}: {weight:.2f}")
     return "\n".join(lines)
 
 
@@ -3492,7 +3731,7 @@ def doctor_text(draws: list[Draw]) -> str:
         lines.append("重複期號樣本: " + ", ".join(duplicate_draw_nos[:5]))
     if bad_rows[:5]:
         lines.append("錯誤樣本: " + " | ".join(bad_rows[:5]))
-    lines.append("狀態: " + ("OK" if not duplicate_dates and not duplicate_draw_nos and not bad_rows else "需要檢查"))
+    lines.append("狀態: " + ("正常" if not duplicate_dates and not duplicate_draw_nos and not bad_rows else "需要檢查"))
     return "\n".join(lines)
 
 
@@ -3627,22 +3866,37 @@ def run_cycle(args: argparse.Namespace) -> str:
         lines.append(evaluate_predictions(conn, "all"))
         draws = load_draws_from_db(conn)
         if len(draws) >= 5:
-            package = generate_prediction_package(
-                draws,
-                strategy=args.strategy,
-                ticket_count=args.tickets,
-                recent_window=args.recent_window,
-                seed=args.seed,
-                conn=conn,
-            )
-            run_id = save_prediction_run(
-                conn,
-                package,
-                draws,
-                args.recent_window,
-                args.seed,
-                args.prediction_html,
-            )
+            should_refresh, refresh_reason = prediction_needs_refresh(conn, draws)
+            if should_refresh:
+                package = generate_prediction_package(
+                    draws,
+                    strategy=args.strategy,
+                    ticket_count=args.tickets,
+                    recent_window=args.recent_window,
+                    seed=args.seed,
+                    conn=conn,
+                )
+                run_id = save_prediction_run(
+                    conn,
+                    package,
+                    draws,
+                    args.recent_window,
+                    args.seed,
+                    args.prediction_html,
+                )
+                lines.append(f"重新運算預測: {refresh_reason}")
+            else:
+                latest_run = latest_prediction_run(conn)
+                run_id = int(latest_run["id"]) if latest_run is not None else None
+                package = package_from_run(conn, run_id) if run_id is not None else generate_prediction_package(
+                    draws,
+                    strategy=args.strategy,
+                    ticket_count=args.tickets,
+                    recent_window=args.recent_window,
+                    seed=args.seed,
+                    conn=conn,
+                )
+                lines.append(f"沿用最新預測: {refresh_reason}")
             render_prediction_html(args.prediction_html, package, draws, run_id)
             render_full_report(args.report_html, conn, args.recent_window)
             battle_paths = save_battle_reports(conn, args.report_html.parent, None, args.recent_window)
@@ -3673,6 +3927,12 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
     target = backup_dir / f"{db_path.stem}_{stamp}{db_path.suffix or '.db'}"
     shutil.copy2(db_path, target)
     return target
+
+
+def load_mobile_cloud_module():
+    import importlib
+
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260624_第8版")
 
 
 def build_site(
@@ -3713,9 +3973,9 @@ def build_site(
     )
     paths = save_battle_reports(conn, report_dir, site_dir, recent_window)
     try:
-        import marksix_mobile_cloud
+        mobile_cloud = load_mobile_cloud_module()
 
-        mobile_paths = marksix_mobile_cloud.build_mobile_cloud_site(
+        mobile_paths = mobile_cloud.build_mobile_cloud_site(
             conn,
             site_dir,
             report_dir,
@@ -3771,22 +4031,37 @@ def daily_update(args: argparse.Namespace) -> str:
         lines.append(doctor_text(draws))
         if len(draws) >= 5:
             prediction_html = args.site_dir / "latest_prediction.html"
-            package = generate_prediction_package(
-                draws,
-                strategy=args.strategy,
-                ticket_count=args.tickets,
-                recent_window=args.recent_window,
-                seed=args.seed,
-                conn=conn,
-            )
-            run_id = save_prediction_run(
-                conn,
-                package,
-                draws,
-                args.recent_window,
-                args.seed,
-                prediction_html,
-            )
+            should_refresh, refresh_reason = prediction_needs_refresh(conn, draws)
+            if should_refresh:
+                package = generate_prediction_package(
+                    draws,
+                    strategy=args.strategy,
+                    ticket_count=args.tickets,
+                    recent_window=args.recent_window,
+                    seed=args.seed,
+                    conn=conn,
+                )
+                run_id = save_prediction_run(
+                    conn,
+                    package,
+                    draws,
+                    args.recent_window,
+                    args.seed,
+                    prediction_html,
+                )
+                lines.append(f"重新運算預測: {refresh_reason}")
+            else:
+                latest_run = latest_prediction_run(conn)
+                run_id = int(latest_run["id"]) if latest_run is not None else None
+                package = package_from_run(conn, run_id) if run_id is not None else generate_prediction_package(
+                    draws,
+                    strategy=args.strategy,
+                    ticket_count=args.tickets,
+                    recent_window=args.recent_window,
+                    seed=args.seed,
+                    conn=conn,
+                )
+                lines.append(f"沿用最新預測: {refresh_reason}")
             render_prediction_html(prediction_html, package, draws, run_id)
             battle_paths = build_site(conn, args.site_dir, args.recent_window, args.report_dir)
             lines.append(print_prediction(package, run_id))
@@ -3919,10 +4194,10 @@ def run() -> None:
         return
 
     if args.command == "mobile-cloud":
-        import marksix_mobile_cloud
+        mobile_cloud = load_mobile_cloud_module()
 
         with connect(args.db) as conn:
-            paths = marksix_mobile_cloud.build_mobile_cloud_site(
+            paths = mobile_cloud.build_mobile_cloud_site(
                 conn,
                 args.site_dir,
                 args.report_dir,
@@ -3965,7 +4240,7 @@ def run() -> None:
         if getattr(args, "db", None) and not args.no_save:
             with connect(args.db) as conn:
                 run_id = save_backtest_run(conn, summary)
-            print(f"已保存回測 Run #{run_id}")
+            print(f"已保存回測編號 {run_id}")
         print(format_backtest_summary(summary))
         return
 

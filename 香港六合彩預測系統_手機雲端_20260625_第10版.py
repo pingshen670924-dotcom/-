@@ -9,7 +9,7 @@ import zlib
 from pathlib import Path
 
 import importlib
-m = importlib.import_module("香港六合彩預測系統_20260625_第9版")
+m = importlib.import_module("香港六合彩預測系統_20260625_第10版")
 
 
 MOBILE_HTML = "香港六合彩預測系統_手機首頁.html"
@@ -163,7 +163,7 @@ def build_payload(conn, recent_window: int) -> dict:
                 "probability": item["probability"],
                 "reason": item["reason"],
             }
-            for item in m.super_recommendation_items(package)
+            for item in m.super_recommendation_items(package, draws)
         ],
         "core_numbers": [
             {
@@ -193,7 +193,7 @@ def build_payload(conn, recent_window: int) -> dict:
                 "target_hits": target_hits,
                 "probability": round(m.probability_at_least_hits(len(numbers), target_hits), 6),
             }
-            for title, numbers, target_hits in m.strong_pack_specs(ranked_numbers, package)
+            for title, numbers, target_hits in m.strong_pack_specs(ranked_numbers, package, draws)
         ],
         "links": {
             "battle_report": m.SITE_BATTLE_REPORT_NAME,
@@ -359,7 +359,7 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
     <section class="section super" id="super">
       <h2>超強信心強推薦</h2>
       {super_pick_cards(payload["super_picks"])}
-      <p class="note">獨隻、2碼、3碼獨立精算；屬研究強推薦，不保證開出。</p>
+      <p class="note">強推精算層每期固定輸出獨隻、2碼、3碼；採穩定度、模型共識、貝葉斯、配對/三碼共振校準。</p>
     </section>
 
     <section class="section" id="core">
@@ -449,7 +449,7 @@ def manifest() -> dict:
 
 
 def service_worker() -> str:
-    return f"""const CACHE_NAME = "香港六合彩預測系統-20260625-v9-install";
+    return f"""const CACHE_NAME = "香港六合彩預測系統-20260625-v10-super";
 const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{MOBILE_MANIFEST}","./{MOBILE_ICON_192}","./{MOBILE_ICON_512}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
 self.addEventListener("install", event => {{
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));

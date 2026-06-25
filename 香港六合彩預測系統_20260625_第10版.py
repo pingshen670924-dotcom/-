@@ -5,6 +5,7 @@ import csv
 import gzip
 import hashlib
 import html
+import itertools
 import json
 import math
 import random
@@ -27,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260625_第9版"
+MODEL_VERSION = "香港六合彩預測系統_20260625_第10版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -2314,7 +2315,7 @@ def render_prediction_html(
       <p class="muted">獨隻、2碼、3碼獨立精算；屬研究強推薦，不保證開出。</p>
       <table>
         <thead><tr><th>類型</th><th>強推薦號碼</th><th>命中目標</th><th>信心指數</th><th>隨機基準</th><th>強化理由</th></tr></thead>
-        <tbody>{render_super_recommendation_rows(package)}</tbody>
+        <tbody>{render_super_recommendation_rows(package, draws)}</tbody>
       </table>
     </section>
 
@@ -2509,15 +2510,15 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，10-15 只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入Top9", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在Top10-15，下一輪前移校準"],
-                ["新一期結構", f"Top9={format_numbers(top9)}", "符合第9版 9顆核心池規格"],
+                ["新一期結構", f"Top9={format_numbers(top9)}", "符合第10版強推精算層與 9顆核心池規格"],
             ],
         ),
         "",
         "## 超強信心高機率強推薦號碼",
-        "- 精算規則：先取 Top9 核心池內最高分，再用模型共識、近期動能、配對圖譜、遺漏修正做二次校準。",
+        "- 精算規則：強推精算層獨立運算，採單號精算、模型共識、穩定度、貝葉斯、近期命中、配對/三碼共振、近180期校準。",
         markdown_table(
             ["類型", "強推薦號碼", "命中目標", "信心指數", "隨機基準", "強化理由"],
-            super_recommendation_rows(package),
+            super_recommendation_rows(package, draws),
         ),
         "",
         "## 高機率信心牌（特別標註）",
@@ -2546,7 +2547,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
         "## 今日觀察候選（不列正式主推）",
     ]
 
-    for title, numbers, target_hits in strong_pack_specs(ranked_numbers, package):
+    for title, numbers, target_hits in strong_pack_specs(ranked_numbers, package, draws):
         probability = probability_at_least_hits(len(numbers), target_hits)
         odds = (1.0 / probability) if probability else 0.0
         lines.append(
@@ -2912,7 +2913,366 @@ def hit_probability_text(pool_size: int) -> str:
     return f"至少1中 {probability_percent(probability_at_least_hits(pool_size, 1))}"
 
 
-def super_recommendation_items(package: PredictionPackage) -> list[dict[str, object]]:
+def clamp01(value: float) -> float:
+    return max(0.0, min(1.0, value))
+
+
+def normalized_values(values: dict[int, float]) -> dict[int, float]:
+    if not values:
+        return {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    low = min(values.values())
+    high = max(values.values())
+    if high <= low:
+        return {number: 0.5 for number in values}
+    return {number: (value - low) / (high - low) for number, value in values.items()}
+
+
+def calculate_rank_stability_scores(draws: list[Draw]) -> dict[int, float]:
+    if len(draws) < 12:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    windows = [8, 12, 18, 24, 30, 45, 60]
+    rank_history: dict[int, list[int]] = {number: [] for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    for window in windows:
+        if len(draws) < max(5, window // 2):
+            continue
+        scores = build_scores(draws, recent_window=min(window, len(draws)), strategy="balanced")
+        ranked = sorted(scores.values(), key=lambda row: row.score, reverse=True)
+        for rank, row in enumerate(ranked, start=1):
+            rank_history[row.number].append(rank)
+    stability: dict[int, float] = {}
+    for number, ranks in rank_history.items():
+        if not ranks:
+            stability[number] = 0.5
+            continue
+        rank_quality = statistics.mean((MAX_NUMBER + 1 - rank) / MAX_NUMBER for rank in ranks)
+        top9_rate = sum(1 for rank in ranks if rank <= CORE_POOL_SIZE) / len(ranks)
+        volatility = 1.0 - min(statistics.pstdev(ranks) / (MAX_NUMBER / 3.0), 1.0) if len(ranks) > 1 else 1.0
+        stability[number] = clamp01(rank_quality * 0.46 + top9_rate * 0.34 + volatility * 0.20)
+    return stability
+
+
+def calculate_super_recent_scores(draws: list[Draw]) -> dict[int, float]:
+    windows = [(6, 0.44), (12, 0.32), (30, 0.18), (60, 0.06)]
+    scores = {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    for window, weight in windows:
+        recent = draws[-min(window, len(draws)) :]
+        counts = Counter(number for draw in recent for number in draw.main_numbers)
+        max_count = max(counts.values(), default=1)
+        for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+            scores[number] += (counts[number] / max_count if max_count else 0.0) * weight
+    return {number: clamp01(value) for number, value in scores.items()}
+
+
+def calculate_super_bayes_scores(draws: list[Draw]) -> dict[int, float]:
+    if not draws:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    recent = draws[-min(30, len(draws)) :]
+    month = month_window_draws(draws)
+    all_counts = Counter(number for draw in draws for number in draw.main_numbers)
+    recent_counts = Counter(number for draw in recent for number in draw.main_numbers)
+    month_counts = Counter(number for draw in month for number in draw.main_numbers)
+    special_counts = Counter(draw.special for draw in draws)
+    raw = {}
+    denominator = len(draws) + len(recent) * 2.4 + len(month) * 2.0 + len(draws) * 0.25 + 49.0
+    for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+        numerator = (
+            all_counts[number]
+            + recent_counts[number] * 2.4
+            + month_counts[number] * 2.0
+            + special_counts[number] * 0.25
+            + 1.0
+        )
+        raw[number] = numerator / max(1.0, denominator)
+    return normalized_values(raw)
+
+
+def calculate_pair_synergy_scores(draws: list[Draw]) -> dict[tuple[int, int], float]:
+    all_pairs: Counter[tuple[int, int]] = Counter()
+    recent_pairs: Counter[tuple[int, int]] = Counter()
+    recent = draws[-min(80, len(draws)) :]
+    for draw in draws:
+        for pair in itertools.combinations(sorted(draw.main_numbers), 2):
+            all_pairs[pair] += 1
+    for draw in recent:
+        for pair in itertools.combinations(sorted(draw.main_numbers), 2):
+            recent_pairs[pair] += 1
+    max_all = max(all_pairs.values(), default=1)
+    max_recent = max(recent_pairs.values(), default=1)
+    scores: dict[tuple[int, int], float] = {}
+    for left in range(MIN_NUMBER, MAX_NUMBER + 1):
+        for right in range(left + 1, MAX_NUMBER + 1):
+            pair = (left, right)
+            scores[pair] = clamp01(
+                (all_pairs[pair] / max_all if max_all else 0.0) * 0.58
+                + (recent_pairs[pair] / max_recent if max_recent else 0.0) * 0.42
+            )
+    return scores
+
+
+def calculate_triple_synergy_scores(draws: list[Draw]) -> dict[tuple[int, int, int], float]:
+    all_triples: Counter[tuple[int, int, int]] = Counter()
+    recent_triples: Counter[tuple[int, int, int]] = Counter()
+    recent = draws[-min(120, len(draws)) :]
+    for draw in draws:
+        for triple in itertools.combinations(sorted(draw.main_numbers), 3):
+            all_triples[triple] += 1
+    for draw in recent:
+        for triple in itertools.combinations(sorted(draw.main_numbers), 3):
+            recent_triples[triple] += 1
+    max_all = max(all_triples.values(), default=1)
+    max_recent = max(recent_triples.values(), default=1)
+    scores: dict[tuple[int, int, int], float] = {}
+    for triple, count in all_triples.items():
+        scores[triple] = clamp01(
+            (count / max_all if max_all else 0.0) * 0.55
+            + (recent_triples[triple] / max_recent if max_recent else 0.0) * 0.45
+        )
+    return scores
+
+
+def super_structure_score(numbers: tuple[int, ...]) -> float:
+    if not numbers:
+        return 0.0
+    colors = Counter(wave_color(number) for number in numbers)
+    decades = Counter(decade_bucket(number) for number in numbers)
+    tails = Counter(number % 10 for number in numbers)
+    odd_count = sum(1 for number in numbers if number % 2)
+    span = max(numbers) - min(numbers) if len(numbers) > 1 else 18
+    color_part = len(colors) / min(len(numbers), 3)
+    decade_part = len(decades) / min(len(numbers), 3)
+    tail_part = len(tails) / len(numbers)
+    odd_balance = 1.0 - abs(odd_count - len(numbers) / 2.0) / max(1.0, len(numbers) / 2.0)
+    span_part = clamp01(span / 36.0)
+    consecutive_penalty = sum(1 for left, right in zip(numbers, numbers[1:]) if right - left == 1) * 0.08
+    return clamp01(
+        color_part * 0.28
+        + decade_part * 0.25
+        + tail_part * 0.18
+        + odd_balance * 0.16
+        + span_part * 0.13
+        - consecutive_penalty
+    )
+
+
+def build_super_precision_metrics(
+    package: PredictionPackage,
+    draws: list[Draw] | None = None,
+) -> dict[int, dict[str, float | NumberScore | int]]:
+    ranked_scores = sorted(package.scores.values(), key=lambda row: row.score, reverse=True)
+    score_max = max((row.score for row in ranked_scores), default=1.0) or 1.0
+    ranks = {row.number: rank for rank, row in enumerate(ranked_scores, start=1)}
+    max_pair = max((row.pair_strength for row in ranked_scores), default=1.0) or 1.0
+    stability_scores = calculate_rank_stability_scores(draws) if draws else {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    recent_scores = calculate_super_recent_scores(draws) if draws else {number: package.scores[number].model_scores.get("recency", 0.5) for number in package.scores}
+    bayes_scores = calculate_super_bayes_scores(draws) if draws else {number: package.scores[number].model_scores.get("bayes", 0.5) for number in package.scores}
+    model_names = list(next(iter(package.scores.values())).model_scores) if package.scores else []
+    model_top9: dict[str, set[int]] = {}
+    for model in model_names:
+        model_top9[model] = {
+            row.number
+            for row in sorted(
+                package.scores.values(),
+                key=lambda item: item.model_scores.get(model, 0.0),
+                reverse=True,
+            )[:CORE_POOL_SIZE]
+        }
+    metrics: dict[int, dict[str, float | NumberScore | int]] = {}
+    for row in ranked_scores:
+        rank = ranks[row.number]
+        ensemble = row.score / score_max if score_max else 0.0
+        model_support = (
+            sum(1 for top_numbers in model_top9.values() if row.number in top_numbers) / len(model_top9)
+            if model_top9
+            else 0.5
+        )
+        rank_focus = clamp01((SUPPORT_POOL_SIZE + 1 - min(rank, SUPPORT_POOL_SIZE + 1)) / SUPPORT_POOL_SIZE)
+        pair_score = row.pair_strength / max_pair if max_pair else 0.0
+        precision = clamp01(
+            ensemble * 0.23
+            + model_support * 0.19
+            + float(stability_scores[row.number]) * 0.17
+            + float(bayes_scores[row.number]) * 0.14
+            + float(recent_scores[row.number]) * 0.12
+            + pair_score * 0.08
+            + row.model_scores.get("cycle", 0.0) * 0.03
+            + row.model_scores.get("rolling_month", 0.0) * 0.02
+            + rank_focus * 0.02
+        )
+        if rank <= CORE_POOL_SIZE:
+            precision = clamp01(precision + 0.045)
+        elif rank > SUPPORT_POOL_SIZE:
+            precision *= 0.72
+        if row.miss_gap == 0:
+            precision *= 0.96
+        metrics[row.number] = {
+            "row": row,
+            "rank": rank,
+            "precision": precision,
+            "stability": float(stability_scores[row.number]),
+            "recent": float(recent_scores[row.number]),
+            "bayes": float(bayes_scores[row.number]),
+            "model_support": model_support,
+            "pair": pair_score,
+            "ensemble": ensemble,
+        }
+    return metrics
+
+
+def super_combo_score(
+    numbers: tuple[int, ...],
+    metrics: dict[int, dict[str, float | NumberScore | int]],
+    pair_synergy: dict[tuple[int, int], float],
+    triple_synergy: dict[tuple[int, int, int], float],
+) -> dict[str, float]:
+    precision = statistics.mean(float(metrics[number]["precision"]) for number in numbers)
+    stability = min(float(metrics[number]["stability"]) for number in numbers)
+    support = statistics.mean(float(metrics[number]["model_support"]) for number in numbers)
+    recent = statistics.mean(float(metrics[number]["recent"]) for number in numbers)
+    core_rate = sum(1 for number in numbers if int(metrics[number]["rank"]) <= CORE_POOL_SIZE) / len(numbers)
+    pairs = [tuple(sorted(pair)) for pair in itertools.combinations(numbers, 2)]
+    pair_score = statistics.mean(pair_synergy.get(pair, 0.0) for pair in pairs) if pairs else 0.0
+    triple_score = triple_synergy.get(tuple(sorted(numbers)), 0.0) if len(numbers) == 3 else pair_score
+    structure = super_structure_score(tuple(sorted(numbers)))
+    if len(numbers) == 1:
+        total = precision * 0.62 + stability * 0.16 + support * 0.12 + recent * 0.10
+    elif len(numbers) == 2:
+        total = precision * 0.50 + stability * 0.12 + support * 0.10 + recent * 0.08 + pair_score * 0.13 + structure * 0.07
+    else:
+        total = (
+            precision * 0.45
+            + stability * 0.11
+            + support * 0.09
+            + recent * 0.07
+            + pair_score * 0.12
+            + triple_score * 0.07
+            + structure * 0.06
+            + core_rate * 0.03
+        )
+    return {
+        "score": clamp01(total),
+        "precision": precision,
+        "stability": stability,
+        "support": support,
+        "recent": recent,
+        "pair": pair_score,
+        "triple": triple_score,
+        "structure": structure,
+        "core_rate": core_rate,
+    }
+
+
+def calibrated_hit_probability_text(numbers: tuple[int, ...], draws: list[Draw] | None) -> str:
+    base = hit_probability_text(len(numbers))
+    if not draws:
+        return base
+    sample_draws = draws[-min(180, len(draws)) :]
+    if not sample_draws:
+        return base
+    hits = [len(set(numbers).intersection(draw.main_numbers)) for draw in sample_draws]
+    sample = len(hits)
+    if len(numbers) == 1:
+        return f"{base}；近{sample}期校準 1中1 {sum(1 for hit in hits if hit == 1) / sample * 100:.1f}%"
+    if len(numbers) == 2:
+        return (
+            f"{base}；近{sample}期校準 "
+            f"至少1中 {sum(1 for hit in hits if hit >= 1) / sample * 100:.1f}%、"
+            f"2中2 {sum(1 for hit in hits if hit == 2) / sample * 100:.1f}%"
+        )
+    return (
+        f"{base}；近{sample}期校準 "
+        f"至少1中 {sum(1 for hit in hits if hit >= 1) / sample * 100:.1f}%、"
+        f"2中以上 {sum(1 for hit in hits if hit >= 2) / sample * 100:.1f}%、"
+        f"3中3 {sum(1 for hit in hits if hit == 3) / sample * 100:.1f}%"
+    )
+
+
+def refined_super_pick_sets(
+    package: PredictionPackage,
+    draws: list[Draw] | None = None,
+) -> list[dict[str, object]]:
+    metrics = build_super_precision_metrics(package, draws)
+    ranked_numbers = sorted(
+        metrics,
+        key=lambda number: (
+            float(metrics[number]["precision"]),
+            float(metrics[number]["stability"]),
+            float(metrics[number]["model_support"]),
+            -int(metrics[number]["rank"]),
+        ),
+        reverse=True,
+    )
+    candidates = ranked_numbers[: min(15, len(ranked_numbers))]
+    pair_synergy = calculate_pair_synergy_scores(draws) if draws else {}
+    triple_synergy = calculate_triple_synergy_scores(draws) if draws else {}
+
+    single = (candidates[0],)
+    pair_candidates = [tuple(sorted((single[0], number))) for number in candidates if number != single[0]]
+    pair = max(
+        pair_candidates,
+        key=lambda numbers: super_combo_score(numbers, metrics, pair_synergy, triple_synergy)["score"],
+        default=single,
+    )
+    triple_candidates = [
+        tuple(sorted((*pair, number)))
+        for number in candidates
+        if number not in pair
+    ]
+    triple = max(
+        triple_candidates,
+        key=lambda numbers: super_combo_score(numbers, metrics, pair_synergy, triple_synergy)["score"],
+        default=pair,
+    )
+
+    specs = [
+        ("超強獨隻", "獨隻1中1", single),
+        ("超強2碼", "2中1~2", pair),
+        ("超強3碼", "3中1~3", triple),
+    ]
+    items: list[dict[str, object]] = []
+    for label, target, numbers in specs:
+        detail = super_combo_score(numbers, metrics, pair_synergy, triple_synergy)
+        confidence = min(99.0, 66.0 + detail["score"] * 31.0 + max(0, 4 - len(numbers)) * 0.55)
+        leader_number = max(numbers, key=lambda number: float(metrics[number]["precision"]))
+        leader_row = metrics[leader_number]["row"]
+        assert isinstance(leader_row, NumberScore)
+        reason_parts = [
+            f"強推精算層 {detail['score']:.3f}",
+            f"穩定 {detail['stability']:.2f}",
+            f"模型共識 {detail['support']:.2f}",
+            f"近況 {detail['recent']:.2f}",
+        ]
+        if len(numbers) >= 2:
+            reason_parts.append(f"配對共振 {detail['pair']:.2f}")
+        if len(numbers) == 3:
+            reason_parts.append(f"三碼共振 {detail['triple']:.2f}")
+        reason_parts.extend(
+            [
+                f"Top{len(numbers)}遞進式核心",
+                number_reasons(leader_row, int(metrics[leader_number]["rank"])),
+            ]
+        )
+        items.append(
+            {
+                "label": label,
+                "target": target,
+                "numbers": numbers,
+                "confidence": f"{confidence:.1f}",
+                "probability": calibrated_hit_probability_text(numbers, draws),
+                "reason": "；".join(part for part in reason_parts if part),
+                "precision_score": round(detail["score"], 6),
+                "stability": round(detail["stability"], 6),
+                "model_support": round(detail["support"], 6),
+            }
+        )
+    return items
+
+
+def super_recommendation_items(
+    package: PredictionPackage,
+    draws: list[Draw] | None = None,
+) -> list[dict[str, object]]:
+    if draws:
+        return refined_super_pick_sets(package, draws)
     ranked_scores = sorted(package.scores.values(), key=lambda row: row.score, reverse=True)
     score_max = max((row.score for row in ranked_scores), default=1.0) or 1.0
     specs = [
@@ -2945,7 +3305,10 @@ def super_recommendation_items(package: PredictionPackage) -> list[dict[str, obj
     return items
 
 
-def super_recommendation_rows(package: PredictionPackage) -> list[list[object]]:
+def super_recommendation_rows(
+    package: PredictionPackage,
+    draws: list[Draw] | None = None,
+) -> list[list[object]]:
     return [
         [
             item["label"],
@@ -2955,18 +3318,29 @@ def super_recommendation_rows(package: PredictionPackage) -> list[list[object]]:
             item["probability"],
             item["reason"],
         ]
-        for item in super_recommendation_items(package)
+        for item in super_recommendation_items(package, draws)
     ]
 
 
 def strong_pack_specs(
     ranked_numbers: list[int],
     package: PredictionPackage,
+    draws: list[Draw] | None = None,
 ) -> list[tuple[str, tuple[int, ...], int]]:
+    if draws:
+        refined = refined_super_pick_sets(package, draws)
+        refined_by_label = {str(item["label"]): tuple(sorted(item["numbers"])) for item in refined}
+        single = refined_by_label.get("超強獨隻", tuple(ranked_numbers[:1]))
+        pair = refined_by_label.get("超強2碼", tuple(sorted(ranked_numbers[:2])))
+        triple = refined_by_label.get("超強3碼", tuple(sorted(ranked_numbers[:3])))
+    else:
+        single = tuple(ranked_numbers[:1])
+        pair = tuple(sorted(ranked_numbers[:2]))
+        triple = tuple(sorted(ranked_numbers[:3]))
     return [
-        ("最強單支", tuple(ranked_numbers[:1]), 1),
-        ("最強2中1", tuple(sorted(ranked_numbers[:2])), 1),
-        ("最強3中1", tuple(sorted(ranked_numbers[:3])), 1),
+        ("最強單支", single, 1),
+        ("最強2中1", pair, 1),
+        ("最強3中1", triple, 1),
         ("最強6中2", tuple(sorted(ranked_numbers[:6])), 2),
         ("最強9中3", tuple(sorted(ranked_numbers[:9])), 3),
         ("特別號候選", tuple(package.special_candidates), 1),
@@ -3681,9 +4055,12 @@ def render_confidence_ticket_rows(package: PredictionPackage, limit: int = 6) ->
     return "\n".join(rows)
 
 
-def render_super_recommendation_rows(package: PredictionPackage) -> str:
+def render_super_recommendation_rows(
+    package: PredictionPackage,
+    draws: list[Draw] | None = None,
+) -> str:
     rows = []
-    for item in super_recommendation_items(package):
+    for item in super_recommendation_items(package, draws):
         rows.append(
             "<tr>"
             f"<td><strong>{escape(item['label'])}</strong></td>"
@@ -4073,7 +4450,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260625_第9版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260625_第10版")
 
 
 def build_site(

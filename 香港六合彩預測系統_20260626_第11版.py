@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260625_第10版"
+MODEL_VERSION = "香港六合彩預測系統_20260626_第11版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -69,6 +69,10 @@ AUTO_MAX_STRATEGY_WEIGHT = 1.85
 CORE_POOL_SIZE = 9
 SUPPORT_POOL_SIZE = 15
 ROLLING_MONTH_WEIGHT = 0.085
+ZONE_REPAIR_WEIGHT = 0.070
+BREAKOUT_CAPTURE_WEIGHT = 0.060
+NEIGHBOR_BRIDGE_WEIGHT = 0.045
+SETTLEMENT_FEEDBACK_WEIGHT = 0.115
 _SCORE_RANK_BACKTEST_CACHE: dict[tuple[int, str, str, str, int, int], dict[str, float | int]] = {}
 
 RED_WAVE = {1, 2, 7, 8, 12, 13, 18, 19, 23, 24, 29, 30, 34, 35, 40, 45, 46}
@@ -777,6 +781,16 @@ def build_scores(
     cycle_scores = calculate_cycle_scores(main_history, miss_gaps)
     structure_scores = calculate_structure_scores(draws, recent_window)
     rolling_month_scores = calculate_rolling_month_scores(draws, recent_window)
+    zone_repair_scores = calculate_zone_repair_scores(draws, recent_window, miss_gaps)
+    breakout_scores = calculate_breakout_capture_scores(
+        draws,
+        recent_window,
+        miss_gaps,
+        pair_strength,
+        cycle_scores,
+        structure_scores,
+    )
+    neighbor_bridge_scores = calculate_neighbor_bridge_scores(draws, miss_gaps)
 
     max_total = max(all_counts.values(), default=1)
     max_recent = max(recent_counts.values(), default=1)
@@ -817,10 +831,16 @@ def build_scores(
             "cycle": cycle_scores[number],
             "structure": structure_scores[number],
             "rolling_month": rolling_month_scores[number],
+            "zone_repair": zone_repair_scores[number],
+            "breakout_capture": breakout_scores[number],
+            "neighbor_bridge": neighbor_bridge_scores[number],
         }
 
         score = sum(weights[name] * model_scores[name] for name in weights)
         score += model_scores["rolling_month"] * ROLLING_MONTH_WEIGHT
+        score += model_scores["zone_repair"] * ZONE_REPAIR_WEIGHT
+        score += model_scores["breakout_capture"] * BREAKOUT_CAPTURE_WEIGHT
+        score += model_scores["neighbor_bridge"] * NEIGHBOR_BRIDGE_WEIGHT
 
         score_rows[number] = NumberScore(
             number=number,
@@ -1021,6 +1041,123 @@ def calculate_rolling_month_scores(draws: list[Draw], recent_window: int) -> dic
     return scores
 
 
+def calculate_zone_repair_scores(
+    draws: list[Draw],
+    recent_window: int,
+    miss_gaps: dict[int, int],
+) -> dict[int, float]:
+    if not draws:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    recent = draws[-min(recent_window, len(draws)) :]
+    short = draws[-min(6, len(draws)) :]
+    latest = draws[-1]
+    month = month_window_draws(draws)
+    recent_decades = Counter(decade_bucket(number) for draw in recent for number in draw.main_numbers)
+    short_decades = Counter(decade_bucket(number) for draw in short for number in draw.main_numbers)
+    latest_decades = Counter(decade_bucket(number) for number in latest.main_numbers)
+    month_decades = Counter(decade_bucket(number) for draw in month for number in draw.main_numbers)
+    recent_tails = Counter(number % 10 for draw in recent for number in draw.main_numbers)
+    latest_tails = Counter(number % 10 for number in latest.main_numbers)
+    recent_colors = Counter(wave_color(number) for draw in recent for number in draw.main_numbers)
+    max_recent_decade = max(recent_decades.values(), default=1)
+    max_short_decade = max(short_decades.values(), default=1)
+    max_latest_decade = max(latest_decades.values(), default=1)
+    max_month_decade = max(month_decades.values(), default=1)
+    max_tail = max(recent_tails.values(), default=1)
+    max_color = max(recent_colors.values(), default=1)
+    max_gap = max(miss_gaps.values(), default=1)
+    scores = {}
+    for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+        decade = decade_bucket(number)
+        decade_signal = (
+            (recent_decades[decade] / max_recent_decade) * 0.28
+            + (short_decades[decade] / max_short_decade) * 0.26
+            + (latest_decades[decade] / max_latest_decade) * 0.24
+            + (month_decades[decade] / max_month_decade) * 0.22
+        )
+        tail_signal = 0.68 if number % 10 in latest_tails else (recent_tails[number % 10] / max_tail if max_tail else 0.0)
+        color_balance = 1.0 - (recent_colors[wave_color(number)] / max_color) * 0.55
+        mid_zone = 1.0 if 11 <= number <= 30 else 0.52
+        gap_signal = min(miss_gaps[number] / max(1, max_gap), 1.0)
+        scores[number] = clamp01(
+            decade_signal * 0.34
+            + tail_signal * 0.19
+            + color_balance * 0.17
+            + mid_zone * 0.15
+            + gap_signal * 0.15
+        )
+    return scores
+
+
+def calculate_breakout_capture_scores(
+    draws: list[Draw],
+    recent_window: int,
+    miss_gaps: dict[int, int],
+    pair_strength: dict[int, float],
+    cycle_scores: dict[int, float],
+    structure_scores: dict[int, float],
+) -> dict[int, float]:
+    if not draws:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    recent = draws[-min(recent_window, len(draws)) :]
+    short = draws[-min(8, len(draws)) :]
+    recent_counts = Counter(number for draw in recent for number in draw.main_numbers)
+    short_counts = Counter(number for draw in short for number in draw.main_numbers)
+    all_counts = Counter(number for draw in draws for number in draw.main_numbers)
+    max_pair = max(pair_strength.values(), default=1.0) or 1.0
+    max_all = max(all_counts.values(), default=1) or 1
+    scores = {}
+    for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+        gap = miss_gaps[number]
+        gap_sweet_spot = math.exp(-((gap - 14.0) ** 2) / (2 * 9.0**2))
+        cold_not_dead = 1.0 - min(short_counts[number] / 3.0, 1.0)
+        long_support = all_counts[number] / max_all
+        pair_support = pair_strength[number] / max_pair
+        cycle = cycle_scores.get(number, 0.0)
+        structure = structure_scores.get(number, 0.0)
+        recent_guard = 0.72 if recent_counts[number] == 0 else 1.0
+        scores[number] = clamp01(
+            (
+                gap_sweet_spot * 0.30
+                + cold_not_dead * 0.18
+                + long_support * 0.17
+                + pair_support * 0.14
+                + cycle * 0.12
+                + structure * 0.09
+            )
+            * recent_guard
+        )
+    return scores
+
+
+def calculate_neighbor_bridge_scores(
+    draws: list[Draw],
+    miss_gaps: dict[int, int],
+) -> dict[int, float]:
+    if not draws:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    recent = draws[-min(5, len(draws)) :]
+    recent_numbers = [number for draw in recent for number in draw.main_numbers]
+    recent_tails = Counter(number % 10 for number in recent_numbers)
+    recent_decades = Counter(decade_bucket(number) for number in recent_numbers)
+    max_tail = max(recent_tails.values(), default=1)
+    max_decade = max(recent_decades.values(), default=1)
+    latest_numbers = set(draws[-1].main_numbers)
+    scores = {}
+    for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+        nearest_distance = min((abs(number - recent_number) for recent_number in recent_numbers), default=49)
+        bridge = 1.0 if nearest_distance == 0 else max(0.0, 1.0 - nearest_distance / 6.0)
+        same_tail = recent_tails[number % 10] / max_tail if max_tail else 0.0
+        same_decade = recent_decades[decade_bucket(number)] / max_decade if max_decade else 0.0
+        repeat_control = 0.86 if number in latest_numbers else 1.0
+        gap_control = min(miss_gaps[number] / 18.0, 1.0)
+        scores[number] = clamp01(
+            (bridge * 0.36 + same_tail * 0.22 + same_decade * 0.18 + gap_control * 0.24)
+            * repeat_control
+        )
+    return scores
+
+
 def rolling_month_review(draws: list[Draw], ranked_numbers: list[int]) -> dict[str, object]:
     month_draws = month_window_draws(draws)
     actual_pool = {number for draw in month_draws for number in draw.main_numbers}
@@ -1176,6 +1313,7 @@ def build_auto_scores(
 
     auto_scores: dict[int, NumberScore] = {}
     base_scores = strategy_score_maps["balanced"]
+    feedback_scores = calculate_settlement_feedback_scores(conn, draws)
     for number in range(MIN_NUMBER, MAX_NUMBER + 1):
         normalized_parts = []
         raw_parts = []
@@ -1191,6 +1329,7 @@ def build_auto_scores(
         raw_score = sum(raw_parts) / total_weight
         model_scores = dict(base.model_scores)
         model_scores["auto_maturity"] = maturity_score
+        model_scores["settlement_feedback"] = feedback_scores[number]
         auto_scores[number] = NumberScore(
             number=base.number,
             total_frequency=base.total_frequency,
@@ -1199,7 +1338,7 @@ def build_auto_scores(
             miss_gap=base.miss_gap,
             trend=base.trend,
             pair_strength=base.pair_strength,
-            score=maturity_score + raw_score * 0.12,
+            score=maturity_score + raw_score * 0.12 + feedback_scores[number] * SETTLEMENT_FEEDBACK_WEIGHT,
             color=base.color,
             model_scores=model_scores,
         )
@@ -1354,6 +1493,94 @@ def backtest_strategy_weights(draws: list[Draw], recent_window: int) -> dict[str
             quality *= 1.15
         weights[strategy] = max(AUTO_MIN_STRATEGY_WEIGHT, min(AUTO_MAX_STRATEGY_WEIGHT, quality))
     return weights
+
+
+def calculate_settlement_feedback_scores(
+    conn: sqlite3.Connection | None,
+    draws: list[Draw],
+) -> dict[int, float]:
+    empty = {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    if conn is None or not draws:
+        return empty
+    try:
+        init_db(conn)
+        row = conn.execute(
+            """
+            SELECT r.id AS run_id,
+                   r.score_snapshot_json AS score_snapshot_json,
+                   d.n1, d.n2, d.n3, d.n4, d.n5, d.n6, d.special,
+                   d.draw_date, d.draw_no
+            FROM prediction_runs r
+            JOIN prediction_results res ON res.run_id = r.id
+            JOIN draws d ON d.id = res.actual_draw_id
+            GROUP BY r.id, res.actual_draw_id
+            ORDER BY d.draw_date DESC, r.id DESC
+            LIMIT 1
+            """
+        ).fetchone()
+        if row is None:
+            return empty
+        actual_numbers = [int(row[f"n{index}"]) for index in range(1, MAIN_COUNT + 1)]
+        snapshot = json.loads(row["score_snapshot_json"] or "{}")
+        snapshot_items = []
+        if isinstance(snapshot, dict):
+            for key, value in snapshot.items():
+                if isinstance(value, dict):
+                    item = dict(value)
+                    item["number"] = int(item.get("number", key))
+                    snapshot_items.append(item)
+        elif isinstance(snapshot, list):
+            snapshot_items = [item for item in snapshot if isinstance(item, dict)]
+        ranked_snapshot = sorted(
+            snapshot_items,
+            key=lambda item: float(item.get("score", 0.0)),
+            reverse=True,
+        )
+        snapshot_ranks = {
+            int(item.get("number")): rank
+            for rank, item in enumerate(ranked_snapshot, start=1)
+            if item.get("number") is not None
+        }
+        ticket_rows = conn.execute(
+            """
+            SELECT ticket_rank, numbers_json
+            FROM prediction_tickets
+            WHERE run_id = ?
+            ORDER BY ticket_rank
+            LIMIT 6
+            """,
+            (int(row["run_id"]),),
+        ).fetchall()
+        exposure = Counter()
+        for ticket in ticket_rows:
+            for number in json.loads(ticket["numbers_json"]):
+                exposure[int(number)] += 1
+        exposure_denominator = max(1, len(ticket_rows))
+        raw = {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+        for actual in actual_numbers:
+            previous_rank = snapshot_ranks.get(actual, MAX_NUMBER)
+            rank_gap = 1.0 if previous_rank > SUPPORT_POOL_SIZE else (0.72 if previous_rank > CORE_POOL_SIZE else 0.34)
+            exposure_gap = 1.0 - min(exposure[actual] / exposure_denominator, 1.0)
+            base = clamp01(rank_gap * 0.64 + exposure_gap * 0.36)
+            for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+                similarity = 0.0
+                if number == actual:
+                    similarity += 1.0
+                if abs(number - actual) <= 2:
+                    similarity += 0.28
+                if number % 10 == actual % 10:
+                    similarity += 0.20
+                if decade_bucket(number) == decade_bucket(actual):
+                    similarity += 0.18
+                if wave_color(number) == wave_color(actual):
+                    similarity += 0.08
+                raw[number] += base * min(similarity, 1.35)
+        max_raw = max(raw.values(), default=0.0)
+        if max_raw <= 0:
+            return empty
+        return {number: clamp01(value / max_raw) for number, value in raw.items()}
+    except Exception:
+        return empty
 
 
 def ticket_maturity_score(
@@ -1576,6 +1803,84 @@ def confidence_ticket_rows(package: PredictionPackage, limit: int = 6) -> list[l
     return rows
 
 
+def system_gap_review_rows(
+    conn: sqlite3.Connection,
+    draws: list[Draw],
+    package: PredictionPackage,
+    rank_backtest: dict[str, float | int],
+    month_review: dict[str, object],
+    settled: tuple[sqlite3.Row, Draw] | None,
+) -> list[list[object]]:
+    rows: list[list[object]] = []
+    top9_edge = float(rank_backtest.get("top9_edge", 0.0))
+    top15_edge = float(rank_backtest.get("top15_edge", 0.0))
+    consensus = model_consensus_rate(package)
+    if top15_edge < 0.03:
+        rows.append(
+            [
+                "Top15補位池失準",
+                f"Top15差值 {top15_edge:.3f}，補位池沒有形成穩定優勢",
+                "新增冷爆捕捉 + 區間修復，補抓 Top9 外的中段與冷爆號",
+            ]
+        )
+    if top9_edge < 0.18:
+        rows.append(
+            [
+                "Top9核心優勢不足",
+                f"Top9差值 {top9_edge:.3f}，只能列主檢查池，不能放大保證",
+                "新增結算回饋，把上期漏抓號與同結構號可控前移",
+            ]
+        )
+    if consensus < 0.58:
+        rows.append(
+            [
+                "模型共識偏低",
+                f"Top10共識 {consensus:.3f}，子模型排名分散",
+                "強化自動融合成熟度，新增鄰近橋接與回饋模型交叉確認",
+            ]
+        )
+    if settled is not None:
+        settled_run, actual = settled
+        ranked = score_snapshot_ranked(settled_run)
+        missed = [number for number in actual.main_numbers if number not in ranked[:CORE_POOL_SIZE]]
+        if missed:
+            rows.append(
+                [
+                    "上期實際漏抓",
+                    f"{format_numbers(missed)} 未在舊 Top9 核心池內",
+                    "第11版結算回饋會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                ]
+            )
+        actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
+        mid_hits = actual_decades.get("11-20", 0) + actual_decades.get("21-30", 0)
+        if mid_hits >= 4:
+            rows.append(
+                [
+                    "中段區間捕捉不足",
+                    f"上期 11-30 區間開出 {mid_hits} 顆",
+                    "第11版區間修復提高 11-30 中段與同尾橋接權重",
+                ]
+            )
+    missing_hot = month_review.get("missing_hot", [])
+    if missing_hot:
+        rows.append(
+            [
+                "月內熱點未前移",
+                f"本月熱點仍在 Top9 外：{format_numbers(missing_hot)}",
+                "第11版本月滾動 + 區間修復共同前移，不再只當防守補位",
+            ]
+        )
+    if not rows:
+        rows.append(
+            [
+                "未發現重大缺口",
+                "資料、回測、結算、手機同步均正常",
+                "維持第11版強化模型並持續滾動校準",
+            ]
+        )
+    return rows
+
+
 def system_completeness_rows(
     draws: list[Draw],
     package: PredictionPackage,
@@ -1786,7 +2091,15 @@ def top_ticket_models(numbers: tuple[int, ...], scores: dict[int, NumberScore]) 
         "cycle": "週期",
         "structure": "結構",
         "rolling_month": "本月滾動",
+        "zone_repair": "區間修復",
+        "breakout_capture": "冷爆捕捉",
+        "neighbor_bridge": "鄰近橋接",
+        "settlement_feedback": "結算回饋",
+        "zone_repair": "區間修復",
+        "breakout_capture": "冷爆捕捉",
+        "neighbor_bridge": "鄰近橋接",
         "auto_maturity": "實戰成熟度",
+        "settlement_feedback": "結算回饋",
     }
     if not scores:
         return []
@@ -2510,12 +2823,18 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，10-15 只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入Top9", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在Top10-15，下一輪前移校準"],
-                ["新一期結構", f"Top9={format_numbers(top9)}", "符合第10版強推精算層與 9顆核心池規格"],
+                ["新一期結構", f"Top9={format_numbers(top9)}", "符合第11版缺口修復與 9顆核心池規格"],
             ],
         ),
         "",
+        "## 全系統缺口檢測與第11版修復",
+        markdown_table(
+            ["缺口", "目前問題", "已接上的修復模型"],
+            system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
+        ),
+        "",
         "## 超強信心高機率強推薦號碼",
-        "- 精算規則：強推精算層獨立運算，採單號精算、模型共識、穩定度、貝葉斯、近期命中、配對/三碼共振、近180期校準。",
+        "- 精算規則：強推精算層獨立運算，採單號精算、模型共識、穩定度、貝葉斯、近期命中、結算回饋、區間修復、冷爆捕捉、配對/三碼共振、近180期校準。",
         markdown_table(
             ["類型", "強推薦號碼", "命中目標", "信心指數", "隨機基準", "強化理由"],
             super_recommendation_rows(package, draws),
@@ -3527,7 +3846,11 @@ def model_label(name: str) -> str:
         "cycle": "週期回歸",
         "structure": "結構適配",
         "rolling_month": "本月滾動修正",
+        "zone_repair": "區間修復",
+        "breakout_capture": "冷爆捕捉",
+        "neighbor_bridge": "鄰近橋接",
         "auto_maturity": "實戰成熟度",
+        "settlement_feedback": "結算回饋",
     }
     return labels.get(name, name)
 
@@ -4273,6 +4596,10 @@ def model_report_text(
         "cycle": "週期回歸",
         "structure": "結構適配",
         "rolling_month": "本月滾動修正",
+        "zone_repair": "區間修復",
+        "breakout_capture": "冷爆捕捉",
+        "neighbor_bridge": "鄰近橋接",
+        "settlement_feedback": "結算回饋",
     }
     lines = [
         "多模型運算",
@@ -4450,7 +4777,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260625_第10版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260626_第11版")
 
 
 def build_site(

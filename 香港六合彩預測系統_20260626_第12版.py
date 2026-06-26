@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260626_第11版"
+MODEL_VERSION = "香港六合彩預測系統_20260626_第12版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -73,6 +73,10 @@ ZONE_REPAIR_WEIGHT = 0.070
 BREAKOUT_CAPTURE_WEIGHT = 0.060
 NEIGHBOR_BRIDGE_WEIGHT = 0.045
 SETTLEMENT_FEEDBACK_WEIGHT = 0.115
+TRANSITION_FOLLOW_WEIGHT = 0.065
+TAIL_TRANSITION_WEIGHT = 0.050
+CALENDAR_PHASE_WEIGHT = 0.040
+SPECIAL_CROSSOVER_WEIGHT = 0.045
 _SCORE_RANK_BACKTEST_CACHE: dict[tuple[int, str, str, str, int, int], dict[str, float | int]] = {}
 
 RED_WAVE = {1, 2, 7, 8, 12, 13, 18, 19, 23, 24, 29, 30, 34, 35, 40, 45, 46}
@@ -791,6 +795,10 @@ def build_scores(
         structure_scores,
     )
     neighbor_bridge_scores = calculate_neighbor_bridge_scores(draws, miss_gaps)
+    transition_follow_scores = calculate_transition_follow_scores(draws)
+    tail_transition_scores = calculate_tail_transition_scores(draws)
+    calendar_phase_scores = calculate_calendar_phase_scores(draws)
+    special_crossover_scores = calculate_special_crossover_scores(draws)
 
     max_total = max(all_counts.values(), default=1)
     max_recent = max(recent_counts.values(), default=1)
@@ -834,6 +842,10 @@ def build_scores(
             "zone_repair": zone_repair_scores[number],
             "breakout_capture": breakout_scores[number],
             "neighbor_bridge": neighbor_bridge_scores[number],
+            "transition_follow": transition_follow_scores[number],
+            "tail_transition": tail_transition_scores[number],
+            "calendar_phase": calendar_phase_scores[number],
+            "special_crossover": special_crossover_scores[number],
         }
 
         score = sum(weights[name] * model_scores[name] for name in weights)
@@ -841,6 +853,10 @@ def build_scores(
         score += model_scores["zone_repair"] * ZONE_REPAIR_WEIGHT
         score += model_scores["breakout_capture"] * BREAKOUT_CAPTURE_WEIGHT
         score += model_scores["neighbor_bridge"] * NEIGHBOR_BRIDGE_WEIGHT
+        score += model_scores["transition_follow"] * TRANSITION_FOLLOW_WEIGHT
+        score += model_scores["tail_transition"] * TAIL_TRANSITION_WEIGHT
+        score += model_scores["calendar_phase"] * CALENDAR_PHASE_WEIGHT
+        score += model_scores["special_crossover"] * SPECIAL_CROSSOVER_WEIGHT
 
         score_rows[number] = NumberScore(
             number=number,
@@ -1156,6 +1172,134 @@ def calculate_neighbor_bridge_scores(
             * repeat_control
         )
     return scores
+
+
+def calculate_transition_follow_scores(draws: list[Draw]) -> dict[int, float]:
+    if len(draws) < 20:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    latest_numbers = set(draws[-1].main_numbers)
+    transition_counts = Counter()
+    transition_weight = Counter()
+    for previous, current in zip(draws, draws[1:]):
+        overlap = len(latest_numbers.intersection(previous.main_numbers))
+        if overlap == 0:
+            continue
+        weight = 1.0 + overlap * 0.42
+        for number in current.main_numbers:
+            transition_counts[number] += weight
+        for source in latest_numbers.intersection(previous.main_numbers):
+            for number in current.main_numbers:
+                distance = abs(number - source)
+                if distance <= 6:
+                    transition_weight[number] += max(0.0, 1.0 - distance / 7.0) * 0.35
+    raw = {
+        number: transition_counts[number] + transition_weight[number]
+        for number in range(MIN_NUMBER, MAX_NUMBER + 1)
+    }
+    if max(raw.values(), default=0.0) <= 0:
+        return {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    return normalized_values(raw)
+
+
+def calculate_tail_transition_scores(draws: list[Draw]) -> dict[int, float]:
+    if len(draws) < 20:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    latest_tails = {number % 10 for number in draws[-1].main_numbers}
+    latest_decades = {decade_bucket(number) for number in draws[-1].main_numbers}
+    tail_to_next = Counter()
+    decade_to_next = Counter()
+    direct_next = Counter()
+    for previous, current in zip(draws, draws[1:]):
+        previous_tails = {number % 10 for number in previous.main_numbers}
+        previous_decades = {decade_bucket(number) for number in previous.main_numbers}
+        tail_overlap = len(latest_tails.intersection(previous_tails))
+        decade_overlap = len(latest_decades.intersection(previous_decades))
+        if tail_overlap == 0 and decade_overlap == 0:
+            continue
+        for number in current.main_numbers:
+            if number % 10 in latest_tails:
+                tail_to_next[number] += 1.0 + tail_overlap * 0.25
+            if decade_bucket(number) in latest_decades:
+                decade_to_next[number] += 1.0 + decade_overlap * 0.18
+            direct_next[number] += tail_overlap * 0.16 + decade_overlap * 0.12
+    raw = {
+        number: tail_to_next[number] * 0.45 + decade_to_next[number] * 0.35 + direct_next[number] * 0.20
+        for number in range(MIN_NUMBER, MAX_NUMBER + 1)
+    }
+    if max(raw.values(), default=0.0) <= 0:
+        return {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    return normalized_values(raw)
+
+
+def calculate_calendar_phase_scores(draws: list[Draw]) -> dict[int, float]:
+    if len(draws) < 30:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    target_date_text = next_marksix_draw_date(draws[-1].draw_date)
+    try:
+        target_date = datetime.strptime(target_date_text[:10], "%Y-%m-%d")
+    except ValueError:
+        target_date = datetime.strptime(draws[-1].draw_date, "%Y-%m-%d")
+    target_weekday = target_date.weekday()
+    target_phase = min(3, (target_date.day - 1) // 8)
+    weekday_counts = Counter()
+    phase_counts = Counter()
+    for draw in draws:
+        try:
+            draw_date = datetime.strptime(draw.draw_date, "%Y-%m-%d")
+        except ValueError:
+            continue
+        weekday_match = 1.0 if draw_date.weekday() == target_weekday else 0.0
+        month_phase = min(3, (draw_date.day - 1) // 8)
+        phase_match = 1.0 if month_phase == target_phase else 0.0
+        if not weekday_match and not phase_match:
+            continue
+        for number in draw.main_numbers:
+            weekday_counts[number] += weekday_match
+            phase_counts[number] += phase_match
+    raw = {
+        number: weekday_counts[number] * 0.66 + phase_counts[number] * 0.34
+        for number in range(MIN_NUMBER, MAX_NUMBER + 1)
+    }
+    if max(raw.values(), default=0.0) <= 0:
+        return {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    return normalized_values(raw)
+
+
+def calculate_special_crossover_scores(draws: list[Draw]) -> dict[int, float]:
+    if len(draws) < 20:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    latest_special = draws[-1].special
+    latest_tail = latest_special % 10
+    latest_decade = decade_bucket(latest_special)
+    direct_counts = Counter()
+    tail_counts = Counter()
+    neighbor_counts = Counter()
+    decade_counts = Counter()
+    for previous, current in zip(draws, draws[1:]):
+        if previous.special == latest_special:
+            for number in current.main_numbers:
+                direct_counts[number] += 1.0
+        if previous.special % 10 == latest_tail:
+            for number in current.main_numbers:
+                tail_counts[number] += 1.0 if number % 10 == latest_tail else 0.38
+        if decade_bucket(previous.special) == latest_decade:
+            for number in current.main_numbers:
+                decade_counts[number] += 1.0 if decade_bucket(number) == latest_decade else 0.26
+        for number in current.main_numbers:
+            if abs(number - latest_special) <= 3:
+                neighbor_counts[number] += 1.0
+    raw = {
+        number: (
+            direct_counts[number] * 0.30
+            + tail_counts[number] * 0.25
+            + decade_counts[number] * 0.20
+            + neighbor_counts[number] * 0.25
+        )
+        for number in range(MIN_NUMBER, MAX_NUMBER + 1)
+    }
+    if max(raw.values(), default=0.0) <= 0:
+        return {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    return normalized_values(raw)
 
 
 def rolling_month_review(draws: list[Draw], ranked_numbers: list[int]) -> dict[str, object]:
@@ -1848,7 +1992,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊 Top9 核心池內",
-                    "第11版結算回饋會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第12版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -1858,7 +2002,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第11版區間修復提高 11-30 中段與同尾橋接權重",
+                    "第12版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -1867,7 +2011,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在 Top9 外：{format_numbers(missing_hot)}",
-                "第11版本月滾動 + 區間修復共同前移，不再只當防守補位",
+                "第12版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -1875,7 +2019,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第11版強化模型並持續滾動校準",
+                "維持第12版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -2094,12 +2238,12 @@ def top_ticket_models(numbers: tuple[int, ...], scores: dict[int, NumberScore]) 
         "zone_repair": "區間修復",
         "breakout_capture": "冷爆捕捉",
         "neighbor_bridge": "鄰近橋接",
-        "settlement_feedback": "結算回饋",
-        "zone_repair": "區間修復",
-        "breakout_capture": "冷爆捕捉",
-        "neighbor_bridge": "鄰近橋接",
         "auto_maturity": "實戰成熟度",
         "settlement_feedback": "結算回饋",
+        "transition_follow": "轉移追蹤",
+        "tail_transition": "尾數轉移",
+        "calendar_phase": "日曆相位",
+        "special_crossover": "特別號交叉",
     }
     if not scores:
         return []
@@ -2823,18 +2967,29 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，10-15 只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入Top9", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在Top10-15，下一輪前移校準"],
-                ["新一期結構", f"Top9={format_numbers(top9)}", "符合第11版缺口修復與 9顆核心池規格"],
+                ["新一期結構", f"Top9={format_numbers(top9)}", "符合第12版新增轉移模型與 9顆核心池規格"],
             ],
         ),
         "",
-        "## 全系統缺口檢測與第11版修復",
+        "## 全系統缺口檢測與第12版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
+        "## 第12版新增邏輯運算模型",
+        markdown_table(
+            ["新增模型", "運算重點", "強化目的"],
+            [
+                ["轉移追蹤", "比對最新一期與歷史相鄰期重疊後的下一期落點", "補強開獎後號碼轉移與延伸號"],
+                ["尾數轉移", "追蹤最新尾數、區間到下一期尾數與區間的轉換", "把 9顆核心池壓得更集中"],
+                ["日曆相位", "依下一期目標日的星期、月內相位與歷史同相位樣本校準", "修正月內節奏與開獎日型態"],
+                ["特別號交叉", "把最新特別號同尾、同區間、鄰近號與歷史轉主號樣本交叉", "補強特別號滲透主號的捕捉"],
+            ],
+        ),
+        "",
         "## 超強信心高機率強推薦號碼",
-        "- 精算規則：強推精算層獨立運算，採單號精算、模型共識、穩定度、貝葉斯、近期命中、結算回饋、區間修復、冷爆捕捉、配對/三碼共振、近180期校準。",
+        "- 精算規則：強推精算層獨立運算，採單號精算、模型共識、穩定度、貝葉斯、近期命中、結算回饋、區間修復、冷爆捕捉、轉移追蹤、尾數轉移、日曆相位、特別號交叉、配對/三碼共振、近180期校準。",
         markdown_table(
             ["類型", "強推薦號碼", "命中目標", "信心指數", "隨機基準", "強化理由"],
             super_recommendation_rows(package, draws),
@@ -3851,6 +4006,10 @@ def model_label(name: str) -> str:
         "neighbor_bridge": "鄰近橋接",
         "auto_maturity": "實戰成熟度",
         "settlement_feedback": "結算回饋",
+        "transition_follow": "轉移追蹤",
+        "tail_transition": "尾數轉移",
+        "calendar_phase": "日曆相位",
+        "special_crossover": "特別號交叉",
     }
     return labels.get(name, name)
 
@@ -4600,6 +4759,10 @@ def model_report_text(
         "breakout_capture": "冷爆捕捉",
         "neighbor_bridge": "鄰近橋接",
         "settlement_feedback": "結算回饋",
+        "transition_follow": "轉移追蹤",
+        "tail_transition": "尾數轉移",
+        "calendar_phase": "日曆相位",
+        "special_crossover": "特別號交叉",
     }
     lines = [
         "多模型運算",
@@ -4777,7 +4940,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260626_第11版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260626_第12版")
 
 
 def build_site(

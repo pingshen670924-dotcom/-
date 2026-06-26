@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-06-26T15:44:32+08:00",
+  "generated_at": "2026-06-26T15:49:50+08:00",
   "model_version": "香港六合彩預測系統_20260626_第12版",
   "draw_count": 2566,
   "date_range": "2008-01-03 -> 2026-06-25",
@@ -29,7 +29,7 @@
     "status": "正常",
     "risk_level": "高",
     "release_level": "研究觀察，不列保證",
-    "completeness": "10/11",
+    "completeness": "12/12",
     "champion": "均衡",
     "auto_weights": "均衡:1.54 / 冷遺漏:0.33 / 分散:0.52 / 熱度:1.41 / 趨勢:1.20",
     "settled_status": "第 9 筆 -> 2026-06-25 2026/068: Top5/Top9/Top10/Top15 2/2/2/3",

@@ -2038,6 +2038,11 @@ def system_completeness_rows(
             "SELECT COUNT(*) FROM prediction_tickets WHERE run_id = ?",
             (latest_run["id"],),
         ).fetchone()[0]
+    launcher_path = Path("香港六合彩預測系統_一鍵啟動.bat")
+    if not launcher_path.exists():
+        parent_launcher = Path("..") / "香港六合彩預測系統_一鍵啟動.bat"
+        if parent_launcher.exists():
+            launcher_path = parent_launcher
     checks = [
         (
             "歷史資料庫",
@@ -2089,9 +2094,16 @@ def system_completeness_rows(
         ),
         (
             "一鍵啟動",
-            Path("香港六合彩預測系統_一鍵啟動.bat").exists() and Path("香港六合彩預測系統_一鍵更新.ps1").exists(),
-            "香港六合彩預測系統_一鍵啟動.bat",
+            launcher_path.exists() and Path("香港六合彩預測系統_一鍵更新.ps1").exists(),
+            str(launcher_path),
             f"已接 {MODEL_VERSION}",
+        ),
+        (
+            "全自動更新",
+            Path("香港六合彩預測系統_開獎後立即更新.ps1").exists()
+            and Path("香港六合彩預測系統_安裝開獎後立即更新排程.ps1").exists(),
+            "每日21:15監控 + 每1分鐘輪詢 + 雲端每日每5分鐘",
+            "開獎後自動重算並同步手機雲端",
         ),
         (
             "手機雲端同步",

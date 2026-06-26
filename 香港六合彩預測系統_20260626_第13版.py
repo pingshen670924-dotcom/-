@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260626_第12版"
+MODEL_VERSION = "香港六合彩預測系統_20260626_第13版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -262,6 +262,7 @@ def parse_args() -> argparse.Namespace:
     daily.add_argument("--tickets", type=int, default=20)
     daily.add_argument("--recent-window", type=int, default=DEFAULT_RECENT_WINDOW)
     daily.add_argument("--seed", type=int, default=None)
+    daily.add_argument("--force-prediction", action="store_true", help="即使最新期號未變，也強制重新運算並新增預測紀錄")
     daily.add_argument("--site-dir", type=Path, default=Path("site"))
     daily.add_argument("--report-dir", type=Path, default=DEFAULT_REPORT_DIR)
     daily.add_argument("--backup-dir", type=Path, default=Path("backups"))
@@ -1992,7 +1993,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊 Top9 核心池內",
-                    "第12版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第13版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2002,7 +2003,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第12版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第13版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2011,7 +2012,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在 Top9 外：{format_numbers(missing_hot)}",
-                "第12版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                "第13版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2019,7 +2020,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第12版強化模型並持續滾動校準",
+                "維持第13版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -2979,17 +2980,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，10-15 只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入Top9", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在Top10-15，下一輪前移校準"],
-                ["新一期結構", f"Top9={format_numbers(top9)}", "符合第12版新增轉移模型與 9顆核心池規格"],
+                ["新一期結構", f"Top9={format_numbers(top9)}", "符合第13版每日強制重算與 9顆核心池規格"],
             ],
         ),
         "",
-        "## 全系統缺口檢測與第12版修復",
+        "## 全系統缺口檢測與第13版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 第12版新增邏輯運算模型",
+        "## 第13版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -4952,7 +4953,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260626_第12版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260626_第13版")
 
 
 def build_site(
@@ -5053,6 +5054,9 @@ def daily_update(args: argparse.Namespace) -> str:
         if len(draws) >= 5:
             prediction_html = args.site_dir / SITE_LATEST_PREDICTION_NAME
             should_refresh, refresh_reason = prediction_needs_refresh(conn, draws)
+            if args.force_prediction and not should_refresh:
+                should_refresh = True
+                refresh_reason = f"每日一鍵強制重新運算 {now_text()}"
             if should_refresh:
                 package = generate_prediction_package(
                     draws,

@@ -33,7 +33,7 @@ jobs:
         if: github.event_name != 'push'
         shell: pwsh
         run: |
-          python "香港六合彩預測系統_20260626_第12版.py" daily-update --db "香港六合彩預測系統_雲端.db" --csv "data/香港六合彩預測系統_全歷史資料.csv" --fetch-hkjc --tickets 20 --site-dir site --report-dir reports --backup-dir backups
+          python "香港六合彩預測系統_20260626_第13版.py" daily-update --db "香港六合彩預測系統_雲端.db" --csv "data/香港六合彩預測系統_全歷史資料.csv" --fetch-hkjc --tickets 20 --site-dir site --report-dir reports --backup-dir backups
           Copy-Item -LiteralPath "site/香港六合彩預測系統_手機首頁.html" -Destination site/index.html -Force
 
       - name: 同步本機已產生結果

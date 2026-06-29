@@ -9,7 +9,7 @@ import zlib
 from pathlib import Path
 
 import importlib
-m = importlib.import_module("香港六合彩預測系統_20260626_第13版")
+m = importlib.import_module("香港六合彩預測系統_20260629_第14版")
 
 
 MOBILE_HTML = "香港六合彩預測系統_手機首頁.html"
@@ -98,6 +98,18 @@ def build_payload(conn, recent_window: int) -> dict:
     release_level = "研究觀察，不列保證" if top9_edge < 0.25 else "研究級高關注"
     settled = m.latest_settled_prediction(conn)
 
+    def exclusion_payload(count: int) -> list[dict]:
+        return [
+            {
+                "number": row[0],
+                "confidence": row[1],
+                "rank": row[2],
+                "low_score": row[3],
+                "reason": row[4],
+            }
+            for row in m.exclusion_rows(package.scores, ranked_numbers, max_number_score, count)
+        ]
+
     return {
         "generated_at": m.now_text(),
         "model_version": m.MODEL_VERSION,
@@ -179,7 +191,7 @@ def build_payload(conn, recent_window: int) -> dict:
             {
                 "rank": rank,
                 "number": row.number,
-                "bucket": "9隻內核心" if rank <= m.CORE_POOL_SIZE else "10-15補位",
+                "bucket": "9隻內核心" if rank <= m.CORE_POOL_SIZE else "第十至第十五補位",
                 "confidence": m.confidence_label(row, max_number_score),
                 "score": round(row.score, 3),
                 "reason": m.number_reasons(row, rank),
@@ -195,6 +207,31 @@ def build_payload(conn, recent_window: int) -> dict:
             }
             for title, numbers, target_hits in m.strong_pack_specs(ranked_numbers, package, draws)
         ],
+        "recalculation_audit": [
+            {
+                "draw_no": row[0],
+                "date": row[1],
+                "status": row[2],
+                "run": row[3],
+                "proof": row[4],
+            }
+            for row in m.prediction_recalculation_rows(conn, draws, 6)
+        ],
+        "recommendation_gate": [
+            {
+                "rank": row[0],
+                "numbers": row[1],
+                "confidence": row[2],
+                "score": row[3],
+                "gate": row[4],
+            }
+            for row in m.recommendation_gate_rows(package, max_number_score)
+        ],
+        "exclusion_groups": {
+            "five": exclusion_payload(5),
+            "ten": exclusion_payload(10),
+            "fifteen": exclusion_payload(15),
+        },
         "links": {
             "battle_report": m.SITE_BATTLE_REPORT_NAME,
             "prediction_report": m.SITE_LATEST_PREDICTION_NAME,
@@ -308,8 +345,8 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
     .link-grid {{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }}
     .action {{ border:1px solid var(--line); border-radius:8px; padding:12px; background:#fff; font-weight:800; text-align:center; min-height:46px; }}
     .action.primary {{ background:var(--red); border-color:var(--red); color:#fff; }}
-    .bottom-nav {{ position:fixed; left:50%; bottom:0; transform:translateX(-50%); width:min(100%,720px); display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:20; }}
-    .bottom-nav a {{ background:#fff; min-height:58px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }}
+    .bottom-nav {{ position:fixed; left:50%; bottom:0; transform:translateX(-50%); width:min(100%,720px); display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--line); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:20; }}
+    .bottom-nav a {{ background:#fff; min-height:58px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }}
     @media (max-width:390px) {{
       .app {{ padding-left:10px; padding-right:10px; }}
       h1 {{ font-size:23px; }}
@@ -348,7 +385,12 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
         <div class="metric"><span>策略 / 組數</span><strong>{e(prediction["strategy"])} / {prediction["ticket_count"]} 組</strong></div>
         <div class="metric"><span>預測目標</span><strong>{e(prediction["target_date"])}</strong></div>
       </div>
-      <p class="note">下方高機率信心牌、9隻內核心池、Top 15 補位池、核心模型全部使用這一筆最新預測。</p>
+      <p class="note">下方高機率信心牌、9隻內核心池、第十至第十五補位池、核心模型全部使用這一筆最新預測。</p>
+    </section>
+
+    <section class="section" id="audit">
+      <h2>每期重算證明</h2>
+      {recalculation_cards(payload["recalculation_audit"])}
     </section>
 
     <section class="section" id="confidence">
@@ -362,23 +404,34 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
       <p class="note">強推精算層每期固定輸出獨隻、2碼、3碼；採穩定度、模型共識、貝葉斯、配對/三碼共振校準。</p>
     </section>
 
+    <section class="section" id="gate">
+      <h2>推薦門檻檢查</h2>
+      {recommendation_gate_cards(payload["recommendation_gate"])}
+      <p class="note">只有通過門檻的組合列入高機率信心牌，其餘只保留觀察或不列主推。</p>
+    </section>
+
     <section class="section" id="core">
       <h2>9隻內核心命中池</h2>
       <div class="number-grid">{number_grid(payload["core_numbers"])}</div>
-      <p class="note">高機率先看這 9 隻，10-15 只作防守補位。</p>
+      <p class="note">高機率先看這 9 隻，第十至第十五只作防守補位。</p>
     </section>
 
     <section class="section" id="numbers">
-      <h2>Top 15 詳表</h2>
+      <h2>前十五詳表</h2>
       <div class="number-grid">{number_grid(payload["top_numbers"])}</div>
+    </section>
+
+    <section class="section" id="exclude">
+      <h2>低機率排除</h2>
+      {exclusion_cards(payload["exclusion_groups"])}
     </section>
 
     <section class="section" id="accuracy">
       <h2>運算精準度</h2>
-      {accuracy_row("Top5", accuracy["top5_avg"], accuracy["top5_random"], accuracy["top5_edge"])}
+      {accuracy_row("前五", accuracy["top5_avg"], accuracy["top5_random"], accuracy["top5_edge"])}
       {accuracy_row("9隻內", accuracy["top9_avg"], accuracy["top9_random"], accuracy["top9_edge"])}
-      {accuracy_row("Top10", accuracy["top10_avg"], accuracy["top10_random"], accuracy["top10_edge"])}
-      {accuracy_row("Top15", accuracy["top15_avg"], accuracy["top15_random"], accuracy["top15_edge"])}
+      {accuracy_row("前十", accuracy["top10_avg"], accuracy["top10_random"], accuracy["top10_edge"])}
+      {accuracy_row("前十五", accuracy["top15_avg"], accuracy["top15_random"], accuracy["top15_edge"])}
       <p class="note">樣本 {accuracy["sample"]} 期 / 共識 {system["consensus"]:.3f} / {e(system["release_level"])}</p>
     </section>
 
@@ -411,7 +464,8 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
   <nav class="bottom-nav">
     <a href="#top">總覽</a>
     <a href="#super">強推</a>
-    <a href="#core">核心</a>
+    <a href="#audit">重算</a>
+    <a href="#exclude">排除</a>
     <a href="#reports">戰報</a>
   </nav>
   {sw_script}
@@ -449,7 +503,7 @@ def manifest() -> dict:
 
 
 def service_worker() -> str:
-    return f"""const CACHE_NAME = "香港六合彩預測系統-20260626-v13-force-refresh";
+    return f"""const CACHE_NAME = "香港六合彩預測系統-20260629-v14-recalculation-audit";
 const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{MOBILE_MANIFEST}","./{MOBILE_ICON_192}","./{MOBILE_ICON_512}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
 self.addEventListener("install", event => {{
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));
@@ -537,6 +591,59 @@ def super_pick_cards(picks: list[dict]) -> str:
     )
 
 
+def recalculation_cards(rows: list[dict]) -> str:
+    return "\n".join(
+        '<div class="ticket">'
+        '<div class="ticket-head">'
+        f'<div class="ticket-label">{e(row["draw_no"])} / {e(row["date"])}</div>'
+        f'<span class="badge hot">{e(row["status"])}</span>'
+        '</div>'
+        f'<div class="meta">{e(row["run"])} / {e(row["proof"])}</div>'
+        '</div>'
+        for row in rows
+    )
+
+
+def recommendation_gate_cards(rows: list[dict]) -> str:
+    return "\n".join(
+        '<div class="ticket">'
+        '<div class="ticket-head">'
+        f'<div class="ticket-label">{row["rank"]}. {e(row["numbers"])}</div>'
+        f'<span class="badge hot">{e(row["gate"])}</span>'
+        '</div>'
+        f'<div class="meta">信心 {e(row["confidence"])} / 分數 {e(row["score"])}</div>'
+        '</div>'
+        for row in rows
+    )
+
+
+def exclusion_cards(groups: dict[str, list[dict]]) -> str:
+    labels = [("five", "5不中"), ("ten", "10不中"), ("fifteen", "15不中")]
+    sections = []
+    for key, label in labels:
+        rows = groups.get(key, [])
+        rows_html = "\n".join(
+            '<div class="number-cell">'
+            f'{ball(int(row["number"]))}'
+            f'<small>{e(row["confidence"])}</small>'
+            f'<small>排名 {e(row["rank"])} / 低分 {e(row["low_score"])}</small>'
+            '</div>'
+            for row in rows
+        )
+        reasons = "；".join(
+            f'{row["number"]}:{row["reason"]}'
+            for row in rows[:5]
+        )
+        sections.append(
+            '<div class="ticket">'
+            f'<div class="ticket-label">{label}低機率排除</div>'
+            f'<div class="number-grid">{rows_html}</div>'
+            f'<div class="meta">{e(reasons)}</div>'
+            '</div>'
+        )
+    return "\n".join(sections)
+
+
 def number_grid(numbers: list[dict]) -> str:
     return "\n".join(
         '<div class="number-cell">'
@@ -565,7 +672,7 @@ def strong_packs(packs: list[dict]) -> str:
         '<div class="ticket">'
         '<div class="ticket-head">'
         f'<div class="ticket-label">{e(pack["title"])} / 目標 {pack["target_hits"]} 中</div>'
-        f'<span class="badge">P {pack["probability"]:.6f}</span>'
+        f'<span class="badge">機率 {pack["probability"]:.6f}</span>'
         '</div>'
         f'<div class="pack-line">{balls(pack["numbers"])}</div>'
         '</div>'

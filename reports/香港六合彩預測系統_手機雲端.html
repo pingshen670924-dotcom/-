@@ -53,8 +53,8 @@
     .link-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
     .action { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fff; font-weight:800; text-align:center; min-height:46px; }
     .action.primary { background:var(--red); border-color:var(--red); color:#fff; }
-    .bottom-nav { position:fixed; left:50%; bottom:0; transform:translateX(-50%); width:min(100%,720px); display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:20; }
-    .bottom-nav a { background:#fff; min-height:58px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; }
+    .bottom-nav { position:fixed; left:50%; bottom:0; transform:translateX(-50%); width:min(100%,720px); display:grid; grid-template-columns:repeat(5,1fr); gap:1px; background:var(--line); border-top:1px solid var(--line); padding-bottom:env(safe-area-inset-bottom); z-index:20; }
+    .bottom-nav a { background:#fff; min-height:58px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; }
     @media (max-width:390px) {
       .app { padding-left:10px; padding-right:10px; }
       h1 { font-size:23px; }
@@ -67,103 +67,160 @@
 <body>
   <main class="app">
     <section class="hero" id="top">
-      <div class="topline"><span>手機獨立入口</span><span class="badge hot">高風險</span></div>
+      <div class="topline"><span>手機獨立入口</span><span class="badge hot">中風險</span></div>
       <h1>香港六合彩預測系統</h1>
-      <div class="meta">產生 2026-06-26T16:17:29+08:00 / 模型 香港六合彩預測系統_20260626_第13版</div>
+      <div class="meta">產生 2026-06-29T12:39:18+08:00 / 模型 香港六合彩預測系統_20260629_第14版</div>
       <button class="install-button" data-install-button hidden onclick="installApp()">安裝到手機</button>
       <div class="metrics">
-        <div class="metric"><span>最新期</span><strong>2026/068 / 2026-06-25</strong></div>
-        <div class="metric"><span>最新預測</span><strong>第 13 筆</strong></div>
-        <div class="metric"><span>預測目標</span><strong>2026-06-27</strong></div>
-        <div class="metric"><span>9隻內差值</span><strong>+0.065</strong></div>
+        <div class="metric"><span>最新期</span><strong>2026/069 / 2026-06-28</strong></div>
+        <div class="metric"><span>最新預測</span><strong>第 18 筆</strong></div>
+        <div class="metric"><span>預測目標</span><strong>2026-06-30</strong></div>
+        <div class="metric"><span>9隻內差值</span><strong>+0.127</strong></div>
       </div>
     </section>
 
     <section class="section">
       <h2>最新開獎</h2>
-      <div class="draw-line"><span class="ball red">12</span> <span class="ball green">16</span> <span class="ball red">19</span> <span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball red">30</span> <span class="ball red special">29</span></div>
-      <p class="note">歷史資料庫 2566 期 / 2008-01-03 -&gt; 2026-06-25</p>
+      <div class="draw-line"><span class="ball green">05</span> <span class="ball red">07</span> <span class="ball blue">26</span> <span class="ball green">32</span> <span class="ball blue">37</span> <span class="ball red">40</span> <span class="ball red special">35</span></div>
+      <p class="note">歷史資料庫 2567 期 / 2008-01-03 -&gt; 2026-06-28</p>
     </section>
 
     <section class="section" id="prediction">
-      <h2>最新預測第 13 筆</h2>
+      <h2>最新預測第 18 筆</h2>
       <div class="metrics">
-        <div class="metric"><span>預測基準期</span><strong>2026/068 / 2026-06-25</strong></div>
-        <div class="metric"><span>產生時間</span><strong>2026-06-26T16:17:13+08:00</strong></div>
+        <div class="metric"><span>預測基準期</span><strong>2026/069 / 2026-06-28</strong></div>
+        <div class="metric"><span>產生時間</span><strong>2026-06-29T12:39:05+08:00</strong></div>
         <div class="metric"><span>策略 / 組數</span><strong>自動融合 / 20 組</strong></div>
-        <div class="metric"><span>預測目標</span><strong>2026-06-27</strong></div>
+        <div class="metric"><span>預測目標</span><strong>2026-06-30</strong></div>
       </div>
-      <p class="note">下方高機率信心牌、9隻內核心池、Top 15 補位池、核心模型全部使用這一筆最新預測。</p>
+      <p class="note">下方高機率信心牌、9隻內核心池、第十至第十五補位池、核心模型全部使用這一筆最新預測。</p>
+    </section>
+
+    <section class="section" id="audit">
+      <h2>每期重算證明</h2>
+      <div class="ticket"><div class="ticket-head"><div class="ticket-label">2026/069 / 2026-06-28</div><span class="badge hot">已重算</span></div><div class="meta">第 18 筆 / 2026-06-29T12:39:05+08:00 / 香港六合彩預測系統_20260629_第14版</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">2026/068 / 2026-06-25</div><span class="badge hot">已重算</span></div><div class="meta">第 13 筆 / 2026-06-26T16:17:13+08:00 / 香港六合彩預測系統_20260626_第13版</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">2026/067 / 2026-06-23</div><span class="badge hot">已重算</span></div><div class="meta">第 9 筆 / 2026-06-25T08:53:52+08:00 / 香港六合彩預測系統_20260625_第10版</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">2026/066 / 2026-06-20</div><span class="badge hot">已重算</span></div><div class="meta">第 3 筆 / 2026-06-22T14:11:02+08:00 / marksix-core-2026.06.22-v4-maturity</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">2026/065 / 2026-06-18</div><span class="badge hot">未重算</span></div><div class="meta">- / 缺少該期重算紀錄</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">2026/064 / 2026-06-14</div><span class="badge hot">未重算</span></div><div class="meta">- / 缺少該期重算紀錄</div></div>
     </section>
 
     <section class="section" id="confidence">
       <h2>高機率信心牌</h2>
-      <div class="ticket"><div class="ticket-head"><div class="ticket-label">1. 高機率信心牌 96.0</div><span class="badge">均衡 / 3.005</span></div><div class="draw-line"><span class="ball blue">04</span> <span class="ball red">12</span> <span class="ball blue">20</span> <span class="ball green">27</span> <span class="ball green">28</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.54；票組成熟分 0.90</div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">2. 高機率信心牌 94.7</div><span class="badge">均衡 / 2.994</span></div><div class="draw-line"><span class="ball red">02</span> <span class="ball red">12</span> <span class="ball blue">20</span> <span class="ball green">27</span> <span class="ball green">28</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.54；票組成熟分 0.89</div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">3. 高機率信心牌 92.8</div><span class="badge">均衡 / 2.935</span></div><div class="draw-line"><span class="ball red">12</span> <span class="ball blue">20</span> <span class="ball green">27</span> <span class="ball green">28</span> <span class="ball red">46</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.54；票組成熟分 0.85</div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">4. 中高信心牌 91.3</div><span class="badge">均衡 / 2.916</span></div><div class="draw-line"><span class="ball red">12</span> <span class="ball blue">20</span> <span class="ball green">27</span> <span class="ball green">28</span> <span class="ball red">34</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.54；票組成熟分 0.87</div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">5. 中高信心牌 89.5</div><span class="badge">均衡 / 2.864</span></div><div class="draw-line"><span class="ball blue">04</span> <span class="ball blue">20</span> <span class="ball green">27</span> <span class="ball green">28</span> <span class="ball red">46</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.54；票組成熟分 0.87</div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">6. 中高信心牌 88.2</div><span class="badge">熱度 / 2.857</span></div><div class="draw-line"><span class="ball red">02</span> <span class="ball red">07</span> <span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball red">34</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.41；票組成熟分 0.92</div></div>
+      <div class="ticket"><div class="ticket-head"><div class="ticket-label">1. 高機率信心牌 96.0</div><span class="badge">均衡 / 2.878</span></div><div class="draw-line"><span class="ball red">02</span> <span class="ball red">07</span> <span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball red">34</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.43；票組成熟分 0.92</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">2. 高機率信心牌 93.3</div><span class="badge">均衡 / 2.758</span></div><div class="draw-line"><span class="ball red">02</span> <span class="ball red">07</span> <span class="ball blue">20</span> <span class="ball red">34</span> <span class="ball red">46</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.43；票組成熟分 0.90</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">3. 高機率信心牌 90.3</div><span class="badge">分散 / 2.618</span></div><div class="draw-line"><span class="ball blue">04</span> <span class="ball red">07</span> <span class="ball blue">20</span> <span class="ball red">34</span> <span class="ball red">35</span> <span class="ball red">46</span></div><div class="meta">實戰成熟度 1.21；票組成熟分 0.90</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">4. 中高信心牌 88.0</div><span class="badge">均衡 / 2.529</span></div><div class="draw-line"><span class="ball red">02</span> <span class="ball blue">04</span> <span class="ball red">07</span> <span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.43；票組成熟分 0.86</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">5. 中高信心牌 86.7</div><span class="badge">均衡 / 2.516</span></div><div class="draw-line"><span class="ball red">02</span> <span class="ball blue">04</span> <span class="ball red">07</span> <span class="ball red">34</span> <span class="ball red">46</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.43；票組成熟分 0.86</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">6. 中高信心牌 85.4</div><span class="badge">均衡 / 2.508</span></div><div class="draw-line"><span class="ball red">02</span> <span class="ball red">07</span> <span class="ball red">12</span> <span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball blue">47</span></div><div class="meta">實戰成熟度 1.43；票組成熟分 0.86</div></div>
     </section>
 
     <section class="section super" id="super">
       <h2>超強信心強推薦</h2>
-      <div class="super-card"><div class="ticket-head"><div class="super-label">超強獨隻 / 獨隻1中1</div><span class="badge hot">信心 92.9</span></div><div class="draw-line"><span class="ball green">28</span></div><div class="meta">1中1 12.245%；近180期校準 1中1 18.9%</div><div class="meta">強推精算層 0.815；穩定 0.95；模型共識 0.60；近況 0.67；Top1遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、時間動能</div></div>
-<div class="super-card"><div class="ticket-head"><div class="super-label">超強2碼 / 2中1~2</div><span class="badge hot">信心 92.1</span></div><div class="draw-line"><span class="ball red">12</span> <span class="ball green">28</span></div><div class="meta">至少1中 23.214%；2中2 1.276%；近180期校準 至少1中 28.3%、2中2 4.4%</div><div class="meta">強推精算層 0.808；穩定 0.95；模型共識 0.57；近況 0.73；配對共振 0.89；Top2遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、時間動能</div></div>
-<div class="super-card"><div class="ticket-head"><div class="super-label">超強3碼 / 3中1~3</div><span class="badge hot">信心 90.2</span></div><div class="draw-line"><span class="ball red">12</span> <span class="ball blue">20</span> <span class="ball green">28</span></div><div class="meta">至少1中 33.017%；2中以上 3.609%；3中3 0.109%；近180期校準 至少1中 37.2%、2中以上 8.3%、3中3 0.6%</div><div class="meta">強推精算層 0.762；穩定 0.95；模型共識 0.55；近況 0.73；配對共振 0.72；三碼共振 0.47；Top3遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、時間動能</div></div>
+      <div class="super-card"><div class="ticket-head"><div class="super-label">超強獨隻 / 獨隻1中1</div><span class="badge hot">信心 93.8</span></div><div class="draw-line"><span class="ball red">34</span></div><div class="meta">1中1 12.245%；近180期校準 1中1 15.0%</div><div class="meta">強推精算層 0.843；穩定 0.97；模型共識 0.45；近況 0.85；前1遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率</div></div>
+<div class="super-card"><div class="ticket-head"><div class="super-label">超強2碼 / 2中1~2</div><span class="badge hot">信心 91.9</span></div><div class="draw-line"><span class="ball blue">20</span> <span class="ball red">34</span></div><div class="meta">至少1中 23.214%；2中2 1.276%；近180期校準 至少1中 26.7%、2中2 1.7%</div><div class="meta">強推精算層 0.800；穩定 0.89；模型共識 0.47；近況 0.86；配對共振 0.66；前2遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率</div></div>
+<div class="super-card"><div class="ticket-head"><div class="super-label">超強3碼 / 3中1~3</div><span class="badge hot">信心 89.5</span></div><div class="draw-line"><span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball red">34</span></div><div class="meta">至少1中 33.017%；2中以上 3.609%；3中3 0.109%；近180期校準 至少1中 39.4%、2中以上 7.2%、3中3 0.6%</div><div class="meta">強推精算層 0.739；穩定 0.80；模型共識 0.48；近況 0.77；配對共振 0.63；三碼共振 0.29；前3遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率</div></div>
       <p class="note">強推精算層每期固定輸出獨隻、2碼、3碼；採穩定度、模型共識、貝葉斯、配對/三碼共振校準。</p>
+    </section>
+
+    <section class="section" id="gate">
+      <h2>推薦門檻檢查</h2>
+      <div class="ticket"><div class="ticket-head"><div class="ticket-label">1. 02 07 20 28 34 47</div><span class="badge hot">允許推薦</span></div><div class="meta">信心 高機率信心牌 96.0 / 分數 100.0</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">2. 02 07 20 34 46 47</div><span class="badge hot">允許推薦</span></div><div class="meta">信心 高機率信心牌 93.3 / 分數 95.8</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">3. 04 07 20 34 35 46</div><span class="badge hot">允許推薦</span></div><div class="meta">信心 高機率信心牌 90.3 / 分數 91.0</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">4. 02 04 07 20 28 47</div><span class="badge hot">保留觀察</span></div><div class="meta">信心 中高信心牌 88.0 / 分數 87.9</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">5. 02 04 07 34 46 47</div><span class="badge hot">保留觀察</span></div><div class="meta">信心 中高信心牌 86.7 / 分數 87.4</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">6. 02 07 12 20 28 47</div><span class="badge hot">保留觀察</span></div><div class="meta">信心 中高信心牌 85.4 / 分數 87.2</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">7. 07 11 20 28 34 47</div><span class="badge hot">不列主推</span></div><div class="meta">信心 觀察牌 84.1 / 分數 83.6</div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">8. 04 09 20 28 34 35</div><span class="badge hot">不列主推</span></div><div class="meta">信心 觀察牌 83.9 / 分數 83.0</div></div>
+      <p class="note">只有通過門檻的組合列入高機率信心牌，其餘只保留觀察或不列主推。</p>
     </section>
 
     <section class="section" id="core">
       <h2>9隻內核心命中池</h2>
-      <div class="number-grid"><div class="number-cell"><span class="ball green">28</span><small>#1 核心</small><small>高信心（研究） 94.6</small></div>
-<div class="number-cell"><span class="ball blue">20</span><small>#2 核心</small><small>高信心（研究） 91.3</small></div>
-<div class="number-cell"><span class="ball red">12</span><small>#3 核心</small><small>高信心（研究） 89.7</small></div>
-<div class="number-cell"><span class="ball blue">47</span><small>#4 核心</small><small>中高信心 86.5</small></div>
-<div class="number-cell"><span class="ball red">34</span><small>#5 核心</small><small>中高信心 83.5</small></div>
-<div class="number-cell"><span class="ball green">16</span><small>#6 核心</small><small>中高信心 83.1</small></div>
-<div class="number-cell"><span class="ball red">46</span><small>#7 核心</small><small>中高信心 82.1</small></div>
-<div class="number-cell"><span class="ball red">02</span><small>#8 核心</small><small>中高信心 81.1</small></div>
-<div class="number-cell"><span class="ball blue">14</span><small>#9 核心</small><small>中高信心 80.7</small></div></div>
-      <p class="note">高機率先看這 9 隻，10-15 只作防守補位。</p>
+      <div class="number-grid"><div class="number-cell"><span class="ball red">34</span><small>#1 核心</small><small>高信心（研究） 94.3</small></div>
+<div class="number-cell"><span class="ball blue">20</span><small>#2 核心</small><small>高信心（研究） 91.6</small></div>
+<div class="number-cell"><span class="ball blue">47</span><small>#3 核心</small><small>高信心（研究） 90.8</small></div>
+<div class="number-cell"><span class="ball red">07</span><small>#4 核心</small><small>高信心（研究） 90.9</small></div>
+<div class="number-cell"><span class="ball green">28</span><small>#5 核心</small><small>高信心（研究） 89.7</small></div>
+<div class="number-cell"><span class="ball blue">04</span><small>#6 核心</small><small>高信心（研究） 88.3</small></div>
+<div class="number-cell"><span class="ball red">02</span><small>#7 核心</small><small>高信心（研究） 88.2</small></div>
+<div class="number-cell"><span class="ball green">32</span><small>#8 核心</small><small>中高信心 87.9</small></div>
+<div class="number-cell"><span class="ball red">46</span><small>#9 核心</small><small>中高信心 85.8</small></div></div>
+      <p class="note">高機率先看這 9 隻，第十至第十五只作防守補位。</p>
     </section>
 
     <section class="section" id="numbers">
-      <h2>Top 15 詳表</h2>
-      <div class="number-grid"><div class="number-cell"><span class="ball green">28</span><small>#1 9隻內核心</small><small>高信心（研究） 94.6</small></div>
-<div class="number-cell"><span class="ball blue">20</span><small>#2 9隻內核心</small><small>高信心（研究） 91.3</small></div>
-<div class="number-cell"><span class="ball red">12</span><small>#3 9隻內核心</small><small>高信心（研究） 89.7</small></div>
-<div class="number-cell"><span class="ball blue">47</span><small>#4 9隻內核心</small><small>中高信心 86.5</small></div>
-<div class="number-cell"><span class="ball red">34</span><small>#5 9隻內核心</small><small>中高信心 83.5</small></div>
-<div class="number-cell"><span class="ball green">16</span><small>#6 9隻內核心</small><small>中高信心 83.1</small></div>
-<div class="number-cell"><span class="ball red">46</span><small>#7 9隻內核心</small><small>中高信心 82.1</small></div>
-<div class="number-cell"><span class="ball red">02</span><small>#8 9隻內核心</small><small>中高信心 81.1</small></div>
-<div class="number-cell"><span class="ball blue">14</span><small>#9 9隻內核心</small><small>中高信心 80.7</small></div>
-<div class="number-cell"><span class="ball blue">10</span><small>#10 10-15補位</small><small>中高信心 79.8</small></div>
-<div class="number-cell"><span class="ball blue">04</span><small>#11 10-15補位</small><small>中高信心 79.7</small></div>
-<div class="number-cell"><span class="ball green">11</span><small>#12 10-15補位</small><small>中高信心 79.7</small></div>
-<div class="number-cell"><span class="ball green">27</span><small>#13 10-15補位</small><small>中高信心 79.8</small></div>
-<div class="number-cell"><span class="ball blue">15</span><small>#14 10-15補位</small><small>中高信心 79.4</small></div>
-<div class="number-cell"><span class="ball red">07</span><small>#15 10-15補位</small><small>中高信心 78.5</small></div></div>
+      <h2>前十五詳表</h2>
+      <div class="number-grid"><div class="number-cell"><span class="ball red">34</span><small>#1 9隻內核心</small><small>高信心（研究） 94.3</small></div>
+<div class="number-cell"><span class="ball blue">20</span><small>#2 9隻內核心</small><small>高信心（研究） 91.6</small></div>
+<div class="number-cell"><span class="ball blue">47</span><small>#3 9隻內核心</small><small>高信心（研究） 90.8</small></div>
+<div class="number-cell"><span class="ball red">07</span><small>#4 9隻內核心</small><small>高信心（研究） 90.9</small></div>
+<div class="number-cell"><span class="ball green">28</span><small>#5 9隻內核心</small><small>高信心（研究） 89.7</small></div>
+<div class="number-cell"><span class="ball blue">04</span><small>#6 9隻內核心</small><small>高信心（研究） 88.3</small></div>
+<div class="number-cell"><span class="ball red">02</span><small>#7 9隻內核心</small><small>高信心（研究） 88.2</small></div>
+<div class="number-cell"><span class="ball green">32</span><small>#8 9隻內核心</small><small>中高信心 87.9</small></div>
+<div class="number-cell"><span class="ball red">46</span><small>#9 9隻內核心</small><small>中高信心 85.8</small></div>
+<div class="number-cell"><span class="ball red">35</span><small>#10 第十至第十五補位</small><small>中高信心 86.5</small></div>
+<div class="number-cell"><span class="ball blue">37</span><small>#11 第十至第十五補位</small><small>中高信心 85.4</small></div>
+<div class="number-cell"><span class="ball blue">36</span><small>#12 第十至第十五補位</small><small>中高信心 85.3</small></div>
+<div class="number-cell"><span class="ball green">27</span><small>#13 第十至第十五補位</small><small>中高信心 84.6</small></div>
+<div class="number-cell"><span class="ball red">12</span><small>#14 第十至第十五補位</small><small>中高信心 84.0</small></div>
+<div class="number-cell"><span class="ball blue">10</span><small>#15 第十至第十五補位</small><small>中高信心 83.6</small></div></div>
+    </section>
+
+    <section class="section" id="exclude">
+      <h2>低機率排除</h2>
+      <div class="ticket"><div class="ticket-label">5不中低機率排除</div><div class="number-grid"><div class="number-cell"><span class="ball blue">03</span><small>觀察排除 66.9</small><small>排名 49 / 低分 0.800</small></div>
+<div class="number-cell"><span class="ball red">19</span><small>觀察排除 54.6</small><small>排名 48 / 低分 0.800</small></div>
+<div class="number-cell"><span class="ball blue">31</span><small>觀察排除 65.6</small><small>排名 47 / 低分 0.790</small></div>
+<div class="number-cell"><span class="ball green">43</span><small>觀察排除 58.3</small><small>排名 46 / 低分 0.753</small></div>
+<div class="number-cell"><span class="ball blue">48</span><small>觀察排除 61.6</small><small>排名 45 / 低分 0.716</small></div></div><div class="meta">03:短線趨勢偏弱；19:剛開後追高風險；31:短線趨勢偏弱；43:短線趨勢偏弱；48:短線趨勢偏弱</div></div>
+<div class="ticket"><div class="ticket-label">10不中低機率排除</div><div class="number-grid"><div class="number-cell"><span class="ball blue">03</span><small>觀察排除 66.9</small><small>排名 49 / 低分 0.800</small></div>
+<div class="number-cell"><span class="ball red">19</span><small>觀察排除 54.6</small><small>排名 48 / 低分 0.800</small></div>
+<div class="number-cell"><span class="ball blue">31</span><small>觀察排除 65.6</small><small>排名 47 / 低分 0.790</small></div>
+<div class="number-cell"><span class="ball green">43</span><small>觀察排除 58.3</small><small>排名 46 / 低分 0.753</small></div>
+<div class="number-cell"><span class="ball blue">48</span><small>觀察排除 61.6</small><small>排名 45 / 低分 0.716</small></div>
+<div class="number-cell"><span class="ball red">18</span><small>觀察排除 60.4</small><small>排名 44 / 低分 0.698</small></div>
+<div class="number-cell"><span class="ball red">13</span><small>觀察排除 58.6</small><small>排名 43 / 低分 0.665</small></div>
+<div class="number-cell"><span class="ball red">29</span><small>觀察排除 58.1</small><small>排名 42 / 低分 0.664</small></div>
+<div class="number-cell"><span class="ball green">49</span><small>觀察排除 62.1</small><small>排名 41 / 低分 0.643</small></div>
+<div class="number-cell"><span class="ball green">39</span><small>觀察排除 50.9</small><small>排名 40 / 低分 0.641</small></div></div><div class="meta">03:短線趨勢偏弱；19:剛開後追高風險；31:短線趨勢偏弱；43:短線趨勢偏弱；48:短線趨勢偏弱</div></div>
+<div class="ticket"><div class="ticket-label">15不中低機率排除</div><div class="number-grid"><div class="number-cell"><span class="ball blue">03</span><small>觀察排除 66.9</small><small>排名 49 / 低分 0.800</small></div>
+<div class="number-cell"><span class="ball red">19</span><small>觀察排除 54.6</small><small>排名 48 / 低分 0.800</small></div>
+<div class="number-cell"><span class="ball blue">31</span><small>觀察排除 65.6</small><small>排名 47 / 低分 0.790</small></div>
+<div class="number-cell"><span class="ball green">43</span><small>觀察排除 58.3</small><small>排名 46 / 低分 0.753</small></div>
+<div class="number-cell"><span class="ball blue">48</span><small>觀察排除 61.6</small><small>排名 45 / 低分 0.716</small></div>
+<div class="number-cell"><span class="ball red">18</span><small>觀察排除 60.4</small><small>排名 44 / 低分 0.698</small></div>
+<div class="number-cell"><span class="ball red">13</span><small>觀察排除 58.6</small><small>排名 43 / 低分 0.665</small></div>
+<div class="number-cell"><span class="ball red">29</span><small>觀察排除 58.1</small><small>排名 42 / 低分 0.664</small></div>
+<div class="number-cell"><span class="ball green">49</span><small>觀察排除 62.1</small><small>排名 41 / 低分 0.643</small></div>
+<div class="number-cell"><span class="ball green">39</span><small>觀察排除 50.9</small><small>排名 40 / 低分 0.641</small></div>
+<div class="number-cell"><span class="ball red">01</span><small>觀察排除 55.1</small><small>排名 39 / 低分 0.626</small></div>
+<div class="number-cell"><span class="ball blue">41</span><small>觀察排除 42.4</small><small>排名 38 / 低分 0.615</small></div>
+<div class="number-cell"><span class="ball green">17</span><small>觀察排除 47.8</small><small>排名 37 / 低分 0.601</small></div>
+<div class="number-cell"><span class="ball red">23</span><small>觀察排除 47.4</small><small>排名 36 / 低分 0.601</small></div>
+<div class="number-cell"><span class="ball blue">42</span><small>觀察排除 46.1</small><small>排名 35 / 低分 0.582</small></div></div><div class="meta">03:短線趨勢偏弱；19:剛開後追高風險；31:短線趨勢偏弱；43:短線趨勢偏弱；48:短線趨勢偏弱</div></div>
     </section>
 
     <section class="section" id="accuracy">
       <h2>運算精準度</h2>
-      <div class="accuracy-row"><strong>Top5</strong><div><div class="bar" style="--w:31.0%"><span></span></div><div class="meta">平均 0.683 / 隨機 0.612</div></div><span class="badge hot">+0.071</span></div>
-      <div class="accuracy-row"><strong>9隻內</strong><div><div class="bar" style="--w:53.0%"><span></span></div><div class="meta">平均 1.167 / 隨機 1.102</div></div><span class="badge hot">+0.065</span></div>
-      <div class="accuracy-row"><strong>Top10</strong><div><div class="bar" style="--w:57.2%"><span></span></div><div class="meta">平均 1.258 / 隨機 1.224</div></div><span class="badge hot">+0.034</span></div>
-      <div class="accuracy-row"><strong>Top15</strong><div><div class="bar" style="--w:84.1%"><span></span></div><div class="meta">平均 1.850 / 隨機 1.837</div></div><span class="badge hot">+0.013</span></div>
-      <p class="note">樣本 120 期 / 共識 0.375 / 研究觀察，不列保證</p>
+      <div class="accuracy-row"><strong>前五</strong><div><div class="bar" style="--w:32.2%"><span></span></div><div class="meta">平均 0.708 / 隨機 0.612</div></div><span class="badge hot">+0.096</span></div>
+      <div class="accuracy-row"><strong>9隻內</strong><div><div class="bar" style="--w:55.9%"><span></span></div><div class="meta">平均 1.229 / 隨機 1.102</div></div><span class="badge hot">+0.127</span></div>
+      <div class="accuracy-row"><strong>前十</strong><div><div class="bar" style="--w:60.6%"><span></span></div><div class="meta">平均 1.333 / 隨機 1.224</div></div><span class="badge hot">+0.109</span></div>
+      <div class="accuracy-row"><strong>前十五</strong><div><div class="bar" style="--w:85.2%"><span></span></div><div class="meta">平均 1.875 / 隨機 1.837</div></div><span class="badge hot">+0.038</span></div>
+      <p class="note">樣本 48 期 / 共識 0.370 / 研究觀察，不列保證</p>
     </section>
 
     <section class="section">
       <h2>核心專用模型</h2>
-      <div class="ticket"><div class="ticket-head"><div class="ticket-label">最強單支 / 目標 1 中</div><span class="badge">P 0.122449</span></div><div class="pack-line"><span class="ball green">28</span></div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">最強2中1 / 目標 1 中</div><span class="badge">P 0.232143</span></div><div class="pack-line"><span class="ball red">12</span> <span class="ball green">28</span></div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">最強3中1 / 目標 1 中</div><span class="badge">P 0.330167</span></div><div class="pack-line"><span class="ball red">12</span> <span class="ball blue">20</span> <span class="ball green">28</span></div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">最強6中2 / 目標 2 中</div><span class="badge">P 0.151016</span></div><div class="pack-line"><span class="ball red">12</span> <span class="ball green">16</span> <span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball red">34</span> <span class="ball blue">47</span></div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">最強9中3 / 目標 3 中</div><span class="badge">P 0.066743</span></div><div class="pack-line"><span class="ball red">02</span> <span class="ball red">12</span> <span class="ball blue">14</span> <span class="ball green">16</span> <span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball red">34</span> <span class="ball red">46</span> <span class="ball blue">47</span></div></div>
-<div class="ticket"><div class="ticket-head"><div class="ticket-label">特別號候選 / 目標 1 中</div><span class="badge">P 0.678458</span></div><div class="pack-line"><span class="ball red">07</span> <span class="ball red">08</span> <span class="ball blue">14</span> <span class="ball blue">20</span> <span class="ball red">24</span> <span class="ball green">27</span> <span class="ball green">44</span> <span class="ball red">46</span></div></div>
+      <div class="ticket"><div class="ticket-head"><div class="ticket-label">最強單支 / 目標 1 中</div><span class="badge">機率 0.122449</span></div><div class="pack-line"><span class="ball red">34</span></div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">最強2中1 / 目標 1 中</div><span class="badge">機率 0.232143</span></div><div class="pack-line"><span class="ball blue">20</span> <span class="ball red">34</span></div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">最強3中1 / 目標 1 中</div><span class="badge">機率 0.330167</span></div><div class="pack-line"><span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball red">34</span></div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">最強6中2 / 目標 2 中</div><span class="badge">機率 0.151016</span></div><div class="pack-line"><span class="ball blue">04</span> <span class="ball red">07</span> <span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball red">34</span> <span class="ball blue">47</span></div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">最強9中3 / 目標 3 中</div><span class="badge">機率 0.066743</span></div><div class="pack-line"><span class="ball red">02</span> <span class="ball blue">04</span> <span class="ball red">07</span> <span class="ball blue">20</span> <span class="ball green">28</span> <span class="ball green">32</span> <span class="ball red">34</span> <span class="ball red">46</span> <span class="ball blue">47</span></div></div>
+<div class="ticket"><div class="ticket-head"><div class="ticket-label">特別號候選 / 目標 1 中</div><span class="badge">機率 0.678458</span></div><div class="pack-line"><span class="ball red">02</span> <span class="ball blue">04</span> <span class="ball red">07</span> <span class="ball red">24</span> <span class="ball green">27</span> <span class="ball green">38</span> <span class="ball green">44</span> <span class="ball red">46</span></div></div>
     </section>
 
     <section class="section" id="system">
@@ -171,8 +228,8 @@
       <div class="metrics">
         <div class="metric"><span>狀態</span><strong>正常</strong></div>
         <div class="metric"><span>主力策略</span><strong>均衡</strong></div>
-        <div class="metric"><span>上期命中檢討</span><strong>第 9 筆 -&gt; 2026-06-25 2026/068: Top5/Top9/Top10/Top15 2/2/2/3</strong></div>
-        <div class="metric"><span>權重</span><strong>均衡:1.54 / 冷遺漏:0.33 / 分散:0.52 / 熱度:1.41 / 趨勢:1.20</strong></div>
+        <div class="metric"><span>上期命中檢討</span><strong>第 13 筆 -&gt; 2026-06-28 2026/069: 前五/前九/前十/前十五 0/0/0/1</strong></div>
+        <div class="metric"><span>權重</span><strong>均衡:1.43 / 冷遺漏:0.55 / 分散:1.21 / 熱度:0.90 / 趨勢:0.91</strong></div>
       </div>
     </section>
 
@@ -190,7 +247,8 @@
   <nav class="bottom-nav">
     <a href="#top">總覽</a>
     <a href="#super">強推</a>
-    <a href="#core">核心</a>
+    <a href="#audit">重算</a>
+    <a href="#exclude">排除</a>
     <a href="#reports">戰報</a>
   </nav>
   

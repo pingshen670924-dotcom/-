@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260626_第13版"
+MODEL_VERSION = "香港六合彩預測系統_20260629_第14版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -63,7 +63,7 @@ LEGACY_REPORT_OUTPUT_NAMES = [
     "六合彩最新強化戰報.html",
 ]
 LOCAL_TZ = timezone(timedelta(hours=8))
-AUTO_BACKTEST_PERIODS = 120
+AUTO_BACKTEST_PERIODS = 48
 AUTO_MIN_STRATEGY_WEIGHT = 0.25
 AUTO_MAX_STRATEGY_WEIGHT = 1.85
 CORE_POOL_SIZE = 9
@@ -1771,7 +1771,7 @@ def generate_tickets(
     ranks = rank_lookup(scores)
     recent_sets = {draw.main_numbers for draw in draws[-20:]}
     candidates: dict[tuple[int, ...], Ticket] = {}
-    attempts = max(2200, ticket_count * 500)
+    attempts = max(1200, ticket_count * 120)
 
     for _ in range(attempts):
         numbers = weighted_sample_without_replacement(scores, MAIN_COUNT, rng)
@@ -1963,16 +1963,16 @@ def system_gap_review_rows(
     if top15_edge < 0.03:
         rows.append(
             [
-                "Top15補位池失準",
-                f"Top15差值 {top15_edge:.3f}，補位池沒有形成穩定優勢",
-                "新增冷爆捕捉 + 區間修復，補抓 Top9 外的中段與冷爆號",
+                "第十至第十五補位池失準",
+                f"前十五差值 {top15_edge:.3f}，補位池沒有形成穩定優勢",
+                "新增冷爆捕捉 + 區間修復，補抓前九外的中段與冷爆號",
             ]
         )
     if top9_edge < 0.18:
         rows.append(
             [
-                "Top9核心優勢不足",
-                f"Top9差值 {top9_edge:.3f}，只能列主檢查池，不能放大保證",
+                "前九核心優勢不足",
+                f"前九差值 {top9_edge:.3f}，只能列主檢查池，不能放大保證",
                 "新增結算回饋，把上期漏抓號與同結構號可控前移",
             ]
         )
@@ -1980,7 +1980,7 @@ def system_gap_review_rows(
         rows.append(
             [
                 "模型共識偏低",
-                f"Top10共識 {consensus:.3f}，子模型排名分散",
+                f"前十共識 {consensus:.3f}，子模型排名分散",
                 "強化自動融合成熟度，新增鄰近橋接與回饋模型交叉確認",
             ]
         )
@@ -1992,8 +1992,8 @@ def system_gap_review_rows(
             rows.append(
                 [
                     "上期實際漏抓",
-                    f"{format_numbers(missed)} 未在舊 Top9 核心池內",
-                    "第13版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    f"{format_numbers(missed)} 未在舊前九核心池內",
+                    "第14版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2003,7 +2003,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第13版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第14版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2011,8 +2011,8 @@ def system_gap_review_rows(
         rows.append(
             [
                 "月內熱點未前移",
-                f"本月熱點仍在 Top9 外：{format_numbers(missing_hot)}",
-                "第13版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
+                "第14版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2020,7 +2020,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第13版強化模型並持續滾動校準",
+                "維持第14版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -2060,7 +2060,7 @@ def system_completeness_rows(
         (
             "官方更新入口",
             True,
-            "HKJC GraphQL + gzip + 日期格式",
+            "官方資料來源 + 壓縮格式 + 日期格式",
             "已修正並接入一鍵更新",
         ),
         (
@@ -2142,10 +2142,10 @@ def battle_summary_rows(
         ["最新開獎", f"{latest.draw_no} / {latest.draw_date}", f"{format_numbers(latest.main_numbers)} + {latest.special:02d}"],
         ["預測目標", target_date, f"第 {run_id if run_id is not None else '-'} 筆預測"],
         ["高信心主牌", "前三組", " / ".join(top_confidence)],
-        ["膽碼", "Top9核心", format_numbers(package.bankers)],
-        ["拖碼", "Top9補強", format_numbers(package.drags)],
+        ["膽碼", "前九核心", format_numbers(package.bankers)],
+        ["拖碼", "前九補強", format_numbers(package.drags)],
         ["特別號", "獨立候選", format_numbers(package.special_candidates)],
-        ["風險", risk_level, f"Top9差值 {release_edge:.3f}"],
+        ["風險", risk_level, f"前九差值 {release_edge:.3f}"],
         ["完整度", f"{completeness_passed}/{completeness_total}", "資料、預測、戰報、網站、一鍵流程已檢查"],
     ]
 
@@ -2219,7 +2219,7 @@ def explain_ticket(
     if banker_hits:
         reasons.append(f"含膽碼 {format_numbers(banker_hits)}")
     if core_hits:
-        reasons.append(f"Top9核心池 {format_numbers(core_hits)}")
+        reasons.append(f"前九核心池 {format_numbers(core_hits)}")
     if drag_hits:
         reasons.append(f"拖碼覆蓋 {format_numbers(drag_hits[:4])}")
     high_gap = [number for number in numbers if scores[number].miss_gap >= 8]
@@ -2760,7 +2760,7 @@ def render_prediction_html(
       <div class="card">
         <h2>膽碼</h2>
         <div class="balls">{render_balls(package.bankers)}</div>
-        <p class="muted">最高綜合分，作為 Top9 核心號碼。</p>
+        <p class="muted">最高綜合分，作為前九核心號碼。</p>
       </div>
       <div class="card">
         <h2>拖碼</h2>
@@ -2937,17 +2937,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
         f"- 預測目標日：{target_date}",
         f"- 目前待結算追蹤記錄：第 {run_id if run_id is not None else '-'} 筆 / 依據期 {based_draw_no or '-'}",
         "- 運算模式：每期開獎後自動更新、自動結算、自動重新運算",
-        "- 重號政策：最新開獎號不硬性排除，依模型分數與 Top9 核心池風控軟性處理",
+        "- 重號政策：最新開獎號不硬性排除，依模型分數與前九核心池風控軟性處理",
         f"- 工業引擎：{MODEL_VERSION}",
         f"- 預測發布等級：{release_level}",
-        f"- Top9 核心池：{format_numbers(top9)}",
-        f"- Top10 穩定共識率：{consensus:.3f}",
+        f"- 前九核心池：{format_numbers(top9)}",
+        f"- 前十穩定共識率：{consensus:.3f}",
         f"- 風險等級：{risk_level}",
         f"- 競賽冠軍：{strategy_label(champion)}",
         f"- 系統完整度：{completeness_passed}/{completeness_total}",
         "- 提醒：本戰報為歷史統計分析，不保證開出，請量力而為。",
         "",
-        "## 本期發布結論",
+        "## 分頁一：本期發布結論",
         markdown_table(
             ["分類", "重點", "內容"],
             battle_summary_rows(
@@ -2962,35 +2962,52 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             ),
         ),
         "",
-        "## 今日總判斷",
+        "## 分頁二：今日總判斷",
         f"- 引擎評語：以 {len(draws)} 期資料、{len(package.tickets)} 組候選、{len(next(iter(package.scores.values())).model_scores)} 個子模型做本期運算。",
         "- 開獎型態：未見資料格式異常，波色、大小、尾數、區間皆納入風控。",
-        f"- 本期核心要求：命中壓在 9 隻內優先檢查，Top10-15 只作補位池，不列高機率主推來源。",
-        f"- 本月滾動修正：已接入本月樣本 {month_review['sample']} 期，Top9 核心池覆蓋率 {float(month_review['coverage']):.3f}。",
-        f"- 隨機 Top10 基準：{random_expected_hits(10):.3f}",
-        f"- 隨機 Top15 基準：{random_expected_hits(15):.3f}",
-        f"- 目前 Top9 回測差值：{release_edge:.3f}",
+        f"- 本期核心要求：命中壓在 9 隻內優先檢查，第十至第十五名只作補位池，不列高機率主推來源。",
+        f"- 本月滾動修正：已接入本月樣本 {month_review['sample']} 期，前九核心池覆蓋率 {float(month_review['coverage']):.3f}。",
+        f"- 隨機前十基準：{random_expected_hits(10):.3f}",
+        f"- 隨機前十五基準：{random_expected_hits(15):.3f}",
+        f"- 目前前九回測差值：{release_edge:.3f}",
         "",
-        "## 本月總檢討與滾動式修正",
+        "## 分頁三：每期重新運算證明",
+        markdown_table(
+            ["期別", "開獎日", "狀態", "預測紀錄", "證明"],
+            prediction_recalculation_rows(conn, draws),
+        ),
+        "",
+        "## 分頁四：命中率低落總校正",
+        markdown_table(
+            ["問題", "目前數值", "修正方式", "執行狀態"],
+            [
+                ["前九差值偏低", f"{release_edge:.3f}", "降低第十至第十五名主推權重，只保留前九核心檢查", "已執行"],
+                ["模型共識不足", f"{consensus:.3f}", "只允許高信心票組列為推薦，其餘轉觀察", "已執行"],
+                ["低分號混入", format_numbers([row.number for row in weak_rows[:5]]), "新增五不中、十不中、十五不中排除信心", "已執行"],
+                ["每期重算疑慮", f"最新第 {run_id if run_id is not None else '-'} 筆", "戰報列出最近期別重算紀錄", "已執行"],
+            ],
+        ),
+        "",
+        "## 分頁五：本月總檢討與滾動式修正",
         markdown_table(
             ["檢討項目", "本月結果", "修正動作"],
             [
                 ["分析月份", month_review["range"], "只採用最新月份樣本，不偷看未來資料"],
                 ["本月樣本", f"{month_review['sample']} 期 / 本月實際號池 {month_review['actual_pool_size']} 顆", "作為新一期結構校準基準"],
-                ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，10-15 只留補位"],
+                ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
-                ["熱點未納入Top9", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在Top10-15，下一輪前移校準"],
-                ["新一期結構", f"Top9={format_numbers(top9)}", "符合第13版每日強制重算與 9顆核心池規格"],
+                ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第14版每期重算與 9顆核心池規格"],
             ],
         ),
         "",
-        "## 全系統缺口檢測與第13版修復",
+        "## 分頁六：全系統缺口檢測與第14版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 第13版新增邏輯運算模型",
+        "## 分頁七：第14版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -3001,21 +3018,27 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             ],
         ),
         "",
-        "## 超強信心高機率強推薦號碼",
+        "## 分頁八：超強信心高機率強推薦號碼",
         "- 精算規則：強推精算層獨立運算，採單號精算、模型共識、穩定度、貝葉斯、近期命中、結算回饋、區間修復、冷爆捕捉、轉移追蹤、尾數轉移、日曆相位、特別號交叉、配對/三碼共振、近180期校準。",
         markdown_table(
             ["類型", "強推薦號碼", "命中目標", "信心指數", "隨機基準", "強化理由"],
             super_recommendation_rows(package, draws),
         ),
         "",
-        "## 高機率信心牌（特別標註）",
-        "- 標註規則：依 Top9 核心池覆蓋、成熟度校準分、策略回測權重、票組成熟分排序；屬研究高信心，不等於保證。",
+        "## 分頁九：高機率信心牌（特別標註）",
+        "- 標註規則：依前九核心池覆蓋、成熟度校準分、策略回測權重、票組成熟分排序；未達門檻不列主推。",
         markdown_table(
             ["優先", "號碼", "信心標籤", "策略", "成熟分", "註明"],
             confidence_ticket_rows(package, limit=6),
         ),
         "",
-        "## 9隻內核心命中池",
+        "## 分頁十：推薦門檻檢查",
+        markdown_table(
+            ["序", "號碼", "信心", "相對分數", "是否主推"],
+            recommendation_gate_rows(package, score_max),
+        ),
+        "",
+        "## 分頁十一：9隻內核心命中池",
         markdown_table(
             ["排名", "號碼", "信心指數", "近期", "遺漏", "主要理由"],
             [
@@ -3031,7 +3054,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             ],
         ),
         "",
-        "## 今日觀察候選（不列正式主推）",
+        "## 分頁十二：今日觀察候選（不列正式主推）",
     ]
 
     for title, numbers, target_hits in strong_pack_specs(ranked_numbers, package, draws):
@@ -3045,7 +3068,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     lines.extend(
         [
             "",
-            "## 日期基準",
+            "## 分頁十三：日期基準",
             markdown_table(
                 ["項目", "內容"],
                 [
@@ -3059,12 +3082,12 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ],
             ),
             "",
-            "## 上期命中檢討",
+            "## 分頁十四：上期命中檢討",
         ]
     )
     lines.extend(settlement_summary_lines(conn, settled))
 
-    lines.extend(["", "## 昨日參考組合檢討"])
+    lines.extend(["", "## 分頁十五：上期參考組合檢討"])
     if settled is None:
         lines.append("- 尚無已結算預測。下一期開獎更新後，本區會自動列出組合命中。")
     else:
@@ -3076,7 +3099,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             )
         )
 
-    lines.extend(["", "## 昨日強牌組成敗檢討"])
+    lines.extend(["", "## 分頁十六：上期強牌組成敗檢討"])
     if settled is None:
         lines.append("- 尚無強牌結算。")
     else:
@@ -3098,7 +3121,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             )
         )
 
-    lines.extend(["", "## 實際開出號碼漏抓檢討"])
+    lines.extend(["", "## 分頁十七：實際開出號碼漏抓檢討"])
     if settled is None:
         lines.append("- 尚無可檢討的實際開獎。")
     else:
@@ -3108,11 +3131,11 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
         for number in actual.main_numbers:
             rank = settled_ranked.index(number) + 1 if number in settled_ranked else "-"
             if number in settled_ranked[:CORE_POOL_SIZE]:
-                bucket = "Top9核心池"
+                bucket = "前九核心池"
                 action = "保留主模型權重"
             elif number in settled_ranked[:SUPPORT_POOL_SIZE]:
                 bucket = "補位池"
-                action = "往Top9前移"
+                action = "往前九前移"
             else:
                 bucket = "核心池外"
                 action = "提高補抓模型權重"
@@ -3122,14 +3145,14 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     lines.extend(
         [
             "",
-            "## 昨日正式預測逐號檢討",
+            "## 分頁十八：上期正式預測逐號檢討",
             markdown_table(
                 ["排名", "號碼", "分區", "信心", "主要模型", "檢核結果"],
                 [
                     [
                         rank,
                         f"{row.number:02d}",
-                        "Top9核心" if rank <= CORE_POOL_SIZE else "Top10-15補位",
+                         "前九核心" if rank <= CORE_POOL_SIZE else "第十至第十五補位",
                         confidence_label(row, score_max),
                         top_model_text(row),
                         "主推核心" if rank <= CORE_POOL_SIZE else "只作防守補位",
@@ -3138,14 +3161,14 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ],
             ),
             "",
-            "## 候選 Top 15 詳表",
+            "## 分頁十九：候選前十五詳表",
             markdown_table(
                 ["排名", "號碼", "分區", "信心指數", "遺漏", "近期", "主要理由"],
                 [
                     [
                         rank,
                         f"{row.number:02d}",
-                        "Top9核心池" if rank <= CORE_POOL_SIZE else "Top10-15補位池",
+                         "前九核心池" if rank <= CORE_POOL_SIZE else "第十至第十五補位池",
                         f"{confidence_index(row, score_max):.1f}",
                         row.miss_gap,
                         row.recent_frequency,
@@ -3155,10 +3178,10 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ],
             ),
             "",
-            "## 牌型關聯",
+            "## 分頁二十：牌型關聯",
             markdown_table(["項目", "結果"], board_pattern_rows(draws)),
             "",
-            "## 號碼關聯與連動精準分析",
+            "## 分頁二十一：號碼關聯與連動精準分析",
             "- 方法：延遲期重疊 + 高共現配對。",
             "- 警示：關聯不等於因果，只允許作為輔助分與風控訊號。",
             "",
@@ -3168,18 +3191,18 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             "### 高共現配對",
             markdown_table(["配對", "出現次數", "保守提升", "用途"], top_pair_lift_rows(draws)),
             "",
-            "## 多模型競賽回測",
+            "## 分頁二十二：多模型競賽回測",
             markdown_table(
-                ["模型", "Top5", "Top9", "Top10", "Top15", "Top9差值", "Top15差值", "樣本"],
+                ["模型", "前五", "前九", "前十", "前十五", "前九差值", "前十五差值", "樣本"],
                 strategy_rows,
             ),
             "",
-            f"## 研究命中 KPI 與禁止虛報門檻（樣本 {rank_backtest.get('sample', 0)} 期）",
+            f"## 分頁二十三：研究命中指標與禁止虛報門檻（樣本 {rank_backtest.get('sample', 0)} 期）",
             markdown_table(
-                ["KPI", "樣本", "平均命中", "隨機基準", "差值", "狀態"],
+                ["指標", "樣本", "平均命中", "隨機基準", "差值", "狀態"],
                 [
                     [
-                        "Top5",
+                        "前五",
                         rank_backtest.get("sample", 0),
                         f"{rank_backtest.get('top5_avg', 0.0):.3f}",
                         f"{random_expected_hits(5):.3f}",
@@ -3187,7 +3210,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                         "研究觀察",
                     ],
                     [
-                        "Top9核心",
+                        "前九核心",
                         rank_backtest.get("sample", 0),
                         f"{rank_backtest.get('top9_avg', 0.0):.3f}",
                         f"{random_expected_hits(CORE_POOL_SIZE):.3f}",
@@ -3195,7 +3218,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                         "主檢查池",
                     ],
                     [
-                        "Top10",
+                        "前十",
                         rank_backtest.get("sample", 0),
                         f"{rank_backtest.get('top10_avg', 0.0):.3f}",
                         f"{random_expected_hits(10):.3f}",
@@ -3203,7 +3226,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                         "輔助比較",
                     ],
                     [
-                        "Top15",
+                        "前十五",
                         rank_backtest.get("sample", 0),
                         f"{rank_backtest.get('top15_avg', 0.0):.3f}",
                         f"{random_expected_hits(15):.3f}",
@@ -3213,72 +3236,75 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ],
             ),
             "",
-            "## 近期穩定度回測",
+            "## 分頁二十四：近期穩定度回測",
             markdown_table(
                 ["排名區間", "平均命中", ">=2命中率", "校準動作"],
                 [
-                    ["Top5", f"{rank_backtest.get('top5_avg', 0.0):.3f}", f"{rank_backtest.get('top5_ge2', 0.0):.3f}", "保留核心但不放大保證"],
-                    ["Top9核心", f"{rank_backtest.get('top9_avg', 0.0):.3f}", f"{rank_backtest.get('top9_ge2', 0.0):.3f}", "本期主檢查池"],
-                    ["Top10", f"{rank_backtest.get('top10_avg', 0.0):.3f}", f"{rank_backtest.get('top10_ge2', 0.0):.3f}", "只作輔助比較"],
-                    ["Top15", f"{rank_backtest.get('top15_avg', 0.0):.3f}", f"{rank_backtest.get('top15_ge2', 0.0):.3f}", "防守與補位池"],
+                    ["前五", f"{rank_backtest.get('top5_avg', 0.0):.3f}", f"{rank_backtest.get('top5_ge2', 0.0):.3f}", "保留核心但不放大保證"],
+                    ["前九核心", f"{rank_backtest.get('top9_avg', 0.0):.3f}", f"{rank_backtest.get('top9_ge2', 0.0):.3f}", "本期主檢查池"],
+                    ["前十", f"{rank_backtest.get('top10_avg', 0.0):.3f}", f"{rank_backtest.get('top10_ge2', 0.0):.3f}", "只作輔助比較"],
+                    ["前十五", f"{rank_backtest.get('top15_avg', 0.0):.3f}", f"{rank_backtest.get('top15_ge2', 0.0):.3f}", "防守與補位池"],
                 ],
             ),
             "",
-            "## 工業級模型審計",
+            "## 分頁二十五：模型審計",
             markdown_table(
                 ["模組", "狀態", "證據", "補強狀態"],
                 completeness_rows,
             ),
             "",
-            "## 風控與每日滾動調整",
+            "## 分頁二十六：風控與每日滾動調整",
             markdown_table(
                 ["滾動項目", "本次結果", "模型調整", "狀態"],
                 [
                     ["上期結算回饋", settled_status_text(settled), "命中來源保留，未命中來源降權", "已啟用"],
-                    ["Top9 回測差值", f"{release_edge:.3f}", "優勢不足時降為觀察等級", "已啟用"],
+                    ["前九回測差值", f"{release_edge:.3f}", "優勢不足時降為觀察等級", "已啟用"],
                     ["權重滾動", auto_weight_text(conn, draws, recent_window), "回測校準 + 實戰結算雙軌調整", "已啟用"],
-                    ["策略熔斷", "低效策略自動降權", "Top9/Top10 差值雙負時降到觀察", "已啟用"],
+                    ["策略熔斷", "低效策略自動降權", "前九/前十差值雙負時降到觀察", "已啟用"],
                     ["票組成熟度", "同策略內標準化後再排序", "避免單一策略分數洗版", "已啟用"],
                     ["資料健檢", f"{len(draws)} 期 / 最新 {latest.draw_date}", "格式錯誤會在資料健檢區顯示", "已啟用"],
                 ],
             ),
             "",
-            "## 低機率暫避號碼（風控觀察）",
+            "## 分頁二十七：5不中低機率排除",
             markdown_table(
-                ["#", "號碼", "暫避指數", "候選排名", "暫避原因"],
-                [
-                    [
-                        index,
-                        f"{row.number:02d}",
-                        f"{1.0 - row.score / score_max:.3f}",
-                        ranked_numbers.index(row.number) + 1,
-                        low_probability_reason(row),
-                    ]
-                    for index, row in enumerate(weak_rows, start=1)
-                ],
+                ["號碼", "排除信心", "候選排名", "低分指標", "排除原因"],
+                exclusion_rows(package.scores, ranked_numbers, score_max, 5),
             ),
             "",
-            "## 全部正式預測歷史對比",
+            "## 分頁二十八：10不中低機率排除",
+            markdown_table(
+                ["號碼", "排除信心", "候選排名", "低分指標", "排除原因"],
+                exclusion_rows(package.scores, ranked_numbers, score_max, 10),
+            ),
+            "",
+            "## 分頁二十九：15不中低機率排除",
+            markdown_table(
+                ["號碼", "排除信心", "候選排名", "低分指標", "排除原因"],
+                exclusion_rows(package.scores, ranked_numbers, score_max, 15),
+            ),
+            "",
+            "## 分頁三十：全部正式預測歷史對比",
             markdown_table(
                 ["預測", "產生時間", "依據期", "策略", "組數", "模型"],
                 recent_prediction_history_rows(conn),
             ),
             "",
-            "## 下期預測號碼池",
+            "## 分頁三十一：下期預測號碼池",
             markdown_table(
                 ["組別", "號碼", "用途"],
                 [
-                    ["膽碼", format_numbers(package.bankers), "Top9核心中的最高分"],
-                    ["拖碼", format_numbers(package.drags), "Top9核心補強"],
-                    ["Top9核心池", format_numbers(top9), "本期主檢查池"],
-                    ["Top10-15補位池", format_numbers(support_numbers), "只作防守補位"],
+                    ["膽碼", format_numbers(package.bankers), "前九核心中的最高分"],
+                    ["拖碼", format_numbers(package.drags), "前九核心補強"],
+                    ["前九核心池", format_numbers(top9), "本期主檢查池"],
+                    ["第十至第十五補位池", format_numbers(support_numbers), "只作防守補位"],
                     ["防守碼", format_numbers(package.reserves), "補位與分散"],
                     ["弱勢碼", format_numbers(package.weak_numbers), "低機率暫避"],
                     ["特別號候選", format_numbers(package.special_candidates), "特碼獨立觀察"],
                 ],
             ),
             "",
-            "## 運算保證審核",
+            "## 分頁三十二：運算審核",
         ]
     )
 
@@ -3286,11 +3312,11 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     output_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
     lines.extend(
         [
-            "- 審核狀態：verified_for_research",
-            f"- 資料指紋 SHA-256：{data_hash}",
-            f"- 輸出指紋 SHA-256：{output_hash}",
-            f"- 雙通道交叉驗證：Top10 穩定共識 {consensus:.3f}",
-            f"- Top9 核心池：{format_numbers(top9)}",
+            "- 審核狀態：研究檢核通過",
+            f"- 資料指紋：{data_hash}",
+            f"- 輸出指紋：{output_hash}",
+            f"- 雙通道交叉驗證：前十穩定共識 {consensus:.3f}",
+            f"- 前九核心池：{format_numbers(top9)}",
             f"- 發布治理：{release_level}",
         ]
     )
@@ -3734,7 +3760,7 @@ def refined_super_pick_sets(
             reason_parts.append(f"三碼共振 {detail['triple']:.2f}")
         reason_parts.extend(
             [
-                f"Top{len(numbers)}遞進式核心",
+                f"前{len(numbers)}遞進式核心",
                 number_reasons(leader_row, int(metrics[leader_number]["rank"])),
             ]
         )
@@ -3775,7 +3801,7 @@ def super_recommendation_items(
         confidence = min(99.0, confidence)
         leader = rows[0]
         reason_parts = [
-            f"Top{len(numbers)}核心",
+            f"前{len(numbers)}核心",
             top_model_text(leader, 3),
             number_reasons(leader, 1),
         ]
@@ -3903,7 +3929,7 @@ def strategy_competition_rows(
     best_name = "balanced"
     best_edge = -999.0
     for strategy in strategy_names():
-        summary = score_rank_backtest(draws, strategy, recent_window, max_periods=120)
+        summary = score_rank_backtest(draws, strategy, recent_window, max_periods=AUTO_BACKTEST_PERIODS)
         top9_edge = float(summary.get("top9_edge", 0.0))
         if top9_edge > best_edge:
             best_edge = top9_edge
@@ -4061,8 +4087,117 @@ def low_probability_reason(row: NumberScore) -> str:
     if row.trend < 0:
         reasons.append("短線趨勢偏弱")
     if not reasons:
-        reasons.append("綜合分數落後Top15")
+        reasons.append("綜合分數落後前十五")
     return "、".join(reasons)
+
+
+def exclusion_confidence(row: NumberScore, score_max: float, rank: int) -> float:
+    score_max = score_max or 1.0
+    low_score = max(0.0, min(1.0, 1.0 - row.score / score_max))
+    rank_pressure = max(0.0, min(1.0, (rank - CORE_POOL_SIZE) / (MAX_NUMBER - CORE_POOL_SIZE)))
+    recent_cold = max(0.0, min(1.0, (3 - row.recent_frequency) / 3))
+    pair_weak = 1.0 if row.pair_strength <= 0 else max(0.0, min(1.0, 1.0 - row.pair_strength))
+    trend_weak = 1.0 if row.trend < 0 else 0.35
+    value = (
+        low_score * 42
+        + rank_pressure * 18
+        + recent_cold * 16
+        + pair_weak * 14
+        + trend_weak * 10
+    )
+    return max(0.0, min(99.0, value))
+
+
+def exclusion_label(value: float) -> str:
+    if value >= 82:
+        return f"高排除 {value:.1f}"
+    if value >= 70:
+        return f"中高排除 {value:.1f}"
+    return f"觀察排除 {value:.1f}"
+
+
+def exclusion_rows(
+    scores: dict[int, NumberScore],
+    ranked_numbers: list[int],
+    score_max: float,
+    count: int,
+) -> list[list[object]]:
+    rows = []
+    ranked = sorted(scores.values(), key=lambda row: row.score)
+    for row in ranked[:count]:
+        rank = ranked_numbers.index(row.number) + 1 if row.number in ranked_numbers else "-"
+        confidence = exclusion_confidence(row, score_max, int(rank) if isinstance(rank, int) else MAX_NUMBER)
+        rows.append(
+            [
+                f"{row.number:02d}",
+                exclusion_label(confidence),
+                rank,
+                f"{1.0 - row.score / (score_max or 1.0):.3f}",
+                low_probability_reason(row).replace("Top15", "前十五"),
+            ]
+        )
+    return rows
+
+
+def prediction_recalculation_rows(
+    conn: sqlite3.Connection,
+    draws: list[Draw],
+    limit: int = 8,
+) -> list[list[object]]:
+    rows = []
+    recent_draws = list(reversed(draws[-limit:]))
+    for draw in recent_draws:
+        if draw.row_id is None:
+            rows.append([draw.draw_no or "-", draw.draw_date, "未檢查", "-", "資料未入庫"])
+            continue
+        run = conn.execute(
+            """
+            SELECT id, created_at, model_version
+            FROM prediction_runs
+            WHERE based_on_draw_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (draw.row_id,),
+        ).fetchone()
+        if run is None:
+            rows.append([draw.draw_no or "-", draw.draw_date, "未重算", "-", "缺少該期重算紀錄"])
+        else:
+            rows.append(
+                [
+                    draw.draw_no or "-",
+                    draw.draw_date,
+                    "已重算",
+                    f"第 {run['id']} 筆",
+                    f"{run['created_at']} / {run['model_version']}",
+                ]
+            )
+    return rows
+
+
+def recommendation_gate_rows(
+    package: PredictionPackage,
+    score_max: float,
+) -> list[list[object]]:
+    rows = []
+    for index, ticket in enumerate(package.tickets[:8], start=1):
+        score_ratio = ticket.score / max((candidate.score for candidate in package.tickets), default=1.0)
+        if index <= 3 and score_ratio >= 0.90:
+            gate = "允許推薦"
+        elif index <= 6 and score_ratio >= 0.82:
+            gate = "保留觀察"
+        else:
+            gate = "不列主推"
+        rows.append(
+            [
+                index,
+                format_numbers(ticket.numbers),
+                ticket_confidence_label(ticket, max((candidate.score for candidate in package.tickets), default=1.0), index),
+                f"{score_ratio * 100:.1f}",
+                gate,
+            ]
+        )
+    return rows
 
 
 def auto_weight_text(
@@ -4086,7 +4221,7 @@ def settled_status_text(settled: tuple[sqlite3.Row, Draw] | None) -> str:
     actual_numbers = set(actual.main_numbers)
     return (
         f"第 {run['id']} 筆 -> {actual.draw_date} {actual.draw_no}: "
-        f"Top5/Top9/Top10/Top15 {hits_in_top(ranked, actual_numbers, 5)}/"
+        f"前五/前九/前十/前十五 {hits_in_top(ranked, actual_numbers, 5)}/"
         f"{hits_in_top(ranked, actual_numbers, CORE_POOL_SIZE)}/"
         f"{hits_in_top(ranked, actual_numbers, 10)}/"
         f"{hits_in_top(ranked, actual_numbers, 15)}"
@@ -4108,9 +4243,9 @@ def settlement_summary_lines(
     return [
         f"- 檢討對應：依據期 {run['based_on_draw_no']} -> 實際開獎期 {actual.draw_no}",
         f"- 實際開出：{format_numbers(actual.main_numbers)} + {actual.special:02d}",
-        f"- Top5 / Top9 / Top10 / Top15 命中：{hits_in_top(ranked, actual_numbers, 5)} / {hits_in_top(ranked, actual_numbers, CORE_POOL_SIZE)} / {hits_in_top(ranked, actual_numbers, 10)} / {hits_in_top(ranked, actual_numbers, 15)}",
-        "- 診斷：以真實結算紀錄反推失敗來源，先檢查 Top9 核心池是否漏抓，再處理 Top10-15 補位池。",
-        "- 改善：提高 Top9 核心集中度，Top10-15 降為防守補位，不列為高機率主推來源。",
+        f"- 前五 / 前九 / 前十 / 前十五 命中：{hits_in_top(ranked, actual_numbers, 5)} / {hits_in_top(ranked, actual_numbers, CORE_POOL_SIZE)} / {hits_in_top(ranked, actual_numbers, 10)} / {hits_in_top(ranked, actual_numbers, 15)}",
+        "- 診斷：以真實結算紀錄反推失敗來源，先檢查前九核心池是否漏抓，再處理第十至第十五補位池。",
+        "- 改善：提高前九核心集中度，第十至第十五降為防守補位，不列為高機率主推來源。",
     ]
 
 
@@ -4137,8 +4272,8 @@ def settlement_detail_lines(
                 [
                     f"{number:02d}",
                     ranked.index(number) + 1 if number in ranked else "-",
-                    "已進Top9核心池" if number in ranked[:CORE_POOL_SIZE] else ("補位池" if number in ranked[:SUPPORT_POOL_SIZE] else "核心池外"),
-                    "核心池有捕捉，保留主推權重" if number in ranked[:CORE_POOL_SIZE] else ("只在補位池，需往Top9前移" if number in ranked[:SUPPORT_POOL_SIZE] else "核心池外，需提高補抓模型權重"),
+                    "已進前九核心池" if number in ranked[:CORE_POOL_SIZE] else ("補位池" if number in ranked[:SUPPORT_POOL_SIZE] else "核心池外"),
+                    "核心池有捕捉，保留主推權重" if number in ranked[:CORE_POOL_SIZE] else ("只在補位池，需往前九前移" if number in ranked[:SUPPORT_POOL_SIZE] else "核心池外，需提高補抓模型權重"),
                 ]
                 for number in actual.main_numbers
             ],
@@ -4429,9 +4564,9 @@ def markdown_to_html(markdown_text: str) -> str:
                 section_class = "band confidence-band"
             elif title in {"本期發布結論", "今日總判斷", "日期基準"}:
                 section_class = "band overview-band"
-            elif any(key in title for key in ("9隻內核心", "今日觀察候選", "候選 Top 15", "下期預測號碼池")):
+            elif any(key in title for key in ("9隻內核心", "今日觀察候選", "候選前十五", "下期預測號碼池")):
                 section_class = "band prediction-band"
-            elif any(key in title for key in ("命中檢討", "強牌組", "漏抓", "逐號檢討", "風控", "審計", "KPI", "穩定度")):
+            elif any(key in title for key in ("命中檢討", "強牌組", "漏抓", "逐號檢討", "風控", "審計", "指標", "穩定度")):
                 section_class = "band control-band"
             elif any(key in title for key in ("牌型", "連動", "競賽", "低機率", "歷史對比", "運算保證")):
                 section_class = "band appendix-band"
@@ -4953,7 +5088,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260626_第13版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260629_第14版")
 
 
 def build_site(

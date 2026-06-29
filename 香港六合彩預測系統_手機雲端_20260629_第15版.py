@@ -9,7 +9,7 @@ import zlib
 from pathlib import Path
 
 import importlib
-m = importlib.import_module("香港六合彩預測系統_20260629_第14版")
+m = importlib.import_module("香港六合彩預測系統_20260629_第15版")
 
 
 MOBILE_HTML = "香港六合彩預測系統_手機首頁.html"
@@ -108,6 +108,12 @@ def build_payload(conn, recent_window: int) -> dict:
                 "reason": row[4],
             }
             for row in m.exclusion_rows(package.scores, ranked_numbers, max_number_score, count)
+        ]
+
+    def table_payload(rows: list[list[object]], headers: list[str]) -> list[dict]:
+        return [
+            {headers[index]: row[index] for index in range(min(len(headers), len(row)))}
+            for row in rows
         ]
 
     return {
@@ -231,6 +237,20 @@ def build_payload(conn, recent_window: int) -> dict:
             "five": exclusion_payload(5),
             "ten": exclusion_payload(10),
             "fifteen": exclusion_payload(15),
+        },
+        "iron_law": {
+            "windows": table_payload(
+                m.iron_law_backtest_rows(draws, "balanced", recent_window),
+                ["window", "sample", "avg_hit", "random", "edge", "zero_rate", "ge2_rate", "status"],
+            ),
+            "formal_records": table_payload(
+                m.formal_prediction_integrity_rows(conn, draws, 6),
+                ["draw_no", "date", "status", "run", "proof"],
+            ),
+            "avoid_packs": table_payload(
+                m.exclusion_pack_summary_rows(draws, package.scores, ranked_numbers, max_number_score, recent_window),
+                ["label", "numbers", "confidence", "avoid_score", "sample", "avg_wrong", "full_avoid_rate", "note"],
+            ),
         },
         "links": {
             "battle_report": m.SITE_BATTLE_REPORT_NAME,
@@ -426,6 +446,11 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
       {exclusion_cards(payload["exclusion_groups"])}
     </section>
 
+    <section class="section" id="iron">
+      <h2>539最新版鐵律檢核</h2>
+      {iron_law_cards(payload["iron_law"])}
+    </section>
+
     <section class="section" id="accuracy">
       <h2>運算精準度</h2>
       {accuracy_row("前五", accuracy["top5_avg"], accuracy["top5_random"], accuracy["top5_edge"])}
@@ -465,7 +490,7 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
     <a href="#top">總覽</a>
     <a href="#super">強推</a>
     <a href="#audit">重算</a>
-    <a href="#exclude">排除</a>
+    <a href="#iron">鐵律</a>
     <a href="#reports">戰報</a>
   </nav>
   {sw_script}
@@ -503,7 +528,7 @@ def manifest() -> dict:
 
 
 def service_worker() -> str:
-    return f"""const CACHE_NAME = "香港六合彩預測系統-20260629-v14-recalculation-audit";
+    return f"""const CACHE_NAME = "香港六合彩預測系統-20260629-v15-iron-law";
 const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{MOBILE_MANIFEST}","./{MOBILE_ICON_192}","./{MOBILE_ICON_512}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
 self.addEventListener("install", event => {{
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));
@@ -642,6 +667,48 @@ def exclusion_cards(groups: dict[str, list[dict]]) -> str:
             '</div>'
         )
     return "\n".join(sections)
+
+
+def iron_law_cards(data: dict[str, list[dict]]) -> str:
+    window_rows = "\n".join(
+        '<div class="ticket">'
+        '<div class="ticket-head">'
+        f'<div class="ticket-label">{e(row.get("window", "-"))}</div>'
+        f'<span class="badge hot">{e(row.get("status", "-"))}</span>'
+        '</div>'
+        f'<div class="meta">前九平均 {e(row.get("avg_hit", "-"))} / 差值 {e(row.get("edge", "-"))} / 零命中率 {e(row.get("zero_rate", "-"))}</div>'
+        '</div>'
+        for row in data.get("windows", [])
+    )
+    formal_rows = "\n".join(
+        '<div class="ticket">'
+        '<div class="ticket-head">'
+        f'<div class="ticket-label">{e(row.get("draw_no", "-"))} / {e(row.get("date", "-"))}</div>'
+        f'<span class="badge hot">{e(row.get("status", "-"))}</span>'
+        '</div>'
+        f'<div class="meta">{e(row.get("run", "-"))} / {e(row.get("proof", "-"))}</div>'
+        '</div>'
+        for row in data.get("formal_records", [])
+    )
+    avoid_rows = "\n".join(
+        '<div class="ticket">'
+        '<div class="ticket-head">'
+        f'<div class="ticket-label">{e(row.get("label", "-"))}</div>'
+        f'<span class="badge">{e(row.get("confidence", "-"))}</span>'
+        '</div>'
+        f'<div class="meta">{e(row.get("numbers", "-"))}</div>'
+        f'<div class="meta">回測 {e(row.get("sample", "-"))} 期 / 平均誤中 {e(row.get("avg_wrong", "-"))} / 完全避開率 {e(row.get("full_avoid_rate", "-"))}</div>'
+        '</div>'
+        for row in data.get("avoid_packs", [])
+    )
+    return (
+        '<div class="ticket-label">多視窗門檻</div>'
+        + window_rows
+        + '<div class="ticket-label">正式預測紀錄</div>'
+        + formal_rows
+        + '<div class="ticket-label">避險包成效</div>'
+        + avoid_rows
+    )
 
 
 def number_grid(numbers: list[dict]) -> str:

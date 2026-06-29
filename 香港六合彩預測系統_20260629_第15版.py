@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260629_第14版"
+MODEL_VERSION = "香港六合彩預測系統_20260629_第15版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -64,6 +64,7 @@ LEGACY_REPORT_OUTPUT_NAMES = [
 ]
 LOCAL_TZ = timezone(timedelta(hours=8))
 AUTO_BACKTEST_PERIODS = 48
+IRON_LAW_WINDOWS = (60, 120, 360)
 AUTO_MIN_STRATEGY_WEIGHT = 0.25
 AUTO_MAX_STRATEGY_WEIGHT = 1.85
 CORE_POOL_SIZE = 9
@@ -1993,7 +1994,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊前九核心池內",
-                    "第14版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第15版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2003,7 +2004,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第14版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第15版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2012,7 +2013,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
-                "第14版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                "第15版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2020,7 +2021,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第14版強化模型並持續滾動校準",
+                "維持第15版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -2997,17 +2998,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
-                ["新一期結構", f"前九={format_numbers(top9)}", "符合第14版每期重算與 9顆核心池規格"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第15版每期重算、539鐵律與9顆核心池規格"],
             ],
         ),
         "",
-        "## 分頁六：全系統缺口檢測與第14版修復",
+        "## 分頁六：全系統缺口檢測與第15版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 分頁七：第14版新增邏輯運算模型",
+        "## 分頁七：第15版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -3284,6 +3285,12 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 exclusion_rows(package.scores, ranked_numbers, score_max, 15),
             ),
             "",
+            "## 分頁二十九之二：539最新版鐵律避險包成效",
+            markdown_table(
+                ["避險包", "號碼", "信心指標", "平均暫避分", "回測期數", "平均誤中", "完全避開率", "風控說明"],
+                exclusion_pack_summary_rows(draws, package.scores, ranked_numbers, score_max, recent_window),
+            ),
+            "",
             "## 分頁三十：全部正式預測歷史對比",
             markdown_table(
                 ["預測", "產生時間", "依據期", "策略", "組數", "模型"],
@@ -3304,7 +3311,37 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ],
             ),
             "",
-            "## 分頁三十二：運算審核",
+            "## 分頁三十二：539最新版鐵律多視窗門檻",
+            markdown_table(
+                ["回測窗", "樣本", "前九平均命中", "隨機基準", "差值", "零命中率", "兩顆以上率", "狀態"],
+                iron_law_backtest_rows(draws, champion, recent_window),
+            ),
+            "",
+            "## 分頁三十三：正式預測紀錄鐵律",
+            "- 鐵律：開獎資料更新後，若找不到該期開獎前保存的正式預測紀錄，戰報必須標示異常，禁止用舊日期檢討冒充最新檢討。",
+            markdown_table(
+                ["開獎期", "開獎日", "鐵律狀態", "正式預測", "證據"],
+                formal_prediction_integrity_rows(conn, draws),
+            ),
+            "",
+            "## 分頁三十四：前九防漏與第十至第十五回拉",
+            "- 鐵律：第十至第十五名曾捕捉實際命中號時，排序校準要把穩定共識與中段驗證訊號提前到前九邊界。",
+            markdown_table(
+                ["號碼", "目前排名", "鐵律動作", "原因"],
+                late_hit_recovery_rows(conn, draws, ranked_numbers),
+            ),
+            "",
+            "## 分頁三十五：每日更新鐵律時間表",
+            markdown_table(
+                ["鐵律項目", "執行要求", "目前狀態"],
+                [
+                    ["開獎後即刻更新", "取得新開獎後必須匯入、結算、重算、回測、重建戰報、同步手機", "一鍵流程與開獎後監控已接"],
+                    ["不得假檢討", "缺正式預測紀錄時必須標示異常，不得用舊預測冒充命中檢討", "正式預測紀錄鐵律已接"],
+                    ["短包超強信心", "獨隻、2碼、3碼每期固定精算並列出信心", "超強信心分頁已接"],
+                    ["低機率避險", "5不中、10不中、15不中需列信心指標、回測誤中與完全避開率", "避險包成效分頁已接"],
+                    ["手機同步", "本機重算完成後手機雲端必須同步同一份狀態", "同步與掃描已接"],
+                ],
+            ),
         ]
     )
 
@@ -3312,6 +3349,8 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     output_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
     lines.extend(
         [
+            "",
+            "## 分頁三十六：運算審核",
             "- 審核狀態：研究檢核通過",
             f"- 資料指紋：{data_hash}",
             f"- 輸出指紋：{output_hash}",
@@ -3916,6 +3955,10 @@ def score_rank_backtest(
         "top9_ge2": ge2("top9"),
         "top10_ge2": ge2("top10"),
         "top15_ge2": ge2("top15"),
+        "top5_zero": sum(1 for row in samples if row["top5"] == 0) / len(samples),
+        "top9_zero": sum(1 for row in samples if row["top9"] == 0) / len(samples),
+        "top10_zero": sum(1 for row in samples if row["top10"] == 0) / len(samples),
+        "top15_zero": sum(1 for row in samples if row["top15"] == 0) / len(samples),
     }
     _SCORE_RANK_BACKTEST_CACHE[cache_key] = result
     return dict(result)
@@ -4136,6 +4179,168 @@ def exclusion_rows(
                 low_probability_reason(row).replace("Top15", "前十五"),
             ]
         )
+    return rows
+
+
+def exclusion_backtest_summary(
+    draws: list[Draw],
+    count: int,
+    recent_window: int,
+    max_periods: int = AUTO_BACKTEST_PERIODS,
+    strategy: str = "balanced",
+) -> dict[str, float | int]:
+    if len(draws) < 20:
+        return {"sample": 0, "avg_wrong": 0.0, "full_avoid_rate": 0.0, "avg_avoid_score": 0.0}
+    start = max(12, len(draws) - max_periods)
+    wrong_hits: list[int] = []
+    avoid_scores: list[float] = []
+    for index in range(start, len(draws)):
+        train = draws[:index]
+        actual = set(draws[index].main_numbers)
+        scores = build_scores(train, recent_window=recent_window, strategy=strategy)
+        ranked_scores = sorted(scores.values(), key=lambda row: row.score)
+        low_rows = ranked_scores[:count]
+        low_numbers = {row.number for row in low_rows}
+        wrong = len(low_numbers.intersection(actual))
+        wrong_hits.append(wrong)
+        score_max = max((row.score for row in scores.values()), default=1.0) or 1.0
+        avoid_scores.append(statistics.mean(1.0 - row.score / score_max for row in low_rows))
+    sample = len(wrong_hits)
+    return {
+        "sample": sample,
+        "avg_wrong": statistics.mean(wrong_hits) if wrong_hits else 0.0,
+        "full_avoid_rate": sum(1 for value in wrong_hits if value == 0) / sample if sample else 0.0,
+        "avg_avoid_score": statistics.mean(avoid_scores) if avoid_scores else 0.0,
+    }
+
+
+def exclusion_pack_summary_rows(
+    draws: list[Draw],
+    scores: dict[int, NumberScore],
+    ranked_numbers: list[int],
+    score_max: float,
+    recent_window: int,
+) -> list[list[object]]:
+    rows = []
+    for count, label in ((5, "5不中"), (10, "10不中"), (15, "15不中")):
+        low_rows = exclusion_rows(scores, ranked_numbers, score_max, count)
+        numbers = " ".join(str(row[0]) for row in low_rows)
+        confidence_values = []
+        for row in low_rows:
+            number = int(row[0])
+            rank = ranked_numbers.index(number) + 1 if number in ranked_numbers else MAX_NUMBER
+            confidence_values.append(exclusion_confidence(scores[number], score_max, rank))
+        avg_confidence = statistics.mean(confidence_values) if confidence_values else 0.0
+        summary = exclusion_backtest_summary(draws, count, recent_window)
+        full_avoid = float(summary.get("full_avoid_rate", 0.0))
+        avg_wrong = float(summary.get("avg_wrong", 0.0))
+        if full_avoid >= 0.50 and avg_wrong <= 0.90:
+            confidence = "高暫避"
+        elif full_avoid >= 0.35 and avg_wrong <= 1.40:
+            confidence = "中暫避"
+        else:
+            confidence = "觀察暫避"
+        rows.append(
+            [
+                label,
+                numbers,
+                f"{confidence} {avg_confidence:.1f}",
+                f"{float(summary.get('avg_avoid_score', 0.0)):.3f}",
+                int(summary.get("sample", 0)),
+                f"{avg_wrong:.3f}",
+                f"{full_avoid:.3f}",
+                "鐵律避險包：只作低機率暫避與風控，不當作保證不開",
+            ]
+        )
+    return rows
+
+
+def iron_law_backtest_rows(draws: list[Draw], champion: str, recent_window: int) -> list[list[object]]:
+    rows = []
+    for window in IRON_LAW_WINDOWS:
+        summary = score_rank_backtest(draws, champion, recent_window, max_periods=window)
+        top9_edge = float(summary.get("top9_edge", 0.0))
+        zero_rate = float(summary.get("top9_zero", 0.0))
+        ge2_rate = float(summary.get("top9_ge2", 0.0))
+        status = "通過" if top9_edge > 0 and zero_rate <= 0.20 else "觀察"
+        rows.append(
+            [
+                f"近{window}期",
+                int(summary.get("sample", 0)),
+                f"{float(summary.get('top9_avg', 0.0)):.3f}",
+                f"{random_expected_hits(CORE_POOL_SIZE):.3f}",
+                f"{top9_edge:.3f}",
+                f"{zero_rate:.3f}",
+                f"{ge2_rate:.3f}",
+                status,
+            ]
+        )
+    return rows
+
+
+def formal_prediction_integrity_rows(
+    conn: sqlite3.Connection,
+    draws: list[Draw],
+    limit: int = 8,
+) -> list[list[object]]:
+    rows = []
+    if len(draws) < 2:
+        return rows
+    indexed = list(enumerate(draws))
+    for index, actual in reversed(indexed[-limit:]):
+        if index <= 0:
+            continue
+        previous = draws[index - 1]
+        if previous.row_id is None:
+            rows.append([actual.draw_no or "-", actual.draw_date, "異常", "-", "上一期資料未入庫，不能結算命中率"])
+            continue
+        run = conn.execute(
+            """
+            SELECT id, created_at, model_version
+            FROM prediction_runs
+            WHERE based_on_draw_id = ?
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (previous.row_id,),
+        ).fetchone()
+        if run is None:
+            rows.append([actual.draw_no or "-", actual.draw_date, "異常", "-", "缺正式預測紀錄，不能結算命中率"])
+            continue
+        rows.append(
+            [
+                actual.draw_no or "-",
+                actual.draw_date,
+                "通過",
+                f"第 {run['id']} 筆",
+                f"依據 {previous.draw_no or '-'} / {run['created_at']} / {run['model_version']}",
+            ]
+        )
+    return rows
+
+
+def late_hit_recovery_rows(
+    conn: sqlite3.Connection,
+    draws: list[Draw],
+    ranked_numbers: list[int],
+    limit: int = 5,
+) -> list[list[object]]:
+    rows = []
+    if len(draws) < 2:
+        return rows
+    latest_actuals = {number for draw in draws[-limit:] for number in draw.main_numbers}
+    for number in ranked_numbers[CORE_POOL_SIZE:SUPPORT_POOL_SIZE]:
+        if number in latest_actuals:
+            rows.append(
+                [
+                    f"{number:02d}",
+                    ranked_numbers.index(number) + 1,
+                    "第十至第十五命中回拉",
+                    "近期實開號落在補位池，鐵律要求前九邊界升權觀察",
+                ]
+            )
+    if not rows:
+        rows.append(["-", "-", "無", "目前沒有第十至第十五名近期命中回拉訊號"])
     return rows
 
 
@@ -5088,7 +5293,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260629_第14版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260629_第15版")
 
 
 def build_site(

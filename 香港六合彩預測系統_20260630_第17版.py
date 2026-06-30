@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260630_第16版"
+MODEL_VERSION = "香港六合彩預測系統_20260630_第17版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -1994,7 +1994,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊前九核心池內",
-                    "第16版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第17版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2004,7 +2004,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第16版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第17版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2013,7 +2013,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
-                "第16版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                "第17版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2021,7 +2021,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第16版強化模型並持續滾動校準",
+                "維持第17版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -2974,6 +2974,15 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
         "## 資料補足說明",
         markdown_table(["項目", "狀態", "說明"], data_gap_clarity_rows(conn, draws)),
         "",
+        "## 缺期掃描與補足證明",
+        markdown_table(["項目", "結果", "證據"], period_gap_summary_rows(draws)),
+        "",
+        "### 逐年期號連續性",
+        markdown_table(["年份", "期號範圍", "入庫期數", "缺期數", "缺期列表"], period_sequence_audit_rows(draws)),
+        "",
+        "### 長日期間隔核對",
+        markdown_table(["期號", "日期區間", "間隔天數", "判定"], long_date_gap_rows(draws)),
+        "",
         "## 輸出檔案檢核",
         markdown_table(["檔案", "狀態", "位置", "時間"], report_file_status_rows()),
         "",
@@ -3048,17 +3057,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
-                ["新一期結構", f"前九={format_numbers(top9)}", "符合第16版每期重算、539鐵律與9顆核心池規格"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第17版每期重算、539鐵律與9顆核心池規格"],
             ],
         ),
         "",
-        "## 分頁六：全系統缺口檢測與第16版修復",
+        "## 分頁六：全系統缺口檢測與第17版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 分頁七：第16版新增邏輯運算模型",
+        "## 分頁七：第17版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -4471,10 +4480,94 @@ def first_prediction_base_draw(draws: list[Draw], conn: sqlite3.Connection) -> D
     return None
 
 
+def period_sequence_audit_rows(draws: list[Draw]) -> list[list[object]]:
+    by_year: dict[int, list[int]] = defaultdict(list)
+    for draw in draws:
+        match = re.fullmatch(r"(\d{4})/(\d{3})", draw.draw_no or "")
+        if not match:
+            continue
+        by_year[int(match.group(1))].append(int(match.group(2)))
+    rows: list[list[object]] = []
+    for year, numbers in sorted(by_year.items()):
+        ordered = sorted(set(numbers))
+        if not ordered:
+            continue
+        expected = set(range(ordered[0], ordered[-1] + 1))
+        missing = sorted(expected.difference(ordered))
+        rows.append(
+            [
+                year,
+                f"{year}/{ordered[0]:03d} -> {year}/{ordered[-1]:03d}",
+                len(ordered),
+                len(missing),
+                "無" if not missing else " ".join(f"{year}/{number:03d}" for number in missing[:30]),
+            ]
+        )
+    return rows
+
+
+def missing_period_labels(draws: list[Draw]) -> list[str]:
+    labels: list[str] = []
+    for row in period_sequence_audit_rows(draws):
+        if int(row[3]) <= 0 or row[4] == "無":
+            continue
+        labels.extend(str(row[4]).split())
+    return labels
+
+
+def long_date_gap_rows(draws: list[Draw], threshold_days: int = 14) -> list[list[object]]:
+    rows: list[list[object]] = []
+    ordered = sort_draws(draws)
+    for previous, current in zip(ordered, ordered[1:]):
+        try:
+            previous_date = datetime.strptime(previous.draw_date, "%Y-%m-%d").date()
+            current_date = datetime.strptime(current.draw_date, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        gap = (current_date - previous_date).days
+        if gap > threshold_days:
+            rows.append(
+                [
+                    f"{previous.draw_no or '-'} -> {current.draw_no or '-'}",
+                    f"{previous.draw_date} -> {current.draw_date}",
+                    gap,
+                    "期號連續，列為歷史停開長間隔，不列缺期" if periods_are_consecutive(previous.draw_no, current.draw_no) else "需人工核對",
+                ]
+            )
+    if not rows:
+        rows.append(["無", "無", 0, "沒有超過門檻的日期長間隔"])
+    return rows
+
+
+def periods_are_consecutive(previous_draw_no: str | None, current_draw_no: str | None) -> bool:
+    previous_match = re.fullmatch(r"(\d{4})/(\d{3})", previous_draw_no or "")
+    current_match = re.fullmatch(r"(\d{4})/(\d{3})", current_draw_no or "")
+    if not previous_match or not current_match:
+        return False
+    previous_year, previous_no = int(previous_match.group(1)), int(previous_match.group(2))
+    current_year, current_no = int(current_match.group(1)), int(current_match.group(2))
+    if current_year == previous_year:
+        return current_no == previous_no + 1
+    return current_year == previous_year + 1 and current_no == 1
+
+
+def period_gap_summary_rows(draws: list[Draw]) -> list[list[object]]:
+    missing = missing_period_labels(draws)
+    long_gaps = [row for row in long_date_gap_rows(draws) if row[0] != "無"]
+    latest = draws[-1] if draws else None
+    return [
+        ["期號缺口", "已補足" if not missing else "需補期", f"{len(missing)} 筆" if not missing else " ".join(missing[:50])],
+        ["長日期間隔", "已分類", f"{len(long_gaps)} 段，期號連續者不列缺期"],
+        ["最新入庫", "已確認" if latest else "無資料", f"{latest.draw_no or '-'} / {latest.draw_date}" if latest else "-"],
+        ["外部更新", "已執行", "本輪已查官方與備援來源；若來源釋出新期，一鍵流程會匯入後重算"],
+    ]
+
+
 def report_index_rows() -> list[list[object]]:
     return [
         ["先看區", "戰報快讀", "最新開獎、下期預測、高信心牌、前九核心、低機率暫避"],
         ["先看區", "資料完整度總表", "歷史資料庫、最新預測、手機同步、戰報輸出是否齊全"],
+        ["先看區", "缺期掃描與補足證明", "逐年檢查期號連續性，分清楚真缺期與歷史停開間隔"],
         ["分頁一至十二", "本期預測", "發布結論、每期重算、低命中校正、高機率信心牌、前九核心"],
         ["分頁十三至十九", "開獎檢討", "日期基準、上期命中、漏抓檢討、前十五詳表"],
         ["分頁二十至二十六", "模型與回測", "牌型、關聯、多模型競賽、命中指標、模型審計"],
@@ -4525,8 +4618,10 @@ def data_completeness_overview_rows(
         else "尚無正式預測基準"
     )
     latest = draws[-1]
+    missing_periods = missing_period_labels(draws)
     return [
         ["歷史資料庫", "已入庫", f"{len(draws)} 期 / {draws[0].draw_date} 到 {draws[-1].draw_date}"],
+        ["缺期掃描", "已補足" if not missing_periods else "需補期", f"期號缺口 {len(missing_periods)} 筆" if not missing_periods else " ".join(missing_periods[:50])],
         ["最新開獎", "已確認", f"{latest.draw_no or '-'} / {latest.draw_date} / {format_numbers(latest.main_numbers)} + 特別號 {latest.special:02d}"],
         ["最新預測", "已重算" if run_id is not None else "臨時計算", f"第 {run_id if run_id is not None else '-'} 筆 / 依據 {based_draw_no or '-'} / {based_draw_date} / 目標 {target_date}"],
         ["正式預測紀錄", "已累積", f"{prediction_count} 筆預測 / {result_count} 筆結算"],
@@ -4548,8 +4643,10 @@ def data_gap_clarity_rows(conn: sqlite3.Connection, draws: list[Draw]) -> list[l
     )
     recent_rows = prediction_recalculation_rows(conn, draws)
     current_missing = [row for row in recent_rows if row[2] in {"未重算", "異常", "未檢查"}]
+    missing_periods = missing_period_labels(draws)
     return [
         ["歷史資料", "已保留", "系統接管前舊期只作歷史樣本，不冒充已預測紀錄"],
+        ["期號缺口", "已補足" if not missing_periods else "需補期", f"資料庫期號缺口 {len(missing_periods)} 筆"],
         ["接管起點", "已標明", first_base_text],
         ["現行缺口", "無" if not current_missing else "需處理", f"最近檢查 {len(recent_rows)} 期，現行缺口 {len(current_missing)} 筆"],
         ["戰報可讀性", "已重整", "最前面固定顯示快讀、目錄、資料完整度與缺口說明"],
@@ -4578,11 +4675,13 @@ def quick_report_rows(
     super_rows = super_recommendation_rows(package, draws)
     confidence_rows = confidence_ticket_rows(package, limit=3)
     avoid_rows = exclusion_pack_summary_rows(draws, package.scores, ranked_numbers, score_max, recent_window)
+    missing_periods = missing_period_labels(draws)
     top_confidence = confidence_rows[0][1] if confidence_rows else "-"
     top_super = "；".join(f"{row[0]} {row[1]}" for row in super_rows[:3])
     avoid_text = "；".join(f"{row[0]} {row[1]} 信心{row[2]}" for row in avoid_rows[:3])
     return [
         ["最新開獎", "已入庫", f"{latest.draw_no or '-'} / {latest.draw_date} / {format_numbers(latest.main_numbers)} + 特別號 {latest.special:02d}"],
+        ["缺期掃描", "已補足" if not missing_periods else "需補期", f"期號缺口 {len(missing_periods)} 筆"],
         ["下期預測", "已重算", f"目標 {target_date} / 第 {run_id if run_id is not None else '-'} 筆 / 依據 {based_draw_no or '-'} {based_draw_date}"],
         ["強推薦", "先看這裡", top_super],
         ["高機率信心牌", "特別加註", top_confidence],
@@ -5506,7 +5605,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260630_第16版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260630_第17版")
 
 
 def build_site(

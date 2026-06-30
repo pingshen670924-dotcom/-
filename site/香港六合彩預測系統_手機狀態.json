@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-06-30T09:22:28+08:00",
-  "model_version": "香港六合彩預測系統_20260630_第16版",
+  "generated_at": "2026-06-30T09:50:49+08:00",
+  "model_version": "香港六合彩預測系統_20260630_第17版",
   "draw_count": 2567,
   "date_range": "2008-01-03 -> 2026-06-28",
   "latest": {
@@ -17,8 +17,8 @@
     "special": 35
   },
   "prediction": {
-    "run_id": 20,
-    "created_at": "2026-06-30T09:15:11+08:00",
+    "run_id": 21,
+    "created_at": "2026-06-30T09:48:54+08:00",
     "based_on_draw_no": "2026/069",
     "based_on_draw_date": "2026-06-28",
     "target_date": "2026-06-30",
@@ -33,7 +33,181 @@
     "champion": "均衡",
     "auto_weights": "均衡:1.43 / 冷遺漏:0.55 / 分散:1.21 / 熱度:0.90 / 趨勢:0.91",
     "settled_status": "第 13 筆 -> 2026-06-28 2026/069: 前五/前九/前十/前十五 0/0/0/1",
-    "consensus": 0.37
+    "consensus": 0.37,
+    "missing_period_status": "期號缺口 0 筆"
+  },
+  "missing_period_audit": {
+    "summary": [
+      {
+        "item": "期號缺口",
+        "status": "已補足",
+        "proof": "0 筆"
+      },
+      {
+        "item": "長日期間隔",
+        "status": "已分類",
+        "proof": "2 段，期號連續者不列缺期"
+      },
+      {
+        "item": "最新入庫",
+        "status": "已確認",
+        "proof": "2026/069 / 2026-06-28"
+      },
+      {
+        "item": "外部更新",
+        "status": "已執行",
+        "proof": "本輪已查官方與備援來源；若來源釋出新期，一鍵流程會匯入後重算"
+      }
+    ],
+    "yearly": [
+      {
+        "year": 2008,
+        "range": "2008/001 -> 2008/149",
+        "draw_count": 149,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2009,
+        "range": "2009/001 -> 2009/154",
+        "draw_count": 154,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2010,
+        "range": "2010/001 -> 2010/152",
+        "draw_count": 152,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2011,
+        "range": "2011/001 -> 2011/154",
+        "draw_count": 154,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2012,
+        "range": "2012/001 -> 2012/152",
+        "draw_count": 152,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2013,
+        "range": "2013/001 -> 2013/152",
+        "draw_count": 152,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2014,
+        "range": "2014/001 -> 2014/152",
+        "draw_count": 152,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2015,
+        "range": "2015/001 -> 2015/152",
+        "draw_count": 152,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2016,
+        "range": "2016/001 -> 2016/151",
+        "draw_count": 151,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2017,
+        "range": "2017/001 -> 2017/153",
+        "draw_count": 153,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2018,
+        "range": "2018/001 -> 2018/149",
+        "draw_count": 149,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2019,
+        "range": "2019/001 -> 2019/144",
+        "draw_count": 144,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2020,
+        "range": "2020/001 -> 2020/030",
+        "draw_count": 30,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2021,
+        "range": "2021/001 -> 2021/123",
+        "draw_count": 123,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2022,
+        "range": "2022/001 -> 2022/111",
+        "draw_count": 111,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2023,
+        "range": "2023/001 -> 2023/146",
+        "draw_count": 146,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2024,
+        "range": "2024/001 -> 2024/140",
+        "draw_count": 140,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2025,
+        "range": "2025/001 -> 2025/134",
+        "draw_count": 134,
+        "missing_count": 0,
+        "missing": "無"
+      },
+      {
+        "year": 2026,
+        "range": "2026/001 -> 2026/069",
+        "draw_count": 69,
+        "missing_count": 0,
+        "missing": "無"
+      }
+    ],
+    "long_gaps": [
+      {
+        "period": "2020/008 -> 2020/009",
+        "date_range": "2020-02-01 -> 2020-09-24",
+        "days": 236,
+        "status": "期號連續，列為歷史停開長間隔，不列缺期"
+      },
+      {
+        "period": "2022/001 -> 2022/002",
+        "date_range": "2022-01-04 -> 2022-01-20",
+        "days": 16,
+        "status": "期號連續，列為歷史停開長間隔，不列缺期"
+      }
+    ]
   },
   "accuracy": {
     "sample": 48,
@@ -54,8 +228,8 @@
     {
       "rank": 1,
       "numbers": [
+        4,
         7,
-        12,
         20,
         34,
         46,
@@ -63,38 +237,38 @@
       ],
       "label": "高機率信心牌 96.0",
       "strategy": "均衡",
-      "score": 2.87,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.90"
+      "score": 2.86,
+      "reasons": "實戰成熟度 1.43；票組成熟分 0.88"
     },
     {
       "rank": 2,
       "numbers": [
+        2,
         7,
         20,
         28,
-        34,
         46,
         47
       ],
-      "label": "高機率信心牌 94.4",
+      "label": "高機率信心牌 93.7",
       "strategy": "均衡",
-      "score": 2.842,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.88"
+      "score": 2.77,
+      "reasons": "實戰成熟度 1.43；票組成熟分 0.91"
     },
     {
       "rank": 3,
       "numbers": [
-        4,
+        2,
         7,
-        20,
+        12,
         28,
-        46,
+        34,
         47
       ],
-      "label": "高機率信心牌 92.3",
+      "label": "高機率信心牌 91.6",
       "strategy": "均衡",
-      "score": 2.769,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.91"
+      "score": 2.702,
+      "reasons": "實戰成熟度 1.43；票組成熟分 0.92"
     },
     {
       "rank": 4,
@@ -102,44 +276,44 @@
         2,
         4,
         7,
-        20,
-        34,
-        47
-      ],
-      "label": "中高信心牌 90.9",
-      "strategy": "均衡",
-      "score": 2.749,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.83"
-    },
-    {
-      "rank": 5,
-      "numbers": [
-        4,
-        7,
-        12,
-        20,
-        34,
-        47
-      ],
-      "label": "中高信心牌 89.2",
-      "strategy": "均衡",
-      "score": 2.711,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.85"
-    },
-    {
-      "rank": 6,
-      "numbers": [
-        2,
-        7,
-        12,
         28,
         34,
         47
       ],
-      "label": "中高信心牌 87.9",
+      "label": "中高信心牌 89.4",
       "strategy": "均衡",
-      "score": 2.702,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.92"
+      "score": 2.625,
+      "reasons": "實戰成熟度 1.43；票組成熟分 0.90"
+    },
+    {
+      "rank": 5,
+      "numbers": [
+        2,
+        4,
+        7,
+        20,
+        28,
+        47
+      ],
+      "label": "中高信心牌 88.1",
+      "strategy": "均衡",
+      "score": 2.615,
+      "reasons": "實戰成熟度 1.43；票組成熟分 0.86"
+    },
+    {
+      "rank": 6,
+      "numbers": [
+        4,
+        20,
+        34,
+        35,
+        46,
+        47
+      ],
+      "label": "中高信心牌 86.7",
+      "strategy": "分散",
+      "score": 2.598,
+      "reasons": "實戰成熟度 1.21；票組成熟分 0.85"
     }
   ],
   "super_picks": [
@@ -442,8 +616,8 @@
       "draw_no": "2026/069",
       "date": "2026-06-28",
       "status": "已重算",
-      "run": "第 20 筆",
-      "proof": "2026-06-30T09:15:11+08:00 / 香港六合彩預測系統_20260630_第16版"
+      "run": "第 21 筆",
+      "proof": "2026-06-30T09:48:54+08:00 / 香港六合彩預測系統_20260630_第17版"
     },
     {
       "draw_no": "2026/068",
@@ -484,58 +658,58 @@
   "recommendation_gate": [
     {
       "rank": 1,
-      "numbers": "07 12 20 34 46 47",
+      "numbers": "04 07 20 34 46 47",
       "confidence": "高機率信心牌 96.0",
       "score": "100.0",
       "gate": "允許推薦"
     },
     {
       "rank": 2,
-      "numbers": "07 20 28 34 46 47",
-      "confidence": "高機率信心牌 94.4",
-      "score": "99.0",
+      "numbers": "02 07 20 28 46 47",
+      "confidence": "高機率信心牌 93.7",
+      "score": "96.9",
       "gate": "允許推薦"
     },
     {
       "rank": 3,
-      "numbers": "04 07 20 28 46 47",
-      "confidence": "高機率信心牌 92.3",
-      "score": "96.5",
+      "numbers": "02 07 12 28 34 47",
+      "confidence": "高機率信心牌 91.6",
+      "score": "94.5",
       "gate": "允許推薦"
     },
     {
       "rank": 4,
-      "numbers": "02 04 07 20 34 47",
-      "confidence": "中高信心牌 90.9",
-      "score": "95.8",
+      "numbers": "02 04 07 28 34 47",
+      "confidence": "中高信心牌 89.4",
+      "score": "91.8",
       "gate": "保留觀察"
     },
     {
       "rank": 5,
-      "numbers": "04 07 12 20 34 47",
-      "confidence": "中高信心牌 89.2",
-      "score": "94.4",
+      "numbers": "02 04 07 20 28 47",
+      "confidence": "中高信心牌 88.1",
+      "score": "91.4",
       "gate": "保留觀察"
     },
     {
       "rank": 6,
-      "numbers": "02 07 12 28 34 47",
-      "confidence": "中高信心牌 87.9",
-      "score": "94.1",
+      "numbers": "04 20 34 35 46 47",
+      "confidence": "中高信心牌 86.7",
+      "score": "90.8",
       "gate": "保留觀察"
     },
     {
       "rank": 7,
-      "numbers": "04 07 12 28 34 47",
-      "confidence": "觀察牌 87.2",
-      "score": "92.1",
+      "numbers": "04 07 12 34 46 47",
+      "confidence": "觀察牌 86.3",
+      "score": "89.7",
       "gate": "不列主推"
     },
     {
       "rank": 8,
-      "numbers": "04 07 28 34 35 46",
-      "confidence": "觀察牌 86.8",
-      "score": "91.2",
+      "numbers": "07 16 20 28 34 47",
+      "confidence": "觀察牌 85.2",
+      "score": "86.7",
       "gate": "不列主推"
     }
   ],

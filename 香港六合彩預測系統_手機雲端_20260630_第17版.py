@@ -9,7 +9,7 @@ import zlib
 from pathlib import Path
 
 import importlib
-m = importlib.import_module("香港六合彩預測系統_20260630_第16版")
+m = importlib.import_module("香港六合彩預測系統_20260630_第17版")
 
 
 MOBILE_HTML = "香港六合彩預測系統_手機首頁.html"
@@ -97,6 +97,7 @@ def build_payload(conn, recent_window: int) -> dict:
     risk_level = "高" if len(draws) < 300 or top9_edge < 0.1 else "中"
     release_level = "研究觀察，不列保證" if top9_edge < 0.25 else "研究級高關注"
     settled = m.latest_settled_prediction(conn)
+    missing_periods = m.missing_period_labels(draws)
 
     def exclusion_payload(count: int) -> list[dict]:
         return [
@@ -145,6 +146,21 @@ def build_payload(conn, recent_window: int) -> dict:
             "auto_weights": m.auto_weight_text(conn, draws, recent_window),
             "settled_status": m.settled_status_text(settled),
             "consensus": round(m.model_consensus_rate(package), 3),
+            "missing_period_status": f"期號缺口 {len(missing_periods)} 筆",
+        },
+        "missing_period_audit": {
+            "summary": table_payload(
+                m.period_gap_summary_rows(draws),
+                ["item", "status", "proof"],
+            ),
+            "yearly": table_payload(
+                m.period_sequence_audit_rows(draws),
+                ["year", "range", "draw_count", "missing_count", "missing"],
+            ),
+            "long_gaps": table_payload(
+                m.long_date_gap_rows(draws),
+                ["period", "date_range", "days", "status"],
+            ),
         },
         "accuracy": {
             "sample": int(rank_backtest.get("sample", 0)),
@@ -451,6 +467,11 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
       {iron_law_cards(payload["iron_law"])}
     </section>
 
+    <section class="section" id="missing">
+      <h2>缺期掃描</h2>
+      {missing_audit_cards(payload["missing_period_audit"])}
+    </section>
+
     <section class="section" id="accuracy">
       <h2>運算精準度</h2>
       {accuracy_row("前五", accuracy["top5_avg"], accuracy["top5_random"], accuracy["top5_edge"])}
@@ -471,6 +492,7 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
         <div class="metric"><span>狀態</span><strong>{e(system["status"])}</strong></div>
         <div class="metric"><span>主力策略</span><strong>{e(system["champion"])}</strong></div>
         <div class="metric"><span>上期命中檢討</span><strong>{e(system["settled_status"])}</strong></div>
+        <div class="metric"><span>缺期掃描</span><strong>{e(system["missing_period_status"])}</strong></div>
         <div class="metric"><span>權重</span><strong>{e(system["auto_weights"])}</strong></div>
       </div>
     </section>
@@ -528,7 +550,7 @@ def manifest() -> dict:
 
 
 def service_worker() -> str:
-    return f"""const CACHE_NAME = "香港六合彩預測系統-20260630-v16-readable-report";
+    return f"""const CACHE_NAME = "香港六合彩預測系統-20260630-v17-missing-period-audit";
 const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{MOBILE_MANIFEST}","./{MOBILE_ICON_192}","./{MOBILE_ICON_512}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
 self.addEventListener("install", event => {{
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));
@@ -709,6 +731,44 @@ def iron_law_cards(data: dict[str, list[dict]]) -> str:
         + '<div class="ticket-label">避險包成效</div>'
         + avoid_rows
     )
+
+
+def missing_audit_cards(data: dict[str, list[dict]]) -> str:
+    summary_rows = data.get("summary", [])
+    yearly_rows = data.get("yearly", [])
+    long_gap_rows = data.get("long_gaps", [])
+    summary_html = "\n".join(
+        '<div class="ticket">'
+        '<div class="ticket-head">'
+        f'<div class="ticket-label">{e(row.get("item", "-"))}</div>'
+        f'<span class="badge hot">{e(row.get("status", "-"))}</span>'
+        '</div>'
+        f'<div class="meta">{e(row.get("proof", "-"))}</div>'
+        '</div>'
+        for row in summary_rows
+    )
+    latest_years = yearly_rows[-5:] if len(yearly_rows) > 5 else yearly_rows
+    yearly_html = "\n".join(
+        '<div class="ticket">'
+        '<div class="ticket-head">'
+        f'<div class="ticket-label">{e(row.get("year", "-"))}</div>'
+        f'<span class="badge">{e(row.get("missing_count", 0))} 缺</span>'
+        '</div>'
+        f'<div class="meta">{e(row.get("range", "-"))} / 入庫 {e(row.get("draw_count", "-"))} 期 / {e(row.get("missing", "無"))}</div>'
+        '</div>'
+        for row in latest_years
+    )
+    gap_html = "\n".join(
+        '<div class="ticket">'
+        '<div class="ticket-head">'
+        f'<div class="ticket-label">{e(row.get("period", "-"))}</div>'
+        f'<span class="badge">{e(row.get("days", "-"))} 天</span>'
+        '</div>'
+        f'<div class="meta">{e(row.get("date_range", "-"))} / {e(row.get("status", "-"))}</div>'
+        '</div>'
+        for row in long_gap_rows[:3]
+    )
+    return summary_html + yearly_html + gap_html
 
 
 def number_grid(numbers: list[dict]) -> str:

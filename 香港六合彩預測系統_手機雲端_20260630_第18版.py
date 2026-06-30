@@ -9,7 +9,7 @@ import zlib
 from pathlib import Path
 
 import importlib
-m = importlib.import_module("香港六合彩預測系統_20260630_第17版")
+m = importlib.import_module("香港六合彩預測系統_20260630_第18版")
 
 
 MOBILE_HTML = "香港六合彩預測系統_手機首頁.html"
@@ -147,7 +147,12 @@ def build_payload(conn, recent_window: int) -> dict:
             "settled_status": m.settled_status_text(settled),
             "consensus": round(m.model_consensus_rate(package), 3),
             "missing_period_status": f"期號缺口 {len(missing_periods)} 筆",
+            "repeat_guard_status": m.repeat_guard_status_text(conn, package, draws, run_id),
         },
+        "repeat_guard_audit": table_payload(
+            m.repeat_guard_audit_rows(conn, package, draws, run_id, 8),
+            ["rank", "numbers", "status", "previous", "proof"],
+        ),
         "missing_period_audit": {
             "summary": table_payload(
                 m.period_gap_summary_rows(draws),
@@ -472,6 +477,12 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
       {missing_audit_cards(payload["missing_period_audit"])}
     </section>
 
+    <section class="section" id="repeat">
+      <h2>上期沿用硬閘</h2>
+      {repeat_guard_cards(payload["repeat_guard_audit"])}
+      <p class="note">上一筆正式預測不得直接沿用；連莊必須同時通過排名、分數、前九核心與成熟度門檻。</p>
+    </section>
+
     <section class="section" id="accuracy">
       <h2>運算精準度</h2>
       {accuracy_row("前五", accuracy["top5_avg"], accuracy["top5_random"], accuracy["top5_edge"])}
@@ -493,6 +504,7 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
         <div class="metric"><span>主力策略</span><strong>{e(system["champion"])}</strong></div>
         <div class="metric"><span>上期命中檢討</span><strong>{e(system["settled_status"])}</strong></div>
         <div class="metric"><span>缺期掃描</span><strong>{e(system["missing_period_status"])}</strong></div>
+        <div class="metric"><span>上期沿用</span><strong>{e(system["repeat_guard_status"])}</strong></div>
         <div class="metric"><span>權重</span><strong>{e(system["auto_weights"])}</strong></div>
       </div>
     </section>
@@ -550,7 +562,7 @@ def manifest() -> dict:
 
 
 def service_worker() -> str:
-    return f"""const CACHE_NAME = "香港六合彩預測系統-20260630-v17-missing-period-audit";
+    return f"""const CACHE_NAME = "香港六合彩預測系統-20260630-v18-repeat-guard";
 const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{MOBILE_MANIFEST}","./{MOBILE_ICON_192}","./{MOBILE_ICON_512}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
 self.addEventListener("install", event => {{
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));
@@ -769,6 +781,20 @@ def missing_audit_cards(data: dict[str, list[dict]]) -> str:
         for row in long_gap_rows[:3]
     )
     return summary_html + yearly_html + gap_html
+
+
+def repeat_guard_cards(rows: list[dict]) -> str:
+    return "\n".join(
+        '<div class="ticket">'
+        '<div class="ticket-head">'
+        f'<div class="ticket-label">{e(row.get("rank", "-"))} / {e(row.get("numbers", "-"))}</div>'
+        f'<span class="badge hot">{e(row.get("status", "-"))}</span>'
+        '</div>'
+        f'<div class="meta">{e(row.get("previous", "-"))}</div>'
+        f'<div class="meta">{e(row.get("proof", "-"))}</div>'
+        '</div>'
+        for row in rows
+    )
 
 
 def number_grid(numbers: list[dict]) -> str:

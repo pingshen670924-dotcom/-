@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260630_第17版"
+MODEL_VERSION = "香港六合彩預測系統_20260630_第18版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -69,6 +69,11 @@ AUTO_MIN_STRATEGY_WEIGHT = 0.25
 AUTO_MAX_STRATEGY_WEIGHT = 1.85
 CORE_POOL_SIZE = 9
 SUPPORT_POOL_SIZE = 15
+REPEAT_GUARD_PREVIOUS_LIMIT = 20
+REPEAT_GUARD_ALLOW_TOP_RANK = 3
+REPEAT_GUARD_MIN_SCORE_RATIO = 0.94
+REPEAT_GUARD_MIN_CORE_HITS = 5
+REPEAT_GUARD_MIN_MATURITY = 0.88
 ROLLING_MONTH_WEIGHT = 0.085
 ZONE_REPAIR_WEIGHT = 0.070
 BREAKOUT_CAPTURE_WEIGHT = 0.060
@@ -1389,13 +1394,15 @@ def generate_prediction_package(
     if len(draws) < 5:
         raise SystemExit("歷史資料太少，至少需要 5 期才能產生預測。")
 
+    candidate_count = max(ticket_count * 5, ticket_count + 60)
     if strategy == "auto":
-        tickets = generate_auto_tickets(draws, ticket_count, recent_window, seed, conn)
+        tickets = generate_auto_tickets(draws, candidate_count, recent_window, seed, conn)
         scores = build_auto_scores(draws, recent_window, conn)
     else:
-        tickets = generate_tickets(draws, strategy, ticket_count, recent_window, seed)
+        tickets = generate_tickets(draws, strategy, candidate_count, recent_window, seed)
         scores = build_scores(draws, recent_window=recent_window, strategy=strategy)
 
+    tickets = enforce_repeat_guard(tickets, scores, draws, conn, ticket_count)
     bankers, drags, reserves, weak_numbers = build_banker_drag_lists(scores)
     special_candidates = build_special_candidates(scores)
     return PredictionPackage(
@@ -1556,6 +1563,176 @@ def generate_auto_tickets(
 
     ranked = sorted(tickets.values(), key=lambda ticket: ticket.score, reverse=True)
     return ranked[:ticket_count]
+
+
+def latest_previous_ticket_map(
+    conn: sqlite3.Connection | None,
+    limit: int = REPEAT_GUARD_PREVIOUS_LIMIT,
+    exclude_run_id: int | None = None,
+) -> dict[tuple[int, ...], dict[str, object]]:
+    if conn is None:
+        return {}
+    init_db(conn)
+    if exclude_run_id is None:
+        latest_run = latest_prediction_run(conn)
+    else:
+        latest_run = conn.execute(
+            "SELECT * FROM prediction_runs WHERE id <> ? ORDER BY id DESC LIMIT 1",
+            (exclude_run_id,),
+        ).fetchone()
+    if latest_run is None:
+        return {}
+    rows = conn.execute(
+        """
+        SELECT ticket_rank, numbers_json, score
+        FROM prediction_tickets
+        WHERE run_id = ?
+        ORDER BY ticket_rank
+        LIMIT ?
+        """,
+        (latest_run["id"], limit),
+    ).fetchall()
+    result: dict[tuple[int, ...], dict[str, object]] = {}
+    for row in rows:
+        numbers = tuple(sorted(int(number) for number in json.loads(row["numbers_json"])))
+        result[numbers] = {
+            "run_id": int(latest_run["id"]),
+            "rank": int(row["ticket_rank"]),
+            "score": float(row["score"]),
+            "based_on": f"{latest_run['based_on_draw_no']} / {latest_run['based_on_draw_date']}",
+        }
+    return result
+
+
+def repeat_guard_metrics(
+    ticket: Ticket,
+    rank: int,
+    max_score: float,
+    scores: dict[int, NumberScore],
+    draws: list[Draw],
+) -> dict[str, float | int | bool]:
+    ranks = rank_lookup(scores)
+    score_ratio = ticket.score / max_score if max_score else 0.0
+    core_hits = sum(1 for number in ticket.numbers if ranks.get(number, 99) <= CORE_POOL_SIZE)
+    maturity = ticket_maturity_score(ticket.numbers, scores, draws[-1])
+    allowed = (
+        rank <= REPEAT_GUARD_ALLOW_TOP_RANK
+        and score_ratio >= REPEAT_GUARD_MIN_SCORE_RATIO
+        and core_hits >= REPEAT_GUARD_MIN_CORE_HITS
+        and maturity >= REPEAT_GUARD_MIN_MATURITY
+    )
+    return {
+        "rank": rank,
+        "score_ratio": score_ratio,
+        "core_hits": core_hits,
+        "maturity": maturity,
+        "allowed": allowed,
+    }
+
+
+def repeat_guard_reason(metrics: dict[str, float | int | bool]) -> str:
+    return (
+        "連莊達標"
+        f" 排名{int(metrics['rank'])}"
+        f" 分數比{float(metrics['score_ratio']):.3f}"
+        f" 前九{int(metrics['core_hits'])}/6"
+        f" 成熟{float(metrics['maturity']):.3f}"
+    )
+
+
+def enforce_repeat_guard(
+    candidates: list[Ticket],
+    scores: dict[int, NumberScore],
+    draws: list[Draw],
+    conn: sqlite3.Connection | None,
+    ticket_count: int,
+) -> list[Ticket]:
+    previous = latest_previous_ticket_map(conn)
+    if not previous:
+        return candidates[:ticket_count]
+    max_score = max((ticket.score for ticket in candidates), default=1.0) or 1.0
+    accepted: list[Ticket] = []
+    for rank, ticket in enumerate(candidates, start=1):
+        previous_hit = previous.get(tuple(sorted(ticket.numbers)))
+        if previous_hit is None:
+            accepted.append(ticket)
+        else:
+            metrics = repeat_guard_metrics(ticket, rank, max_score, scores, draws)
+            if bool(metrics["allowed"]):
+                accepted.append(
+                    Ticket(
+                        numbers=ticket.numbers,
+                        score=ticket.score,
+                        profile=ticket.profile,
+                        strategy=ticket.strategy,
+                        reasons=tuple([*ticket.reasons, repeat_guard_reason(metrics)]),
+                    )
+                )
+        if len(accepted) >= ticket_count:
+            break
+    return accepted[:ticket_count]
+
+
+def repeat_guard_audit_rows(
+    conn: sqlite3.Connection,
+    package: PredictionPackage,
+    draws: list[Draw],
+    current_run_id: int | None = None,
+    limit: int = 10,
+) -> list[list[object]]:
+    previous = latest_previous_ticket_map(conn, exclude_run_id=current_run_id)
+    if not previous:
+        return [["上期沿用檢查", "無上期預測", "-", "首次或資料尚未建立，無需比對"]]
+    max_score = max((ticket.score for ticket in package.tickets), default=1.0) or 1.0
+    rows: list[list[object]] = []
+    repeated_count = 0
+    for rank, ticket in enumerate(package.tickets, start=1):
+        previous_hit = previous.get(tuple(sorted(ticket.numbers)))
+        if previous_hit is None:
+            if len(rows) < limit:
+                rows.append([rank, format_numbers(ticket.numbers), "新票組", "-", "未與上一筆正式預測重複"])
+            continue
+        repeated_count += 1
+        metrics = repeat_guard_metrics(ticket, rank, max_score, package.scores, draws)
+        status = "達標連莊" if bool(metrics["allowed"]) else "違規"
+        rows.append(
+            [
+                rank,
+                format_numbers(ticket.numbers),
+                status,
+                f"上一筆第 {previous_hit['rank']} 組",
+                repeat_guard_reason(metrics),
+            ]
+        )
+    if repeated_count == 0:
+        rows.insert(0, ["總檢查", "全部正式主推", "通過", "0 組重複", "沒有把上一筆預測直接沿用成新預測"])
+    return rows[:limit]
+
+
+def repeat_guard_status_text(
+    conn: sqlite3.Connection,
+    package: PredictionPackage,
+    draws: list[Draw],
+    current_run_id: int | None = None,
+) -> str:
+    previous = latest_previous_ticket_map(conn, exclude_run_id=current_run_id)
+    if not previous:
+        return "無上期可比對"
+    max_score = max((ticket.score for ticket in package.tickets), default=1.0) or 1.0
+    repeated = []
+    violations = []
+    for rank, ticket in enumerate(package.tickets, start=1):
+        if tuple(sorted(ticket.numbers)) not in previous:
+            continue
+        repeated.append(ticket)
+        metrics = repeat_guard_metrics(ticket, rank, max_score, package.scores, draws)
+        if not bool(metrics["allowed"]):
+            violations.append(ticket)
+    if violations:
+        return f"違規 {len(violations)} 組，需立即重算"
+    if repeated:
+        return f"達標連莊 {len(repeated)} 組"
+    return "通過，0 組沿用"
 
 
 def performance_strategy_weights(conn: sqlite3.Connection | None) -> dict[str, float]:
@@ -1994,7 +2171,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊前九核心池內",
-                    "第17版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第18版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2004,7 +2181,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第17版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第18版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2013,7 +2190,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
-                "第17版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                "第18版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2021,7 +2198,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第17版強化模型並持續滾動校準",
+                "維持第18版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -2948,6 +3125,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 risk_level,
                 completeness_passed,
                 completeness_total,
+                run_id,
             ),
         ),
         "",
@@ -2968,11 +3146,12 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 top9,
                 completeness_passed,
                 completeness_total,
+                run_id,
             ),
         ),
         "",
         "## 資料補足說明",
-        markdown_table(["項目", "狀態", "說明"], data_gap_clarity_rows(conn, draws)),
+        markdown_table(["項目", "狀態", "說明"], data_gap_clarity_rows(conn, draws, package, run_id)),
         "",
         "## 缺期掃描與補足證明",
         markdown_table(["項目", "結果", "證據"], period_gap_summary_rows(draws)),
@@ -2982,6 +3161,13 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
         "",
         "### 長日期間隔核對",
         markdown_table(["期號", "日期區間", "間隔天數", "判定"], long_date_gap_rows(draws)),
+        "",
+        "## 上期預測禁沿用硬閘",
+        "- 鐵律：上期正式預測不得直接變成本期正式主推；若有連莊，必須同時達到排名前三、相對分數、前九核心覆蓋、成熟度門檻。",
+        markdown_table(
+            ["本期排名", "號碼", "狀態", "上期來源", "判定證據"],
+            repeat_guard_audit_rows(conn, package, draws, run_id),
+        ),
         "",
         "## 輸出檔案檢核",
         markdown_table(["檔案", "狀態", "位置", "時間"], report_file_status_rows()),
@@ -3057,17 +3243,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
-                ["新一期結構", f"前九={format_numbers(top9)}", "符合第17版每期重算、539鐵律與9顆核心池規格"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第18版每期重算、539鐵律與9顆核心池規格"],
             ],
         ),
         "",
-        "## 分頁六：全系統缺口檢測與第17版修復",
+        "## 分頁六：全系統缺口檢測與第18版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 分頁七：第17版新增邏輯運算模型",
+        "## 分頁七：第18版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -4568,6 +4754,7 @@ def report_index_rows() -> list[list[object]]:
         ["先看區", "戰報快讀", "最新開獎、下期預測、高信心牌、前九核心、低機率暫避"],
         ["先看區", "資料完整度總表", "歷史資料庫、最新預測、手機同步、戰報輸出是否齊全"],
         ["先看區", "缺期掃描與補足證明", "逐年檢查期號連續性，分清楚真缺期與歷史停開間隔"],
+        ["先看區", "上期預測禁沿用硬閘", "嚴禁上一筆預測直接沿用，連莊必須達標才保留"],
         ["分頁一至十二", "本期預測", "發布結論、每期重算、低命中校正、高機率信心牌、前九核心"],
         ["分頁十三至十九", "開獎檢討", "日期基準、上期命中、漏抓檢討、前十五詳表"],
         ["分頁二十至二十六", "模型與回測", "牌型、關聯、多模型競賽、命中指標、模型審計"],
@@ -4608,6 +4795,7 @@ def data_completeness_overview_rows(
     top9: list[int],
     completeness_passed: int,
     completeness_total: int,
+    current_run_id: int | None = None,
 ) -> list[list[object]]:
     prediction_count = conn.execute("SELECT COUNT(*) AS total FROM prediction_runs").fetchone()["total"]
     result_count = conn.execute("SELECT COUNT(*) AS total FROM prediction_results").fetchone()["total"]
@@ -4628,13 +4816,19 @@ def data_completeness_overview_rows(
         ["系統接管點", "已標示", first_base_text],
         ["高機率信心牌", "已加註", f"{min(6, len(package.tickets))} 組列入特別標註"],
         ["前九核心池", "已限制", format_numbers(top9)],
+        ["上期沿用硬閘", "已啟用", repeat_guard_status_text(conn, package, draws, current_run_id)],
         ["低機率暫避", "已補足", "五不中、十不中、十五不中各自列信心與回測成效"],
         ["模型完整度", "通過" if completeness_passed == completeness_total else "需追蹤", f"{completeness_passed}/{completeness_total}"],
         ["手機雲端", "已同步生成", "手機首頁、手機狀態、離線快取與完整戰報同源輸出"],
     ]
 
 
-def data_gap_clarity_rows(conn: sqlite3.Connection, draws: list[Draw]) -> list[list[object]]:
+def data_gap_clarity_rows(
+    conn: sqlite3.Connection,
+    draws: list[Draw],
+    package: PredictionPackage | None = None,
+    current_run_id: int | None = None,
+) -> list[list[object]]:
     first_base = first_prediction_base_draw(draws, conn)
     first_base_text = (
         f"{first_base.draw_no or '-'} / {first_base.draw_date}"
@@ -4647,6 +4841,11 @@ def data_gap_clarity_rows(conn: sqlite3.Connection, draws: list[Draw]) -> list[l
     return [
         ["歷史資料", "已保留", "系統接管前舊期只作歷史樣本，不冒充已預測紀錄"],
         ["期號缺口", "已補足" if not missing_periods else "需補期", f"資料庫期號缺口 {len(missing_periods)} 筆"],
+        [
+            "上期沿用",
+            "已禁止",
+            repeat_guard_status_text(conn, package, draws, current_run_id) if package is not None else "正式預測生成時強制檢查",
+        ],
         ["接管起點", "已標明", first_base_text],
         ["現行缺口", "無" if not current_missing else "需處理", f"最近檢查 {len(recent_rows)} 期，現行缺口 {len(current_missing)} 筆"],
         ["戰報可讀性", "已重整", "最前面固定顯示快讀、目錄、資料完整度與缺口說明"],
@@ -4671,6 +4870,7 @@ def quick_report_rows(
     risk_level: str,
     completeness_passed: int,
     completeness_total: int,
+    current_run_id: int | None = None,
 ) -> list[list[object]]:
     super_rows = super_recommendation_rows(package, draws)
     confidence_rows = confidence_ticket_rows(package, limit=3)
@@ -4682,6 +4882,7 @@ def quick_report_rows(
     return [
         ["最新開獎", "已入庫", f"{latest.draw_no or '-'} / {latest.draw_date} / {format_numbers(latest.main_numbers)} + 特別號 {latest.special:02d}"],
         ["缺期掃描", "已補足" if not missing_periods else "需補期", f"期號缺口 {len(missing_periods)} 筆"],
+        ["上期沿用硬閘", "已啟用", repeat_guard_status_text(conn, package, draws, current_run_id)],
         ["下期預測", "已重算", f"目標 {target_date} / 第 {run_id if run_id is not None else '-'} 筆 / 依據 {based_draw_no or '-'} {based_draw_date}"],
         ["強推薦", "先看這裡", top_super],
         ["高機率信心牌", "特別加註", top_confidence],
@@ -5605,7 +5806,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260630_第17版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260630_第18版")
 
 
 def build_site(

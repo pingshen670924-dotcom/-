@@ -4498,13 +4498,9 @@ def report_file_status_rows() -> list[list[object]]:
     rows = []
     for path, label in files:
         if path.exists():
-            try:
-                stamp = datetime.fromtimestamp(path.stat().st_mtime, LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
-            except OSError:
-                stamp = "-"
-            rows.append([label, "已產生", str(path), stamp])
+            rows.append([label, "本輪已排入輸出", str(path), "一鍵完成後以檔案時間為準"])
         else:
-            rows.append([label, "待本輪產生", str(path), "本次一鍵完成後覆寫"])
+            rows.append([label, "本輪將建立", str(path), "一鍵完成後以檔案時間為準"])
     return rows
 
 

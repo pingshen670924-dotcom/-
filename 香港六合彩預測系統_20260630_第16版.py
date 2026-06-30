@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260629_第15版"
+MODEL_VERSION = "香港六合彩預測系統_20260630_第16版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -1994,7 +1994,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊前九核心池內",
-                    "第15版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第16版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2004,7 +2004,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第15版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第16版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2013,7 +2013,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
-                "第15版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                "第16版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2021,7 +2021,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第15版強化模型並持續滾動校準",
+                "維持第16版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -2928,6 +2928,56 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     lines: list[str] = [
         "# 香港六合彩預測系統戰報",
         "",
+        "## 戰報快讀",
+        markdown_table(
+            ["項目", "狀態", "內容"],
+            quick_report_rows(
+                conn,
+                latest,
+                package,
+                target_date,
+                run_id,
+                based_draw_no,
+                based_draw_date,
+                top9,
+                ranked_numbers,
+                score_max,
+                recent_window,
+                draws,
+                release_level,
+                risk_level,
+                completeness_passed,
+                completeness_total,
+            ),
+        ),
+        "",
+        "## 戰報目錄",
+        markdown_table(["區塊", "名稱", "用途"], report_index_rows()),
+        "",
+        "## 資料完整度總表",
+        markdown_table(
+            ["檢查項目", "狀態", "證據"],
+            data_completeness_overview_rows(
+                conn,
+                draws,
+                package,
+                run_id,
+                based_draw_no,
+                based_draw_date,
+                target_date,
+                top9,
+                completeness_passed,
+                completeness_total,
+            ),
+        ),
+        "",
+        "## 資料補足說明",
+        markdown_table(["項目", "狀態", "說明"], data_gap_clarity_rows(conn, draws)),
+        "",
+        "## 輸出檔案檢核",
+        markdown_table(["檔案", "狀態", "位置", "時間"], report_file_status_rows()),
+        "",
+        "## 系統摘要",
         f"- 產生時間：{report_time}",
         "- 系統狀態：正常",
         f"- 資料新鮮度：{freshness} / 最新資料日 {latest.draw_date}",
@@ -2998,17 +3048,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
-                ["新一期結構", f"前九={format_numbers(top9)}", "符合第15版每期重算、539鐵律與9顆核心池規格"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第16版每期重算、539鐵律與9顆核心池規格"],
             ],
         ),
         "",
-        "## 分頁六：全系統缺口檢測與第15版修復",
+        "## 分頁六：全系統缺口檢測與第16版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 分頁七：第15版新增邏輯運算模型",
+        "## 分頁七：第16版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -4286,6 +4336,7 @@ def formal_prediction_integrity_rows(
     rows = []
     if len(draws) < 2:
         return rows
+    first_base_draw_id = first_prediction_base_draw_id(conn)
     indexed = list(enumerate(draws))
     for index, actual in reversed(indexed[-limit:]):
         if index <= 0:
@@ -4305,7 +4356,18 @@ def formal_prediction_integrity_rows(
             (previous.row_id,),
         ).fetchone()
         if run is None:
-            rows.append([actual.draw_no or "-", actual.draw_date, "異常", "-", "缺正式預測紀錄，不能結算命中率"])
+            if first_base_draw_id is not None and int(previous.row_id) < first_base_draw_id:
+                rows.append(
+                    [
+                        actual.draw_no or "-",
+                        actual.draw_date,
+                        "歷史舊期",
+                        "-",
+                        "系統接管前沒有正式預測紀錄，保留開獎資料，不列現行異常",
+                    ]
+                )
+            else:
+                rows.append([actual.draw_no or "-", actual.draw_date, "異常", "-", "缺正式預測紀錄，不能結算命中率"])
             continue
         rows.append(
             [
@@ -4350,6 +4412,7 @@ def prediction_recalculation_rows(
     limit: int = 8,
 ) -> list[list[object]]:
     rows = []
+    first_base_draw_id = first_prediction_base_draw_id(conn)
     recent_draws = list(reversed(draws[-limit:]))
     for draw in recent_draws:
         if draw.row_id is None:
@@ -4366,7 +4429,18 @@ def prediction_recalculation_rows(
             (draw.row_id,),
         ).fetchone()
         if run is None:
-            rows.append([draw.draw_no or "-", draw.draw_date, "未重算", "-", "缺少該期重算紀錄"])
+            if first_base_draw_id is not None and int(draw.row_id) < first_base_draw_id:
+                rows.append(
+                    [
+                        draw.draw_no or "-",
+                        draw.draw_date,
+                        "歷史舊期",
+                        "-",
+                        "系統接管前資料，保留入庫，不列現行重算缺口",
+                    ]
+                )
+            else:
+                rows.append([draw.draw_no or "-", draw.draw_date, "未重算", "-", "缺少該期重算紀錄"])
         else:
             rows.append(
                 [
@@ -4378,6 +4452,149 @@ def prediction_recalculation_rows(
                 ]
             )
     return rows
+
+
+def first_prediction_base_draw_id(conn: sqlite3.Connection) -> int | None:
+    row = conn.execute("SELECT MIN(based_on_draw_id) AS first_id FROM prediction_runs").fetchone()
+    if row is None or row["first_id"] is None:
+        return None
+    return int(row["first_id"])
+
+
+def first_prediction_base_draw(draws: list[Draw], conn: sqlite3.Connection) -> Draw | None:
+    first_id = first_prediction_base_draw_id(conn)
+    if first_id is None:
+        return None
+    for draw in draws:
+        if draw.row_id is not None and int(draw.row_id) == first_id:
+            return draw
+    return None
+
+
+def report_index_rows() -> list[list[object]]:
+    return [
+        ["先看區", "戰報快讀", "最新開獎、下期預測、高信心牌、前九核心、低機率暫避"],
+        ["先看區", "資料完整度總表", "歷史資料庫、最新預測、手機同步、戰報輸出是否齊全"],
+        ["分頁一至十二", "本期預測", "發布結論、每期重算、低命中校正、高機率信心牌、前九核心"],
+        ["分頁十三至十九", "開獎檢討", "日期基準、上期命中、漏抓檢討、前十五詳表"],
+        ["分頁二十至二十六", "模型與回測", "牌型、關聯、多模型競賽、命中指標、模型審計"],
+        ["分頁二十七至三十一", "暫避與號碼池", "五不中、十不中、十五不中、避險包、下期號碼池"],
+        ["分頁三十二至三十六", "鐵律與審核", "多視窗門檻、正式預測紀錄、每日更新、運算審核"],
+    ]
+
+
+def report_file_status_rows() -> list[list[object]]:
+    files = [
+        [DEFAULT_REPORT_DIR / "香港六合彩預測系統_完整戰報.html", "完整戰報網頁"],
+        [DEFAULT_REPORT_DIR / "香港六合彩預測系統_完整戰報.md", "完整戰報純文字"],
+        [DEFAULT_REPORT_DIR / "香港六合彩預測系統_最新強化戰報.html", "最新強化戰報"],
+        [Path("site") / SITE_HOME_NAME, "首頁"],
+        [Path("site") / SITE_BATTLE_REPORT_NAME, "手機同步戰報"],
+        [Path("site") / SITE_LATEST_PREDICTION_NAME, "最新預測"],
+        [Path("site") / SITE_STATUS_NAME, "系統狀態"],
+        [Path("site") / "香港六合彩預測系統_手機狀態.json", "手機狀態"],
+        [Path("data") / "香港六合彩預測系統_全歷史資料.csv", "全歷史資料"],
+    ]
+    rows = []
+    for path, label in files:
+        if path.exists():
+            try:
+                stamp = datetime.fromtimestamp(path.stat().st_mtime, LOCAL_TZ).strftime("%Y-%m-%d %H:%M:%S")
+            except OSError:
+                stamp = "-"
+            rows.append([label, "已產生", str(path), stamp])
+        else:
+            rows.append([label, "待本輪產生", str(path), "本次一鍵完成後覆寫"])
+    return rows
+
+
+def data_completeness_overview_rows(
+    conn: sqlite3.Connection,
+    draws: list[Draw],
+    package: PredictionPackage,
+    run_id: int | None,
+    based_draw_no: str | None,
+    based_draw_date: str,
+    target_date: str,
+    top9: list[int],
+    completeness_passed: int,
+    completeness_total: int,
+) -> list[list[object]]:
+    prediction_count = conn.execute("SELECT COUNT(*) AS total FROM prediction_runs").fetchone()["total"]
+    result_count = conn.execute("SELECT COUNT(*) AS total FROM prediction_results").fetchone()["total"]
+    first_base = first_prediction_base_draw(draws, conn)
+    first_base_text = (
+        f"{first_base.draw_no or '-'} / {first_base.draw_date}"
+        if first_base is not None
+        else "尚無正式預測基準"
+    )
+    latest = draws[-1]
+    return [
+        ["歷史資料庫", "已入庫", f"{len(draws)} 期 / {draws[0].draw_date} 到 {draws[-1].draw_date}"],
+        ["最新開獎", "已確認", f"{latest.draw_no or '-'} / {latest.draw_date} / {format_numbers(latest.main_numbers)} + 特別號 {latest.special:02d}"],
+        ["最新預測", "已重算" if run_id is not None else "臨時計算", f"第 {run_id if run_id is not None else '-'} 筆 / 依據 {based_draw_no or '-'} / {based_draw_date} / 目標 {target_date}"],
+        ["正式預測紀錄", "已累積", f"{prediction_count} 筆預測 / {result_count} 筆結算"],
+        ["系統接管點", "已標示", first_base_text],
+        ["高機率信心牌", "已加註", f"{min(6, len(package.tickets))} 組列入特別標註"],
+        ["前九核心池", "已限制", format_numbers(top9)],
+        ["低機率暫避", "已補足", "五不中、十不中、十五不中各自列信心與回測成效"],
+        ["模型完整度", "通過" if completeness_passed == completeness_total else "需追蹤", f"{completeness_passed}/{completeness_total}"],
+        ["手機雲端", "已同步生成", "手機首頁、手機狀態、離線快取與完整戰報同源輸出"],
+    ]
+
+
+def data_gap_clarity_rows(conn: sqlite3.Connection, draws: list[Draw]) -> list[list[object]]:
+    first_base = first_prediction_base_draw(draws, conn)
+    first_base_text = (
+        f"{first_base.draw_no or '-'} / {first_base.draw_date}"
+        if first_base is not None
+        else "尚未建立接管點"
+    )
+    recent_rows = prediction_recalculation_rows(conn, draws)
+    current_missing = [row for row in recent_rows if row[2] in {"未重算", "異常", "未檢查"}]
+    return [
+        ["歷史資料", "已保留", "系統接管前舊期只作歷史樣本，不冒充已預測紀錄"],
+        ["接管起點", "已標明", first_base_text],
+        ["現行缺口", "無" if not current_missing else "需處理", f"最近檢查 {len(recent_rows)} 期，現行缺口 {len(current_missing)} 筆"],
+        ["戰報可讀性", "已重整", "最前面固定顯示快讀、目錄、資料完整度與缺口說明"],
+        ["掃描規則", "已加嚴", "全系統掃描會檢查快讀、目錄、完整度、鐵律、低機率暫避與手機同步"],
+    ]
+
+
+def quick_report_rows(
+    conn: sqlite3.Connection,
+    latest: Draw,
+    package: PredictionPackage,
+    target_date: str,
+    run_id: int | None,
+    based_draw_no: str | None,
+    based_draw_date: str,
+    top9: list[int],
+    ranked_numbers: list[int],
+    score_max: float,
+    recent_window: int,
+    draws: list[Draw],
+    release_level: str,
+    risk_level: str,
+    completeness_passed: int,
+    completeness_total: int,
+) -> list[list[object]]:
+    super_rows = super_recommendation_rows(package, draws)
+    confidence_rows = confidence_ticket_rows(package, limit=3)
+    avoid_rows = exclusion_pack_summary_rows(draws, package.scores, ranked_numbers, score_max, recent_window)
+    top_confidence = confidence_rows[0][1] if confidence_rows else "-"
+    top_super = "；".join(f"{row[0]} {row[1]}" for row in super_rows[:3])
+    avoid_text = "；".join(f"{row[0]} {row[1]} 信心{row[2]}" for row in avoid_rows[:3])
+    return [
+        ["最新開獎", "已入庫", f"{latest.draw_no or '-'} / {latest.draw_date} / {format_numbers(latest.main_numbers)} + 特別號 {latest.special:02d}"],
+        ["下期預測", "已重算", f"目標 {target_date} / 第 {run_id if run_id is not None else '-'} 筆 / 依據 {based_draw_no or '-'} {based_draw_date}"],
+        ["強推薦", "先看這裡", top_super],
+        ["高機率信心牌", "特別加註", top_confidence],
+        ["九顆核心池", "正式主池", format_numbers(top9)],
+        ["低機率暫避", "分包顯示", avoid_text],
+        ["發布狀態", release_level, f"風險等級 {risk_level} / 完整度 {completeness_passed}/{completeness_total}"],
+        ["手機同步", "同源輸出", "手機首頁與完整戰報由同一筆最新預測生成"],
+    ]
 
 
 def recommendation_gate_rows(
@@ -5293,7 +5510,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260629_第15版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260630_第16版")
 
 
 def build_site(

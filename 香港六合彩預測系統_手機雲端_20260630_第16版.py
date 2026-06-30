@@ -9,7 +9,7 @@ import zlib
 from pathlib import Path
 
 import importlib
-m = importlib.import_module("香港六合彩預測系統_20260629_第15版")
+m = importlib.import_module("香港六合彩預測系統_20260630_第16版")
 
 
 MOBILE_HTML = "香港六合彩預測系統_手機首頁.html"
@@ -528,7 +528,7 @@ def manifest() -> dict:
 
 
 def service_worker() -> str:
-    return f"""const CACHE_NAME = "香港六合彩預測系統-20260629-v15-iron-law";
+    return f"""const CACHE_NAME = "香港六合彩預測系統-20260630-v16-readable-report";
 const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{MOBILE_MANIFEST}","./{MOBILE_ICON_192}","./{MOBILE_ICON_512}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
 self.addEventListener("install", event => {{
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));

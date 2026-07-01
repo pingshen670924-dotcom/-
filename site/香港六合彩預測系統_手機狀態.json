@@ -1,27 +1,27 @@
 {
-  "generated_at": "2026-06-30T13:35:27+08:00",
-  "model_version": "香港六合彩預測系統_20260630_第18版",
-  "draw_count": 2567,
-  "date_range": "2008-01-03 -> 2026-06-28",
+  "generated_at": "2026-07-01T10:03:21+08:00",
+  "model_version": "香港六合彩預測系統_20260701_第19版",
+  "draw_count": 2568,
+  "date_range": "2008-01-03 -> 2026-06-30",
   "latest": {
-    "draw_no": "2026/069",
-    "date": "2026-06-28",
+    "draw_no": "2026/070",
+    "date": "2026-06-30",
     "main_numbers": [
-      5,
-      7,
-      26,
-      32,
-      37,
+      12,
+      14,
+      17,
+      18,
+      22,
       40
     ],
-    "special": 35
+    "special": 13
   },
   "prediction": {
-    "run_id": 22,
-    "created_at": "2026-06-30T13:33:33+08:00",
-    "based_on_draw_no": "2026/069",
-    "based_on_draw_date": "2026-06-28",
-    "target_date": "2026-06-30",
+    "run_id": 23,
+    "created_at": "2026-07-01T10:00:55+08:00",
+    "based_on_draw_no": "2026/070",
+    "based_on_draw_date": "2026-06-30",
+    "target_date": "2026-07-02",
     "strategy": "自動融合",
     "ticket_count": 20
   },
@@ -31,65 +31,65 @@
     "release_level": "研究觀察，不列保證",
     "completeness": "12/12",
     "champion": "均衡",
-    "auto_weights": "均衡:1.43 / 冷遺漏:0.55 / 分散:1.21 / 熱度:0.90 / 趨勢:0.91",
-    "settled_status": "第 13 筆 -> 2026-06-28 2026/069: 前五/前九/前十/前十五 0/0/0/1",
-    "consensus": 0.37,
+    "auto_weights": "均衡:1.41 / 冷遺漏:0.74 / 分散:0.92 / 熱度:0.99 / 趨勢:0.95",
+    "settled_status": "第 22 筆 -> 2026-06-30 2026/070: 前五/前九/前十/前十五 0/0/0/1",
+    "consensus": 0.41,
     "missing_period_status": "期號缺口 0 筆",
-    "repeat_guard_status": "達標連莊 1 組"
+    "repeat_guard_status": "通過，0 組沿用"
   },
   "repeat_guard_audit": [
     {
+      "rank": "總檢查",
+      "numbers": "全部正式主推",
+      "status": "通過",
+      "previous": "0 組重複",
+      "proof": "沒有把上一筆預測直接沿用成新預測"
+    },
+    {
       "rank": 1,
-      "numbers": "02 07 20 28 34 47",
-      "status": "達標連莊",
-      "previous": "上一筆第 12 組",
-      "proof": "連莊達標 排名1 分數比1.000 前九6/6 成熟0.921"
+      "numbers": "11 12 20 28 34 47",
+      "status": "新票組",
+      "previous": "-",
+      "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 2,
-      "numbers": "04 07 20 28 34 47",
+      "numbers": "04 11 12 20 28 47",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 3,
-      "numbers": "02 07 20 34 46 47",
+      "numbers": "04 11 12 20 34 47",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 4,
-      "numbers": "07 12 20 34 46 47",
+      "numbers": "11 12 16 20 34 47",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 5,
-      "numbers": "02 07 12 20 34 47",
+      "numbers": "04 11 20 28 34 47",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 6,
-      "numbers": "04 20 28 34 35 47",
+      "numbers": "10 11 12 20 28 47",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 7,
-      "numbers": "04 07 20 28 46 47",
-      "status": "新票組",
-      "previous": "-",
-      "proof": "未與上一筆正式預測重複"
-    },
-    {
-      "rank": 8,
-      "numbers": "02 04 07 20 34 47",
+      "numbers": "10 11 12 20 34 47",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
@@ -110,7 +110,7 @@
       {
         "item": "最新入庫",
         "status": "已確認",
-        "proof": "2026/069 / 2026-06-28"
+        "proof": "2026/070 / 2026-06-30"
       },
       {
         "item": "外部更新",
@@ -247,8 +247,8 @@
       },
       {
         "year": 2026,
-        "range": "2026/001 -> 2026/069",
-        "draw_count": 69,
+        "range": "2026/001 -> 2026/070",
+        "draw_count": 70,
         "missing_count": 0,
         "missing": "無"
       }
@@ -270,25 +270,25 @@
   },
   "accuracy": {
     "sample": 48,
-    "top5_avg": 0.708,
+    "top5_avg": 0.688,
     "top5_random": 0.612,
-    "top5_edge": 0.096,
+    "top5_edge": 0.075,
     "top9_avg": 1.229,
     "top9_random": 1.102,
     "top9_edge": 0.127,
     "top10_avg": 1.333,
     "top10_random": 1.224,
     "top10_edge": 0.109,
-    "top15_avg": 1.875,
+    "top15_avg": 1.854,
     "top15_random": 1.837,
-    "top15_edge": 0.038
+    "top15_edge": 0.017
   },
   "confidence_tickets": [
     {
       "rank": 1,
       "numbers": [
-        2,
-        7,
+        11,
+        12,
         20,
         28,
         34,
@@ -296,83 +296,83 @@
       ],
       "label": "高機率信心牌 96.0",
       "strategy": "均衡",
-      "score": 2.878,
-      "reasons": "票組成熟分 0.92；連莊達標 排名1 分數比1.000 前九6/6 成熟0.921"
+      "score": 2.862,
+      "reasons": "實戰成熟度 1.41；票組成熟分 0.94"
     },
     {
       "rank": 2,
       "numbers": [
         4,
-        7,
+        11,
+        12,
         20,
         28,
-        34,
         47
       ],
-      "label": "高機率信心牌 93.8",
+      "label": "高機率信心牌 94.1",
       "strategy": "均衡",
-      "score": 2.797,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.91"
+      "score": 2.806,
+      "reasons": "實戰成熟度 1.41；票組成熟分 0.90"
     },
     {
       "rank": 3,
       "numbers": [
-        2,
-        7,
+        4,
+        11,
+        12,
         20,
         34,
-        46,
         47
       ],
-      "label": "高機率信心牌 92.0",
+      "label": "高機率信心牌 92.8",
       "strategy": "均衡",
-      "score": 2.75,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.90"
+      "score": 2.802,
+      "reasons": "實戰成熟度 1.41；票組成熟分 0.90"
     },
     {
       "rank": 4,
       "numbers": [
-        7,
+        11,
         12,
+        16,
         20,
         34,
-        46,
         47
       ],
-      "label": "中高信心牌 90.1",
+      "label": "中高信心牌 91.1",
       "strategy": "均衡",
-      "score": 2.693,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.90"
+      "score": 2.761,
+      "reasons": "實戰成熟度 1.41；票組成熟分 0.91"
     },
     {
       "rank": 5,
       "numbers": [
-        2,
-        7,
-        12,
+        4,
+        11,
         20,
+        28,
         34,
         47
       ],
-      "label": "中高信心牌 88.4",
+      "label": "中高信心牌 89.0",
       "strategy": "均衡",
-      "score": 2.654,
-      "reasons": "實戰成熟度 1.43；票組成熟分 0.85"
+      "score": 2.69,
+      "reasons": "實戰成熟度 1.41；票組成熟分 0.94"
     },
     {
       "rank": 6,
       "numbers": [
-        4,
+        10,
+        11,
+        12,
         20,
         28,
-        34,
-        35,
         47
       ],
-      "label": "中高信心牌 86.7",
-      "strategy": "分散",
-      "score": 2.614,
-      "reasons": "實戰成熟度 1.21；票組成熟分 0.89"
+      "label": "中高信心牌 87.4",
+      "strategy": "均衡",
+      "score": 2.652,
+      "reasons": "實戰成熟度 1.41；票組成熟分 0.87"
     }
   ],
   "super_picks": [
@@ -380,228 +380,228 @@
       "label": "超強獨隻",
       "target": "獨隻1中1",
       "numbers": [
-        34
+        20
       ],
-      "confidence": "93.8",
-      "probability": "1中1 12.245%；近180期校準 1中1 15.0%",
-      "reason": "強推精算層 0.843；穩定 0.97；模型共識 0.45；近況 0.85；前1遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "confidence": "96.1",
+      "probability": "1中1 12.245%；近180期校準 1中1 13.3%",
+      "reason": "強推精算層 0.919；穩定 0.98；模型共識 0.75；近況 0.88；前1遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、轉移追蹤、貝葉斯平滑"
     },
     {
       "label": "超強2碼",
       "target": "2中1~2",
       "numbers": [
-        20,
-        34
+        12,
+        20
       ],
-      "confidence": "91.9",
-      "probability": "至少1中 23.214%；2中2 1.276%；近180期校準 至少1中 26.7%、2中2 1.7%",
-      "reason": "強推精算層 0.800；穩定 0.89；模型共識 0.47；近況 0.86；配對共振 0.66；前2遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "confidence": "92.6",
+      "probability": "至少1中 23.214%；2中2 1.276%；近180期校準 至少1中 26.7%、2中2 1.1%",
+      "reason": "強推精算層 0.823；穩定 0.98；模型共識 0.65；近況 0.93；配對共振 0.59；前2遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、轉移追蹤、貝葉斯平滑"
     },
     {
       "label": "超強3碼",
       "target": "3中1~3",
       "numbers": [
+        12,
         20,
-        28,
-        34
+        28
       ],
-      "confidence": "89.5",
-      "probability": "至少1中 33.017%；2中以上 3.609%；3中3 0.109%；近180期校準 至少1中 39.4%、2中以上 7.2%、3中3 0.6%",
-      "reason": "強推精算層 0.739；穩定 0.80；模型共識 0.48；近況 0.77；配對共振 0.63；三碼共振 0.29；前3遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "confidence": "90.8",
+      "probability": "至少1中 33.017%；2中以上 3.609%；3中3 0.109%；近180期校準 至少1中 37.8%、2中以上 8.3%、3中3 0.6%",
+      "reason": "強推精算層 0.781；穩定 0.84；模型共識 0.60；近況 0.81；配對共振 0.72；三碼共振 0.47；前3遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、轉移追蹤、貝葉斯平滑"
     }
   ],
   "core_numbers": [
     {
       "rank": 1,
-      "number": 34,
-      "confidence": "高信心（研究） 94.3",
-      "score": 1.07,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "number": 20,
+      "confidence": "高信心（研究） 94.8",
+      "score": 1.095,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、轉移追蹤、貝葉斯平滑"
     },
     {
       "rank": 2,
-      "number": 20,
-      "confidence": "高信心（研究） 91.6",
-      "score": 1.005,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "number": 12,
+      "confidence": "高信心（研究） 93.6",
+      "score": 1.06,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、時間動能、特別號交叉"
     },
     {
       "rank": 3,
-      "number": 47,
-      "confidence": "高信心（研究） 90.8",
-      "score": 0.991,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+      "number": 28,
+      "confidence": "中高信心 87.2",
+      "score": 0.887,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、尾數轉移"
     },
     {
       "rank": 4,
-      "number": 7,
-      "confidence": "高信心（研究） 90.9",
-      "score": 0.979,
+      "number": 47,
+      "confidence": "中高信心 86.3",
+      "score": 0.88,
       "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
     },
     {
       "rank": 5,
-      "number": 28,
-      "confidence": "高信心（研究） 89.7",
-      "score": 0.949,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、時間動能、配對圖譜"
+      "number": 34,
+      "confidence": "中高信心 86.3",
+      "score": 0.863,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 6,
-      "number": 4,
-      "confidence": "高信心（研究） 88.3",
-      "score": 0.909,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、配對圖譜"
+      "number": 16,
+      "confidence": "中高信心 84.7",
+      "score": 0.809,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、長期頻率、貝葉斯平滑"
     },
     {
       "rank": 7,
-      "number": 2,
-      "confidence": "高信心（研究） 88.2",
-      "score": 0.904,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、尾數轉移"
+      "number": 4,
+      "confidence": "中高信心 83.3",
+      "score": 0.782,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、配對圖譜"
     },
     {
       "rank": 8,
-      "number": 32,
-      "confidence": "中高信心 87.9",
-      "score": 0.877,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、特別號交叉、轉移追蹤"
+      "number": 10,
+      "confidence": "中高信心 83.1",
+      "score": 0.774,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
     },
     {
       "rank": 9,
-      "number": 46,
-      "confidence": "中高信心 85.8",
-      "score": 0.852,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "number": 14,
+      "confidence": "中高信心 82.9",
+      "score": 0.759,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、結算回饋"
     }
   ],
   "top_numbers": [
     {
       "rank": 1,
-      "number": 34,
+      "number": 20,
       "bucket": "9隻內核心",
-      "confidence": "高信心（研究） 94.3",
-      "score": 1.07,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "confidence": "高信心（研究） 94.8",
+      "score": 1.095,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、轉移追蹤、貝葉斯平滑"
     },
     {
       "rank": 2,
-      "number": 20,
+      "number": 12,
       "bucket": "9隻內核心",
-      "confidence": "高信心（研究） 91.6",
-      "score": 1.005,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "confidence": "高信心（研究） 93.6",
+      "score": 1.06,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、時間動能、特別號交叉"
     },
     {
       "rank": 3,
-      "number": 47,
+      "number": 28,
       "bucket": "9隻內核心",
-      "confidence": "高信心（研究） 90.8",
-      "score": 0.991,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+      "confidence": "中高信心 87.2",
+      "score": 0.887,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、尾數轉移"
     },
     {
       "rank": 4,
-      "number": 7,
+      "number": 47,
       "bucket": "9隻內核心",
-      "confidence": "高信心（研究） 90.9",
-      "score": 0.979,
+      "confidence": "中高信心 86.3",
+      "score": 0.88,
       "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
     },
     {
       "rank": 5,
-      "number": 28,
+      "number": 34,
       "bucket": "9隻內核心",
-      "confidence": "高信心（研究） 89.7",
-      "score": 0.949,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、時間動能、配對圖譜"
+      "confidence": "中高信心 86.3",
+      "score": 0.863,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 6,
-      "number": 4,
+      "number": 16,
       "bucket": "9隻內核心",
-      "confidence": "高信心（研究） 88.3",
-      "score": 0.909,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、配對圖譜"
+      "confidence": "中高信心 84.7",
+      "score": 0.809,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、長期頻率、貝葉斯平滑"
     },
     {
       "rank": 7,
-      "number": 2,
+      "number": 4,
       "bucket": "9隻內核心",
-      "confidence": "高信心（研究） 88.2",
-      "score": 0.904,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、尾數轉移"
+      "confidence": "中高信心 83.3",
+      "score": 0.782,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、配對圖譜"
     },
     {
       "rank": 8,
-      "number": 32,
+      "number": 10,
       "bucket": "9隻內核心",
-      "confidence": "中高信心 87.9",
-      "score": 0.877,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、特別號交叉、轉移追蹤"
+      "confidence": "中高信心 83.1",
+      "score": 0.774,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
     },
     {
       "rank": 9,
-      "number": 46,
+      "number": 14,
       "bucket": "9隻內核心",
-      "confidence": "中高信心 85.8",
-      "score": 0.852,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
+      "confidence": "中高信心 82.9",
+      "score": 0.759,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、結算回饋"
     },
     {
       "rank": 10,
-      "number": 35,
+      "number": 11,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 86.5",
-      "score": 0.834,
-      "reason": "近期熱度、共現配對、特別號歷史、特別號交叉、尾數轉移"
+      "confidence": "中高信心 82.6",
+      "score": 0.747,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 11,
-      "number": 37,
+      "number": 15,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 85.4",
-      "score": 0.811,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、結算回饋、配對圖譜"
+      "confidence": "中高信心 81.1",
+      "score": 0.707,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
     },
     {
       "rank": 12,
-      "number": 36,
+      "number": 7,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 85.3",
-      "score": 0.805,
-      "reason": "近期熱度、遺漏補償、共現配對、特別號歷史、貝葉斯平滑、尾數轉移"
+      "confidence": "中高信心 78.9",
+      "score": 0.672,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
     },
     {
       "rank": 13,
-      "number": 27,
+      "number": 46,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 84.6",
-      "score": 0.805,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
+      "confidence": "中高信心 78.6",
+      "score": 0.658,
+      "reason": "近期熱度、遺漏補償、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 14,
-      "number": 12,
+      "number": 2,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 84.0",
-      "score": 0.795,
+      "confidence": "中高信心 78.3",
+      "score": 0.646,
       "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 15,
-      "number": 10,
+      "number": 27,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 83.6",
-      "score": 0.782,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、配對圖譜、貝葉斯平滑"
+      "confidence": "觀察 77.7",
+      "score": 0.631,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑"
     }
   ],
   "strong_packs": [
     {
       "title": "最強單支",
       "numbers": [
-        34
+        20
       ],
       "target_hits": 1,
       "probability": 0.122449
@@ -609,8 +609,8 @@
     {
       "title": "最強2中1",
       "numbers": [
-        20,
-        34
+        12,
+        20
       ],
       "target_hits": 1,
       "probability": 0.232143
@@ -618,9 +618,9 @@
     {
       "title": "最強3中1",
       "numbers": [
+        12,
         20,
-        28,
-        34
+        28
       ],
       "target_hits": 1,
       "probability": 0.330167
@@ -628,8 +628,8 @@
     {
       "title": "最強6中2",
       "numbers": [
-        4,
-        7,
+        12,
+        16,
         20,
         28,
         34,
@@ -641,14 +641,14 @@
     {
       "title": "最強9中3",
       "numbers": [
-        2,
         4,
-        7,
+        10,
+        12,
+        14,
+        16,
         20,
         28,
-        32,
         34,
-        46,
         47
       ],
       "target_hits": 3,
@@ -657,12 +657,12 @@
     {
       "title": "特別號候選",
       "numbers": [
-        2,
-        4,
         7,
+        13,
+        14,
+        20,
         24,
         27,
-        38,
         44,
         46
       ],
@@ -671,6 +671,13 @@
     }
   ],
   "recalculation_audit": [
+    {
+      "draw_no": "2026/070",
+      "date": "2026-06-30",
+      "status": "已重算",
+      "run": "第 23 筆",
+      "proof": "2026-07-01T10:00:55+08:00 / 香港六合彩預測系統_20260701_第19版"
+    },
     {
       "draw_no": "2026/069",
       "date": "2026-06-28",
@@ -705,70 +712,63 @@
       "status": "歷史舊期",
       "run": "-",
       "proof": "系統接管前資料，保留入庫，不列現行重算缺口"
-    },
-    {
-      "draw_no": "2026/064",
-      "date": "2026-06-14",
-      "status": "歷史舊期",
-      "run": "-",
-      "proof": "系統接管前資料，保留入庫，不列現行重算缺口"
     }
   ],
   "recommendation_gate": [
     {
       "rank": 1,
-      "numbers": "02 07 20 28 34 47",
+      "numbers": "11 12 20 28 34 47",
       "confidence": "高機率信心牌 96.0",
       "score": "100.0",
       "gate": "允許推薦"
     },
     {
       "rank": 2,
-      "numbers": "04 07 20 28 34 47",
-      "confidence": "高機率信心牌 93.8",
-      "score": "97.2",
+      "numbers": "04 11 12 20 28 47",
+      "confidence": "高機率信心牌 94.1",
+      "score": "98.0",
       "gate": "允許推薦"
     },
     {
       "rank": 3,
-      "numbers": "02 07 20 34 46 47",
-      "confidence": "高機率信心牌 92.0",
-      "score": "95.6",
+      "numbers": "04 11 12 20 34 47",
+      "confidence": "高機率信心牌 92.8",
+      "score": "97.9",
       "gate": "允許推薦"
     },
     {
       "rank": 4,
-      "numbers": "07 12 20 34 46 47",
-      "confidence": "中高信心牌 90.1",
-      "score": "93.6",
+      "numbers": "11 12 16 20 34 47",
+      "confidence": "中高信心牌 91.1",
+      "score": "96.5",
       "gate": "保留觀察"
     },
     {
       "rank": 5,
-      "numbers": "02 07 12 20 34 47",
-      "confidence": "中高信心牌 88.4",
-      "score": "92.2",
+      "numbers": "04 11 20 28 34 47",
+      "confidence": "中高信心牌 89.0",
+      "score": "94.0",
       "gate": "保留觀察"
     },
     {
       "rank": 6,
-      "numbers": "04 20 28 34 35 47",
-      "confidence": "中高信心牌 86.7",
-      "score": "90.9",
+      "numbers": "10 11 12 20 28 47",
+      "confidence": "中高信心牌 87.4",
+      "score": "92.7",
       "gate": "保留觀察"
     },
     {
       "rank": 7,
-      "numbers": "04 07 20 28 46 47",
-      "confidence": "觀察牌 86.7",
-      "score": "90.8",
+      "numbers": "10 11 12 20 34 47",
+      "confidence": "觀察牌 87.3",
+      "score": "92.5",
       "gate": "不列主推"
     },
     {
       "rank": 8,
-      "numbers": "02 04 07 20 34 47",
-      "confidence": "觀察牌 86.5",
-      "score": "90.1",
+      "numbers": "10 11 12 28 34 47",
+      "confidence": "觀察牌 85.9",
+      "score": "88.7",
       "gate": "不列主推"
     }
   ],
@@ -776,216 +776,216 @@
     "five": [
       {
         "number": "03",
-        "confidence": "觀察排除 66.9",
+        "confidence": "中高排除 70.1",
         "rank": 49,
-        "low_score": "0.800",
+        "low_score": "0.876",
         "reason": "短線趨勢偏弱"
-      },
-      {
-        "number": "19",
-        "confidence": "觀察排除 54.6",
-        "rank": 48,
-        "low_score": "0.800",
-        "reason": "剛開後追高風險"
       },
       {
         "number": "31",
-        "confidence": "觀察排除 65.6",
-        "rank": 47,
-        "low_score": "0.790",
+        "confidence": "觀察排除 66.8",
+        "rank": 48,
+        "low_score": "0.808",
         "reason": "短線趨勢偏弱"
+      },
+      {
+        "number": "05",
+        "confidence": "觀察排除 53.4",
+        "rank": 47,
+        "low_score": "0.781",
+        "reason": "剛開後追高風險"
       },
       {
         "number": "43",
-        "confidence": "觀察排除 58.3",
+        "confidence": "觀察排除 59.1",
         "rank": 46,
-        "low_score": "0.753",
+        "low_score": "0.773",
         "reason": "短線趨勢偏弱"
       },
       {
-        "number": "48",
-        "confidence": "觀察排除 61.6",
+        "number": "33",
+        "confidence": "觀察排除 69.1",
         "rank": 45,
-        "low_score": "0.716",
+        "low_score": "0.767",
         "reason": "短線趨勢偏弱"
       }
     ],
     "ten": [
       {
         "number": "03",
-        "confidence": "觀察排除 66.9",
+        "confidence": "中高排除 70.1",
         "rank": 49,
-        "low_score": "0.800",
+        "low_score": "0.876",
         "reason": "短線趨勢偏弱"
-      },
-      {
-        "number": "19",
-        "confidence": "觀察排除 54.6",
-        "rank": 48,
-        "low_score": "0.800",
-        "reason": "剛開後追高風險"
       },
       {
         "number": "31",
-        "confidence": "觀察排除 65.6",
-        "rank": 47,
-        "low_score": "0.790",
+        "confidence": "觀察排除 66.8",
+        "rank": 48,
+        "low_score": "0.808",
         "reason": "短線趨勢偏弱"
+      },
+      {
+        "number": "05",
+        "confidence": "觀察排除 53.4",
+        "rank": 47,
+        "low_score": "0.781",
+        "reason": "剛開後追高風險"
       },
       {
         "number": "43",
-        "confidence": "觀察排除 58.3",
+        "confidence": "觀察排除 59.1",
         "rank": 46,
-        "low_score": "0.753",
+        "low_score": "0.773",
         "reason": "短線趨勢偏弱"
       },
       {
-        "number": "48",
-        "confidence": "觀察排除 61.6",
+        "number": "33",
+        "confidence": "觀察排除 69.1",
         "rank": 45,
-        "low_score": "0.716",
+        "low_score": "0.767",
         "reason": "短線趨勢偏弱"
       },
       {
-        "number": "18",
-        "confidence": "觀察排除 60.4",
+        "number": "01",
+        "confidence": "觀察排除 62.5",
         "rank": 44,
-        "low_score": "0.698",
-        "reason": "短線趨勢偏弱"
-      },
-      {
-        "number": "13",
-        "confidence": "觀察排除 58.6",
-        "rank": 43,
-        "low_score": "0.665",
-        "reason": "短線趨勢偏弱"
-      },
-      {
-        "number": "29",
-        "confidence": "觀察排除 58.1",
-        "rank": 42,
-        "low_score": "0.664",
+        "low_score": "0.748",
         "reason": "短線趨勢偏弱"
       },
       {
         "number": "49",
-        "confidence": "觀察排除 62.1",
-        "rank": 41,
-        "low_score": "0.643",
+        "confidence": "觀察排除 66.8",
+        "rank": 43,
+        "low_score": "0.735",
         "reason": "短線趨勢偏弱"
       },
       {
-        "number": "39",
-        "confidence": "觀察排除 50.9",
-        "rank": 40,
-        "low_score": "0.641",
+        "number": "19",
+        "confidence": "觀察排除 55.7",
+        "rank": 42,
+        "low_score": "0.735",
         "reason": "剛開後追高風險、短線趨勢偏弱"
+      },
+      {
+        "number": "41",
+        "confidence": "觀察排除 48.3",
+        "rank": 41,
+        "low_score": "0.723",
+        "reason": "綜合分數落後前十五"
+      },
+      {
+        "number": "39",
+        "confidence": "觀察排除 53.6",
+        "rank": 40,
+        "low_score": "0.706",
+        "reason": "短線趨勢偏弱"
       }
     ],
     "fifteen": [
       {
         "number": "03",
-        "confidence": "觀察排除 66.9",
+        "confidence": "中高排除 70.1",
         "rank": 49,
-        "low_score": "0.800",
+        "low_score": "0.876",
         "reason": "短線趨勢偏弱"
-      },
-      {
-        "number": "19",
-        "confidence": "觀察排除 54.6",
-        "rank": 48,
-        "low_score": "0.800",
-        "reason": "剛開後追高風險"
       },
       {
         "number": "31",
-        "confidence": "觀察排除 65.6",
-        "rank": 47,
-        "low_score": "0.790",
+        "confidence": "觀察排除 66.8",
+        "rank": 48,
+        "low_score": "0.808",
         "reason": "短線趨勢偏弱"
+      },
+      {
+        "number": "05",
+        "confidence": "觀察排除 53.4",
+        "rank": 47,
+        "low_score": "0.781",
+        "reason": "剛開後追高風險"
       },
       {
         "number": "43",
-        "confidence": "觀察排除 58.3",
+        "confidence": "觀察排除 59.1",
         "rank": 46,
-        "low_score": "0.753",
+        "low_score": "0.773",
         "reason": "短線趨勢偏弱"
       },
       {
-        "number": "48",
-        "confidence": "觀察排除 61.6",
+        "number": "33",
+        "confidence": "觀察排除 69.1",
         "rank": 45,
-        "low_score": "0.716",
+        "low_score": "0.767",
         "reason": "短線趨勢偏弱"
       },
       {
-        "number": "18",
-        "confidence": "觀察排除 60.4",
+        "number": "01",
+        "confidence": "觀察排除 62.5",
         "rank": 44,
-        "low_score": "0.698",
-        "reason": "短線趨勢偏弱"
-      },
-      {
-        "number": "13",
-        "confidence": "觀察排除 58.6",
-        "rank": 43,
-        "low_score": "0.665",
-        "reason": "短線趨勢偏弱"
-      },
-      {
-        "number": "29",
-        "confidence": "觀察排除 58.1",
-        "rank": 42,
-        "low_score": "0.664",
+        "low_score": "0.748",
         "reason": "短線趨勢偏弱"
       },
       {
         "number": "49",
-        "confidence": "觀察排除 62.1",
-        "rank": 41,
-        "low_score": "0.643",
+        "confidence": "觀察排除 66.8",
+        "rank": 43,
+        "low_score": "0.735",
         "reason": "短線趨勢偏弱"
       },
       {
-        "number": "39",
-        "confidence": "觀察排除 50.9",
-        "rank": 40,
-        "low_score": "0.641",
+        "number": "19",
+        "confidence": "觀察排除 55.7",
+        "rank": 42,
+        "low_score": "0.735",
         "reason": "剛開後追高風險、短線趨勢偏弱"
       },
       {
-        "number": "01",
-        "confidence": "觀察排除 55.1",
-        "rank": 39,
-        "low_score": "0.626",
-        "reason": "短線趨勢偏弱"
-      },
-      {
         "number": "41",
-        "confidence": "觀察排除 42.4",
+        "confidence": "觀察排除 48.3",
+        "rank": 41,
+        "low_score": "0.723",
+        "reason": "綜合分數落後前十五"
+      },
+      {
+        "number": "39",
+        "confidence": "觀察排除 53.6",
+        "rank": 40,
+        "low_score": "0.706",
+        "reason": "短線趨勢偏弱"
+      },
+      {
+        "number": "22",
+        "confidence": "觀察排除 58.5",
+        "rank": 39,
+        "low_score": "0.705",
+        "reason": "剛開後追高風險、短線趨勢偏弱"
+      },
+      {
+        "number": "29",
+        "confidence": "觀察排除 57.1",
         "rank": 38,
-        "low_score": "0.615",
-        "reason": "剛開後追高風險"
+        "low_score": "0.684",
+        "reason": "短線趨勢偏弱"
       },
       {
-        "number": "17",
-        "confidence": "觀察排除 47.8",
+        "number": "48",
+        "confidence": "觀察排除 56.0",
         "rank": 37,
-        "low_score": "0.601",
+        "low_score": "0.668",
         "reason": "短線趨勢偏弱"
       },
       {
-        "number": "23",
-        "confidence": "觀察排除 47.4",
+        "number": "09",
+        "confidence": "觀察排除 49.7",
         "rank": 36,
-        "low_score": "0.601",
+        "low_score": "0.656",
         "reason": "短線趨勢偏弱"
       },
       {
-        "number": "42",
-        "confidence": "觀察排除 46.1",
+        "number": "36",
+        "confidence": "觀察排除 49.0",
         "rank": 35,
-        "low_score": "0.582",
+        "low_score": "0.649",
         "reason": "短線趨勢偏弱"
       }
     ]
@@ -995,11 +995,11 @@
       {
         "window": "近60期",
         "sample": 60,
-        "avg_hit": "1.250",
+        "avg_hit": "1.233",
         "random": "1.102",
-        "edge": "0.148",
+        "edge": "0.131",
         "zero_rate": "0.250",
-        "ge2_rate": "0.333",
+        "ge2_rate": "0.317",
         "status": "觀察"
       },
       {
@@ -1015,15 +1015,22 @@
       {
         "window": "近360期",
         "sample": 360,
-        "avg_hit": "1.217",
+        "avg_hit": "1.219",
         "random": "1.102",
-        "edge": "0.115",
-        "zero_rate": "0.261",
+        "edge": "0.117",
+        "zero_rate": "0.258",
         "ge2_rate": "0.361",
         "status": "觀察"
       }
     ],
     "formal_records": [
+      {
+        "draw_no": "2026/070",
+        "date": "2026-06-30",
+        "status": "通過",
+        "run": "第 22 筆",
+        "proof": "依據 2026/069 / 2026-06-30T13:33:33+08:00 / 香港六合彩預測系統_20260630_第18版"
+      },
       {
         "draw_no": "2026/069",
         "date": "2026-06-28",
@@ -1058,21 +1065,14 @@
         "status": "歷史舊期",
         "run": "-",
         "proof": "系統接管前沒有正式預測紀錄，保留開獎資料，不列現行異常"
-      },
-      {
-        "draw_no": "2026/064",
-        "date": "2026-06-14",
-        "status": "歷史舊期",
-        "run": "-",
-        "proof": "系統接管前沒有正式預測紀錄，保留開獎資料，不列現行異常"
       }
     ],
     "avoid_packs": [
       {
         "label": "5不中",
-        "numbers": "03 19 31 43 48",
-        "confidence": "高暫避 61.4",
-        "avoid_score": "0.353",
+        "numbers": "03 31 05 43 33",
+        "confidence": "高暫避 63.7",
+        "avoid_score": "0.352",
         "sample": 48,
         "avg_wrong": "0.521",
         "full_avoid_rate": "0.625",
@@ -1080,9 +1080,9 @@
       },
       {
         "label": "10不中",
-        "numbers": "03 19 31 43 48 18 13 29 49 39",
-        "confidence": "中暫避 59.7",
-        "avoid_score": "0.328",
+        "numbers": "03 31 05 43 33 01 49 19 41 39",
+        "confidence": "中暫避 60.5",
+        "avoid_score": "0.327",
         "sample": 48,
         "avg_wrong": "1.042",
         "full_avoid_rate": "0.354",
@@ -1090,11 +1090,11 @@
       },
       {
         "label": "15不中",
-        "numbers": "03 19 31 43 48 18 13 29 49 39 01 41 17 23 42",
-        "confidence": "觀察暫避 55.7",
-        "avoid_score": "0.309",
+        "numbers": "03 31 05 43 33 01 49 19 41 39 22 29 48 09 36",
+        "confidence": "觀察暫避 58.4",
+        "avoid_score": "0.308",
         "sample": 48,
-        "avg_wrong": "1.646",
+        "avg_wrong": "1.688",
         "full_avoid_rate": "0.146",
         "note": "鐵律避險包：只作低機率暫避與風控，不當作保證不開"
       }

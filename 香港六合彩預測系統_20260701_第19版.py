@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260630_第18版"
+MODEL_VERSION = "香港六合彩預測系統_20260701_第19版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -2171,7 +2171,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊前九核心池內",
-                    "第18版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第19版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2181,7 +2181,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第18版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第19版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2190,7 +2190,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
-                "第18版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                "第19版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2198,7 +2198,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第18版強化模型並持續滾動校準",
+                "維持第19版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -3078,15 +3078,15 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     weak_rows = sorted(package.scores.values(), key=lambda row: row.score)[:15]
     month_review = rolling_month_review(draws, ranked_numbers)
     target_date = next_marksix_draw_date(based_draw_date)
-    report_time = now_text()
-    date_range = f"{draws[0].draw_date} -> {draws[-1].draw_date}"
+    report_time = report_datetime_text()
+    date_range = f"{draws[0].draw_date} 到 {draws[-1].draw_date}"
     freshness = "最新" if latest.draw_date == based_draw_date else "已更新"
-    data_hash = hashlib.sha256(
+    data_hash = report_numeric_fingerprint(
         "\n".join(
             f"{draw.draw_date}|{draw.draw_no}|{format_numbers(draw.main_numbers)}|{draw.special:02d}"
             for draw in draws
-        ).encode("utf-8")
-    ).hexdigest()
+        )
+    )
     strategy_rows, champion = strategy_competition_rows(draws, recent_window)
     rank_backtest = score_rank_backtest(
         draws,
@@ -3169,6 +3169,43 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             repeat_guard_audit_rows(conn, package, draws, run_id),
         ),
         "",
+        "## 逐號驗算總則",
+        markdown_table(
+            ["驗算層", "檢查內容", "戰報要求"],
+            [
+                ["第一層", "正式票來源", "每顆號碼必須能追到第幾組正式票、前九核心、膽碼、拖碼或暫避包"],
+                ["第二層", "多模型通過", "列出通過模型數與前四個主要模型分數，拒絕憑空出現號碼"],
+                ["第三層", "路數結構", "列出波色、尾數、區間、遺漏、近期、同尾、同區、鄰近與特別號交叉"],
+                ["第四層", "膽拖交叉", "列出與膽碼、拖碼、防守碼在正式票內的交叉組數"],
+                ["第五層", "近期回測", "列出近期香港樣本中進前九、進前十五與實際開出次數"],
+                ["第六層", "沿用硬閘", "上一筆正式預測不得直接沿用，連莊必須達標才保留"],
+            ],
+        ),
+        "",
+        "## 強推薦逐號驗算",
+        markdown_table(
+            ["號碼", "排名", "綜合分", "信心", "多模型驗證", "路數驗證", "膽拖交叉", "回測驗證", "判定"],
+            super_number_validation_rows(package, ranked_numbers, score_max, draws, recent_window),
+        ),
+        "",
+        "## 前九核心逐號驗算",
+        markdown_table(
+            ["排名", "號碼", "來源", "綜合分", "多模型驗證", "路數驗證", "膽拖交叉", "回測驗證", "判定"],
+            core_number_validation_rows(package, ranked_numbers, score_max, draws, recent_window),
+        ),
+        "",
+        "## 正式預測逐號驗算",
+        markdown_table(
+            ["號碼", "正式票來源", "分類", "排名", "綜合分", "信心", "多模型驗證", "路數驗證", "膽拖交叉", "回測驗證", "判定"],
+            official_number_validation_rows(package, ranked_numbers, score_max, draws, recent_window),
+        ),
+        "",
+        "## 暫避號碼逐號驗算",
+        markdown_table(
+            ["號碼", "暫避包", "候選排名", "排除信心", "低分指標", "多模型驗證", "路數驗證", "膽拖交叉", "回測驗證", "判定"],
+            avoid_number_validation_rows(package, ranked_numbers, score_max, draws, recent_window),
+        ),
+        "",
         "## 輸出檔案檢核",
         markdown_table(["檔案", "狀態", "位置", "時間"], report_file_status_rows()),
         "",
@@ -3211,7 +3248,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
         "## 分頁二：今日總判斷",
         f"- 引擎評語：以 {len(draws)} 期資料、{len(package.tickets)} 組候選、{len(next(iter(package.scores.values())).model_scores)} 個子模型做本期運算。",
         "- 開獎型態：未見資料格式異常，波色、大小、尾數、區間皆納入風控。",
-        f"- 本期核心要求：命中壓在 9 隻內優先檢查，第十至第十五名只作補位池，不列高機率主推來源。",
+        f"- 本期核心要求：命中壓在九隻內優先檢查，第十至第十五名只作補位池，不列高機率主推來源。",
         f"- 本月滾動修正：已接入本月樣本 {month_review['sample']} 期，前九核心池覆蓋率 {float(month_review['coverage']):.3f}。",
         f"- 隨機前十基準：{random_expected_hits(10):.3f}",
         f"- 隨機前十五基準：{random_expected_hits(15):.3f}",
@@ -3243,17 +3280,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
-                ["新一期結構", f"前九={format_numbers(top9)}", "符合第18版每期重算、539鐵律與9顆核心池規格"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第19版每期重算、539鐵律與九顆核心池規格"],
             ],
         ),
         "",
-        "## 分頁六：全系統缺口檢測與第18版修復",
+        "## 分頁六：全系統缺口檢測與第19版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 分頁七：第18版新增邏輯運算模型",
+        "## 分頁七：第19版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -3591,7 +3628,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     )
 
     body = "\n".join(str(part) for part in lines)
-    output_hash = hashlib.sha256(body.encode("utf-8")).hexdigest()
+    output_hash = report_numeric_fingerprint(body)
     lines.extend(
         [
             "",
@@ -3604,7 +3641,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             f"- 發布治理：{release_level}",
         ]
     )
-    return "\n".join(str(part) for part in lines)
+    return sanitize_battle_report_text("\n".join(str(part) for part in lines))
 
 
 def latest_prediction_run(conn: sqlite3.Connection) -> sqlite3.Row | None:
@@ -4364,6 +4401,315 @@ def number_reasons(row: NumberScore, rank: int) -> str:
     return "、".join(dict.fromkeys(reasons))
 
 
+def report_datetime_text(value: str | None = None) -> str:
+    text = value or now_text()
+    return text.replace("T", " ").replace("+08:00", "")
+
+
+def report_numeric_fingerprint(text: str, digits: int = 36) -> str:
+    value = int(hashlib.sha256(text.encode("utf-8")).hexdigest(), 16)
+    return str(value)[:digits]
+
+
+def sanitize_battle_report_text(text: str) -> str:
+    text = text.replace("->", "到")
+    text = text.replace(">=", "大於等於")
+    text = re.sub(r"(\d{4}-\d{2}-\d{2})T", r"\1 ", text)
+    text = re.sub(r"[A-Za-z]+", "", text)
+    return text
+
+
+def model_validation_summary(row: NumberScore, threshold: float = 0.56) -> str:
+    model_items = sorted(row.model_scores.items(), key=lambda item: item[1], reverse=True)
+    passed = [(name, value) for name, value in model_items if value >= threshold]
+    top_text = "、".join(f"{model_label(name)}{value:.2f}" for name, value in model_items[:4])
+    return f"通過{len(passed)}/{len(model_items)}；{top_text}"
+
+
+def ticket_source_text(number: int, package: PredictionPackage, limit: int = 8) -> str:
+    ranks = [rank for rank, ticket in enumerate(package.tickets, start=1) if number in ticket.numbers]
+    if not ranks:
+        return "未列正式票"
+    shown = "、".join(f"第{rank}組" for rank in ranks[:limit])
+    suffix = "等" if len(ranks) > limit else ""
+    return f"{shown}{suffix}；共{len(ranks)}組"
+
+
+def number_source_tags(number: int, package: PredictionPackage, ranked_numbers: list[int]) -> str:
+    tags = []
+    if number in ranked_numbers[:CORE_POOL_SIZE]:
+        tags.append("前九核心")
+    if number in package.bankers:
+        tags.append("膽碼")
+    if number in package.drags:
+        tags.append("拖碼")
+    if number in package.reserves:
+        tags.append("防守碼")
+    if number in package.weak_numbers:
+        tags.append("弱勢暫避")
+    if number in package.special_candidates:
+        tags.append("特別號觀察")
+    if any(number in ticket.numbers for ticket in package.tickets):
+        tags.append("正式票")
+    return "、".join(dict.fromkeys(tags)) if tags else "僅模型觀察"
+
+
+def number_route_text(number: int, row: NumberScore, draws: list[Draw]) -> str:
+    latest = draws[-1] if draws else None
+    route_parts = [
+        wave_color(number),
+        f"尾{number % 10}",
+        f"{decade_bucket(number)}區",
+        f"近窗{row.recent_frequency}次",
+        f"遺漏{row.miss_gap}期",
+        f"趨勢{row.trend:+.3f}",
+    ]
+    if latest is not None:
+        latest_tails = {actual % 10 for actual in latest.main_numbers}
+        latest_zones = {decade_bucket(actual) for actual in latest.main_numbers}
+        if number % 10 in latest_tails:
+            route_parts.append("同尾延伸")
+        if decade_bucket(number) in latest_zones:
+            route_parts.append("同區延伸")
+        if any(abs(number - actual) <= 2 for actual in latest.main_numbers):
+            route_parts.append("鄰近橋接")
+        if number % 10 == latest.special % 10 or decade_bucket(number) == decade_bucket(latest.special):
+            route_parts.append("特別號交叉")
+    return "、".join(route_parts)
+
+
+def drag_cross_text(number: int, package: PredictionPackage, row: NumberScore) -> str:
+    co_ticket_count = sum(1 for ticket in package.tickets if number in ticket.numbers)
+    banker_cross = sum(
+        1
+        for ticket in package.tickets
+        if number in ticket.numbers and any(banker != number and banker in ticket.numbers for banker in package.bankers)
+    )
+    drag_cross = sum(
+        1
+        for ticket in package.tickets
+        if number in ticket.numbers and any(drag != number and drag in ticket.numbers for drag in package.drags)
+    )
+    reserve_cross = sum(
+        1
+        for ticket in package.tickets
+        if number in ticket.numbers and any(reserve != number and reserve in ticket.numbers for reserve in package.reserves)
+    )
+    return (
+        f"正式票{co_ticket_count}組；"
+        f"膽碼交叉{banker_cross}組；"
+        f"拖碼交叉{drag_cross}組；"
+        f"防守交叉{reserve_cross}組；"
+        f"配對強度{row.pair_strength:.2f}"
+    )
+
+
+def number_backtest_profiles(
+    draws: list[Draw],
+    recent_window: int,
+    numbers: Iterable[int],
+    max_periods: int = AUTO_BACKTEST_PERIODS,
+    strategy: str = "balanced",
+) -> dict[int, dict[str, int]]:
+    selected = sorted(set(numbers))
+    profiles = {
+        number: {
+            "sample": 0,
+            "core_seen": 0,
+            "core_hit": 0,
+            "support_seen": 0,
+            "support_hit": 0,
+            "actual_hit": 0,
+        }
+        for number in selected
+    }
+    if len(draws) < 20 or not selected:
+        return profiles
+    start = max(12, len(draws) - max_periods)
+    for index in range(start, len(draws)):
+        train = draws[:index]
+        actual = set(draws[index].main_numbers)
+        score_map = build_scores(train, recent_window=recent_window, strategy=strategy)
+        ranked = [item.number for item in sorted(score_map.values(), key=lambda item: item.score, reverse=True)]
+        rank_map = {number: rank for rank, number in enumerate(ranked, start=1)}
+        for number in selected:
+            profile = profiles[number]
+            profile["sample"] += 1
+            if number in actual:
+                profile["actual_hit"] += 1
+            rank = rank_map.get(number, MAX_NUMBER)
+            if rank <= CORE_POOL_SIZE:
+                profile["core_seen"] += 1
+                if number in actual:
+                    profile["core_hit"] += 1
+            if rank <= SUPPORT_POOL_SIZE:
+                profile["support_seen"] += 1
+                if number in actual:
+                    profile["support_hit"] += 1
+    return profiles
+
+
+def number_backtest_text(profile: dict[str, int]) -> str:
+    sample = profile.get("sample", 0)
+    if not sample:
+        return "樣本不足，暫列觀察"
+    return (
+        f"近{sample}期；"
+        f"進前九{profile.get('core_seen', 0)}次命中{profile.get('core_hit', 0)}次；"
+        f"進前十五{profile.get('support_seen', 0)}次命中{profile.get('support_hit', 0)}次；"
+        f"實開{profile.get('actual_hit', 0)}次"
+    )
+
+
+def number_validation_decision(number: int, rank: int, package: PredictionPackage, model_pass_text: str) -> str:
+    match = re.search(r"通過(\d+)/", model_pass_text)
+    passed = int(match.group(1)) if match else 0
+    if number in package.weak_numbers:
+        return "暫避驗證，僅供風控"
+    if rank <= CORE_POOL_SIZE and passed >= 4:
+        return "通過主推驗算"
+    if rank <= SUPPORT_POOL_SIZE and passed >= 3:
+        return "通過補位驗算"
+    if any(number in ticket.numbers for ticket in package.tickets):
+        return "依拖牌交叉保留"
+    return "觀察，不列主推"
+
+
+def official_number_validation_rows(
+    package: PredictionPackage,
+    ranked_numbers: list[int],
+    score_max: float,
+    draws: list[Draw],
+    recent_window: int,
+) -> list[list[object]]:
+    official_numbers = sorted(
+        {number for ticket in package.tickets for number in ticket.numbers},
+        key=lambda number: ranked_numbers.index(number) if number in ranked_numbers else MAX_NUMBER,
+    )
+    profiles = number_backtest_profiles(draws, recent_window, official_numbers)
+    rows = []
+    for number in official_numbers:
+        row = package.scores[number]
+        rank = ranked_numbers.index(number) + 1 if number in ranked_numbers else MAX_NUMBER
+        model_text = model_validation_summary(row)
+        rows.append(
+            [
+                f"{number:02d}",
+                ticket_source_text(number, package),
+                number_source_tags(number, package, ranked_numbers),
+                rank,
+                f"{row.score:.3f}",
+                f"{confidence_index(row, score_max):.1f}",
+                model_text,
+                number_route_text(number, row, draws),
+                drag_cross_text(number, package, row),
+                number_backtest_text(profiles[number]),
+                number_validation_decision(number, rank, package, model_text),
+            ]
+        )
+    return rows
+
+
+def core_number_validation_rows(
+    package: PredictionPackage,
+    ranked_numbers: list[int],
+    score_max: float,
+    draws: list[Draw],
+    recent_window: int,
+) -> list[list[object]]:
+    core_numbers = ranked_numbers[:CORE_POOL_SIZE]
+    profiles = number_backtest_profiles(draws, recent_window, core_numbers)
+    rows = []
+    for rank, number in enumerate(core_numbers, start=1):
+        row = package.scores[number]
+        model_text = model_validation_summary(row)
+        rows.append(
+            [
+                rank,
+                f"{number:02d}",
+                number_source_tags(number, package, ranked_numbers),
+                f"{row.score:.3f}",
+                model_text,
+                number_route_text(number, row, draws),
+                drag_cross_text(number, package, row),
+                number_backtest_text(profiles[number]),
+                number_validation_decision(number, rank, package, model_text),
+            ]
+        )
+    return rows
+
+
+def super_number_validation_rows(
+    package: PredictionPackage,
+    ranked_numbers: list[int],
+    score_max: float,
+    draws: list[Draw],
+    recent_window: int,
+) -> list[list[object]]:
+    super_numbers = sorted(
+        {number for item in super_recommendation_items(package, draws) for number in item["numbers"]},
+        key=lambda number: ranked_numbers.index(number) if number in ranked_numbers else MAX_NUMBER,
+    )
+    profiles = number_backtest_profiles(draws, recent_window, super_numbers)
+    rows = []
+    for number in super_numbers:
+        row = package.scores[number]
+        rank = ranked_numbers.index(number) + 1 if number in ranked_numbers else MAX_NUMBER
+        model_text = model_validation_summary(row)
+        rows.append(
+            [
+                f"{number:02d}",
+                rank,
+                f"{row.score:.3f}",
+                f"{confidence_index(row, score_max):.1f}",
+                model_text,
+                number_route_text(number, row, draws),
+                drag_cross_text(number, package, row),
+                number_backtest_text(profiles[number]),
+                number_validation_decision(number, rank, package, model_text),
+            ]
+        )
+    return rows
+
+
+def avoid_number_validation_rows(
+    package: PredictionPackage,
+    ranked_numbers: list[int],
+    score_max: float,
+    draws: list[Draw],
+    recent_window: int,
+) -> list[list[object]]:
+    low_rows = exclusion_rows(package.scores, ranked_numbers, score_max, 15)
+    numbers = [int(row[0]) for row in low_rows]
+    profiles = number_backtest_profiles(draws, recent_window, numbers)
+    rows = []
+    for index, low_row in enumerate(low_rows, start=1):
+        number = int(low_row[0])
+        row = package.scores[number]
+        rank = ranked_numbers.index(number) + 1 if number in ranked_numbers else MAX_NUMBER
+        if index <= 5:
+            pack = "五不中"
+        elif index <= 10:
+            pack = "十不中"
+        else:
+            pack = "十五不中"
+        rows.append(
+            [
+                f"{number:02d}",
+                pack,
+                rank,
+                low_row[1],
+                low_row[3],
+                model_validation_summary(row),
+                number_route_text(number, row, draws),
+                drag_cross_text(number, package, row),
+                number_backtest_text(profiles[number]),
+                "暫避驗證，僅供風控，不作保證",
+            ]
+        )
+    return rows
+
+
 def low_probability_reason(row: NumberScore) -> str:
     reasons = []
     if row.recent_frequency == 0:
@@ -4755,6 +5101,8 @@ def report_index_rows() -> list[list[object]]:
         ["先看區", "資料完整度總表", "歷史資料庫、最新預測、手機同步、戰報輸出是否齊全"],
         ["先看區", "缺期掃描與補足證明", "逐年檢查期號連續性，分清楚真缺期與歷史停開間隔"],
         ["先看區", "上期預測禁沿用硬閘", "嚴禁上一筆預測直接沿用，連莊必須達標才保留"],
+        ["先看區", "逐號驗算總則", "每顆號碼列出正式票來源、多模型、路數、膽拖交叉與回測證據"],
+        ["先看區", "正式預測逐號驗算", "拒絕憑空號碼，所有正式票號碼必須逐號驗算"],
         ["分頁一至十二", "本期預測", "發布結論、每期重算、低命中校正、高機率信心牌、前九核心"],
         ["分頁十三至十九", "開獎檢討", "日期基準、上期命中、漏抓檢討、前十五詳表"],
         ["分頁二十至二十六", "模型與回測", "牌型、關聯、多模型競賽、命中指標、模型審計"],
@@ -4778,9 +5126,9 @@ def report_file_status_rows() -> list[list[object]]:
     rows = []
     for path, label in files:
         if path.exists():
-            rows.append([label, "本輪已排入輸出", str(path), "一鍵完成後以檔案時間為準"])
+            rows.append([label, "本輪已排入輸出", "系統輸出區", "一鍵完成後以檔案時間為準"])
         else:
-            rows.append([label, "本輪將建立", str(path), "一鍵完成後以檔案時間為準"])
+            rows.append([label, "本輪將建立", "系統輸出區", "一鍵完成後以檔案時間為準"])
     return rows
 
 
@@ -5806,7 +6154,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260630_第18版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260701_第19版")
 
 
 def build_site(

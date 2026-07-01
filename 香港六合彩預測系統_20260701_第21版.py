@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260701_第20版"
+MODEL_VERSION = "香港六合彩預測系統_20260701_第21版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -2174,7 +2174,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊前九核心池內",
-                    "第20版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第21版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2184,7 +2184,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第20版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第21版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2193,7 +2193,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
-                "第20版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                "第21版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2201,7 +2201,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第20版強化模型並持續滾動校準",
+                "維持第21版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -3146,7 +3146,8 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["分類二：預測命中", "最新結算、月度命中、第一組與最佳組命中", "只看有沒有命中與命中幾顆"],
                 ["分類三：低機率暫避", "五不中、十不中、十五不中與誤中檢查", "只看低機率風控是否誤中"],
                 ["分類四：檢討修正", "漏抓、低命中、月度總檢討、下月修正", "只看問題與修正方向"],
-                ["分類五：其他資料", "資料完整度、缺期、同步、系統掃描、排程", "只看系統是否正常"],
+                ["分類五：每月總整理", "每月預測、實際開獎、命中圖表、低機率圖表", "只看六月與每月總報表"],
+                ["分類六：其他資料", "資料完整度、缺期、同步、系統掃描、排程", "只看系統是否正常"],
             ],
         ),
         "",
@@ -3187,7 +3188,18 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             ],
         ),
         "",
-        "## 分類五：其他資料",
+        "## 分類五：每月總整理",
+        markdown_table(
+            ["項目", "內容", "位置"],
+            [
+                ["月報期間", month_label(summary_month_key), "每月總整理報表"],
+                ["預測與實際", "逐期列出正式預測、實際開獎、第一組命中、最佳組命中", f"{month_label(summary_month_key)}總整理報表"],
+                ["圖表分析", "命中走勢、前九核心、五不中誤中全部分開", "每月總整理報表"],
+                ["手機同步", "手機首頁與雲端發布包同步同一份月報", "手機雲端"],
+            ],
+        ),
+        "",
+        "## 分類六：其他資料",
         markdown_table(
             ["項目", "狀態", "證據"],
             [
@@ -3349,17 +3361,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
-                ["新一期結構", f"前九={format_numbers(top9)}", "符合第20版每期重算、539鐵律與九顆核心池規格"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第21版每期重算、539鐵律與九顆核心池規格"],
             ],
         ),
         "",
-        "## 分頁六：全系統缺口檢測與第20版修復",
+        "## 分頁六：全系統缺口檢測與第21版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 分頁七：第20版新增邏輯運算模型",
+        "## 分頁七：第21版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -5921,8 +5933,127 @@ def board_pattern_rows(draws: list[Draw]) -> list[list[object]]:
     ]
 
 
+REPORT_TAB_NAMES = ("總覽", "預測", "命中", "低機率", "檢討", "月報", "其他")
+
+
+def report_tab_key(title: str) -> str:
+    prediction_keys = (
+        "分類一：預測號碼",
+        "逐號驗算總則",
+        "強推薦逐號驗算",
+        "前九核心逐號驗算",
+        "正式預測逐號驗算",
+        "本期發布結論",
+        "今日總判斷",
+        "超強信心",
+        "高機率信心",
+        "推薦門檻",
+        "9隻內核心",
+        "今日觀察",
+        "候選前十五",
+        "下期預測號碼池",
+        "前九防漏",
+    )
+    hit_keys = (
+        "分類二：預測命中",
+        "預測命中",
+        "每期重新運算證明",
+        "上期命中檢討",
+        "上期參考",
+        "上期強牌",
+        "實際開出",
+        "上期正式預測逐號檢討",
+        "全部正式預測歷史對比",
+        "正式預測紀錄鐵律",
+    )
+    low_keys = (
+        "分類三：低機率暫避",
+        "暫避號碼逐號驗算",
+        "5不中",
+        "10不中",
+        "15不中",
+        "避險包",
+    )
+    review_keys = (
+        "分類四：檢討修正",
+        "命中率低落",
+        "本月總檢討",
+        "全系統缺口",
+        "新增邏輯",
+        "牌型關聯",
+        "號碼關聯",
+        "多模型競賽",
+        "研究命中指標",
+        "近期穩定度",
+        "模型審計",
+        "風控",
+        "運算審核",
+    )
+    monthly_keys = (
+        "分類五：每月總整理",
+        "每月總整理",
+        "月報",
+        "圖表分析",
+        "命中走勢圖",
+    )
+    overview_keys = (
+        "香港六合彩預測系統戰報",
+        "戰報快讀",
+        "分類分頁總覽",
+        "月報快讀",
+    )
+    other_keys = (
+        "分類五：其他資料",
+        "分類六：其他資料",
+        "詳細附錄目錄",
+        "資料完整度",
+        "資料補足",
+        "缺期掃描",
+        "輸出檔案檢核",
+        "系統摘要",
+        "日期基準",
+        "每日更新鐵律時間表",
+        "上期預測禁沿用硬閘",
+        "539最新版鐵律多視窗門檻",
+    )
+
+    for key in overview_keys:
+        if key in title:
+            return "總覽"
+    for key in prediction_keys:
+        if key in title:
+            return "預測"
+    for key in hit_keys:
+        if key in title:
+            return "命中"
+    for key in low_keys:
+        if key in title:
+            return "低機率"
+    for key in review_keys:
+        if key in title:
+            return "檢討"
+    for key in monthly_keys:
+        if key in title:
+            return "月報"
+    for key in other_keys:
+        if key in title:
+            return "其他"
+    return "其他"
+
+
+def build_report_tabs_html() -> str:
+    buttons = "\n".join(
+        f'      <button type="button" class="report-tab{" active" if name == "總覽" else ""}" data-tab-button="{name}">{name}</button>'
+        for name in REPORT_TAB_NAMES
+    )
+    return f"""  <nav class="report-tabs" aria-label="戰報分類">
+{buttons}
+  </nav>"""
+
+
 def build_battle_report_html(markdown_text: str) -> str:
     body = markdown_to_html(markdown_text)
+    tabs_html = build_report_tabs_html()
     return f"""<!doctype html>
 <html lang="zh-Hant">
 <head>
@@ -5939,6 +6070,36 @@ def build_battle_report_html(markdown_text: str) -> str:
     h3 {{ font-size: 16px; color: #243b53; }}
     .band {{ background: white; border: 1px solid #d7dee8; border-radius: 8px; padding: 16px; margin: 0 0 16px; overflow-x: auto; }}
     .lead {{ background: #102a43; color: white; border-radius: 0; border: 0; margin: 0; }}
+    .report-tabs {{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 22px;
+      background: #f4f6f8;
+      border-bottom: 1px solid #d7dee8;
+      box-shadow: 0 6px 16px rgba(16, 42, 67, .08);
+    }}
+    .report-tab {{
+      flex: 0 0 auto;
+      min-width: 72px;
+      border: 1px solid #b9c6d6;
+      border-radius: 8px;
+      background: white;
+      color: #102a43;
+      padding: 9px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }}
+    .report-tab.active {{
+      background: #102a43;
+      border-color: #102a43;
+      color: white;
+    }}
+    [hidden] {{ display: none !important; }}
     .overview-band {{
       border-left: 6px solid #2563eb;
       background: #f8fbff;
@@ -5974,6 +6135,13 @@ def build_battle_report_html(markdown_text: str) -> str:
     .prediction-band h2::before {{ content: "預測"; background: #b42318; }}
     .control-band h2::before {{ content: "檢查"; background: #15803d; }}
     .appendix-band h2::before {{ content: "附錄"; background: #64748b; }}
+    .band[data-tab="總覽"] h2::before {{ content: "總覽"; background: #2563eb; }}
+    .band[data-tab="預測"] h2::before {{ content: "預測"; background: #b42318; }}
+    .band[data-tab="命中"] h2::before {{ content: "命中"; background: #15803d; }}
+    .band[data-tab="低機率"] h2::before {{ content: "低機率"; background: #7c3aed; min-width: 64px; }}
+    .band[data-tab="檢討"] h2::before {{ content: "檢討"; background: #c2410c; }}
+    .band[data-tab="月報"] h2::before {{ content: "月報"; background: #0f766e; }}
+    .band[data-tab="其他"] h2::before {{ content: "其他"; background: #64748b; }}
     .confidence-band {{
       border: 3px solid #b42318;
       background: #fff7f5;
@@ -6036,9 +6204,32 @@ def build_battle_report_html(markdown_text: str) -> str:
     <h1>香港六合彩預測系統戰報</h1>
     <div class="meta">539同規格強化戰報 / 自動更新、自動結算、自動預測</div>
   </header>
+{tabs_html}
   <main>
 {body}
   </main>
+  <script>
+    (() => {{
+      const buttons = Array.from(document.querySelectorAll("[data-tab-button]"));
+      const panels = Array.from(document.querySelectorAll("[data-tab]"));
+      const show = (tab) => {{
+        buttons.forEach((button) => button.classList.toggle("active", button.dataset.tabButton === tab));
+        panels.forEach((panel) => {{
+          panel.hidden = panel.dataset.tab !== tab;
+        }});
+        try {{ localStorage.setItem("香港六合彩預測系統戰報分頁", tab); }} catch (error) {{}}
+      }};
+      buttons.forEach((button) => button.addEventListener("click", () => show(button.dataset.tabButton)));
+      let saved = "總覽";
+      try {{
+        const value = localStorage.getItem("香港六合彩預測系統戰報分頁");
+        if (buttons.some((button) => button.dataset.tabButton === value)) {{
+          saved = value;
+        }}
+      }} catch (error) {{}}
+      show(saved);
+    }})();
+  </script>
 </body>
 </html>
 """
@@ -6096,7 +6287,8 @@ def markdown_to_html(markdown_text: str) -> str:
             continue
         if stripped.startswith("# "):
             close_section()
-            html_parts.append(f'<section class="band lead"><h1>{inline_html(stripped[2:])}</h1>')
+            title = stripped[2:]
+            html_parts.append(f'<section class="band lead" data-tab="{report_tab_key(title)}"><h1>{inline_html(title)}</h1>')
             section_open = True
             continue
         if stripped.startswith("## "):
@@ -6114,7 +6306,7 @@ def markdown_to_html(markdown_text: str) -> str:
                 section_class = "band appendix-band"
             else:
                 section_class = "band"
-            html_parts.append(f'<section class="{section_class}"><h2>{inline_html(title)}</h2>')
+            html_parts.append(f'<section class="{section_class}" data-tab="{report_tab_key(title)}"><h2>{inline_html(title)}</h2>')
             section_open = True
             continue
         if stripped.startswith("### "):
@@ -6630,7 +6822,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260701_第20版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260701_第21版")
 
 
 def build_site(

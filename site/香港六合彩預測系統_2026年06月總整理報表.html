@@ -14,6 +14,36 @@
     h3 { font-size: 16px; color: #243b53; }
     .band { background: white; border: 1px solid #d7dee8; border-radius: 8px; padding: 16px; margin: 0 0 16px; overflow-x: auto; }
     .lead { background: #102a43; color: white; border-radius: 0; border: 0; margin: 0; }
+    .report-tabs {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 10px 22px;
+      background: #f4f6f8;
+      border-bottom: 1px solid #d7dee8;
+      box-shadow: 0 6px 16px rgba(16, 42, 67, .08);
+    }
+    .report-tab {
+      flex: 0 0 auto;
+      min-width: 72px;
+      border: 1px solid #b9c6d6;
+      border-radius: 8px;
+      background: white;
+      color: #102a43;
+      padding: 9px 14px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .report-tab.active {
+      background: #102a43;
+      border-color: #102a43;
+      color: white;
+    }
+    [hidden] { display: none !important; }
     .overview-band {
       border-left: 6px solid #2563eb;
       background: #f8fbff;
@@ -49,6 +79,13 @@
     .prediction-band h2::before { content: "預測"; background: #b42318; }
     .control-band h2::before { content: "檢查"; background: #15803d; }
     .appendix-band h2::before { content: "附錄"; background: #64748b; }
+    .band[data-tab="總覽"] h2::before { content: "總覽"; background: #2563eb; }
+    .band[data-tab="預測"] h2::before { content: "預測"; background: #b42318; }
+    .band[data-tab="命中"] h2::before { content: "命中"; background: #15803d; }
+    .band[data-tab="低機率"] h2::before { content: "低機率"; background: #7c3aed; min-width: 64px; }
+    .band[data-tab="檢討"] h2::before { content: "檢討"; background: #c2410c; }
+    .band[data-tab="月報"] h2::before { content: "月報"; background: #0f766e; }
+    .band[data-tab="其他"] h2::before { content: "其他"; background: #64748b; }
     .confidence-band {
       border: 3px solid #b42318;
       background: #fff7f5;
@@ -111,10 +148,19 @@
     <h1>香港六合彩預測系統戰報</h1>
     <div class="meta">539同規格強化戰報 / 自動更新、自動結算、自動預測</div>
   </header>
+  <nav class="report-tabs" aria-label="戰報分類">
+      <button type="button" class="report-tab active" data-tab-button="總覽">總覽</button>
+      <button type="button" class="report-tab" data-tab-button="預測">預測</button>
+      <button type="button" class="report-tab" data-tab-button="命中">命中</button>
+      <button type="button" class="report-tab" data-tab-button="低機率">低機率</button>
+      <button type="button" class="report-tab" data-tab-button="檢討">檢討</button>
+      <button type="button" class="report-tab" data-tab-button="月報">月報</button>
+      <button type="button" class="report-tab" data-tab-button="其他">其他</button>
+  </nav>
   <main>
-    <section class="band lead"><h1>2026年06月總整理報表</h1>
+    <section class="band lead" data-tab="其他"><h1>2026年06月總整理報表</h1>
     </section>
-    <section class="band"><h2>月報快讀</h2>
+    <section class="band" data-tab="總覽"><h2>月報快讀</h2>
     <table>
     <thead><tr><th>項目</th><th>數值</th><th>說明</th></tr></thead>
     <tbody>
@@ -129,7 +175,7 @@
     <tr><td>本月最佳單期</td><td>2026/068 最佳組3顆</td><td>用於下月滾動修正</td></tr>
     </tbody></table>
     </section>
-    <section class="band"><h2>分類一：預測命中</h2>
+    <section class="band" data-tab="命中"><h2>分類一：預測命中</h2>
     <table>
     <thead><tr><th>開獎期</th><th>開獎日</th><th>狀態</th><th>預測紀錄</th><th>第一組預測號碼</th><th>實際開獎</th><th>第一組命中</th><th>最佳組命中</th><th>前九命中</th><th>最佳命中號</th></tr></thead>
     <tbody>
@@ -147,7 +193,7 @@
     <tr><td>2026/070</td><td>2026-06-30</td><td>已結算</td><td>第 22 筆</td><td>02 07 20 28 34 47</td><td>12 14 17 18 22 40 + 13</td><td>0</td><td>1</td><td>0</td><td>12</td></tr>
     </tbody></table>
     </section>
-    <section class="band appendix-band"><h2>分類二：低機率暫避</h2>
+    <section class="band appendix-band" data-tab="其他"><h2>分類二：低機率暫避</h2>
     <table>
     <thead><tr><th>開獎期</th><th>開獎日</th><th>五不中誤中</th><th>十不中誤中</th><th>十五不中誤中</th><th>處理</th></tr></thead>
     <tbody>
@@ -165,7 +211,7 @@
     <tr><td>2026/070</td><td>2026-06-30</td><td>0</td><td>1</td><td>2</td><td>通過</td></tr>
     </tbody></table>
     </section>
-    <section class="band"><h2>分類三：圖表分析</h2>
+    <section class="band" data-tab="月報"><h2>分類三：圖表分析</h2>
     <h3>命中走勢圖</h3>
     <table>
     <thead><tr><th>開獎期</th><th>最佳組圖</th><th>最佳組</th><th>前九圖</th><th>前九</th><th>五不中誤中圖</th><th>五不中誤中</th></tr></thead>
@@ -233,7 +279,7 @@
     <tr><td>17</td><td>2</td><td>■■■■■■□□□□□□</td><td>綠波、尾7、11-20區</td></tr>
     </tbody></table>
     </section>
-    <section class="band"><h2>分類四：檢討修正</h2>
+    <section class="band" data-tab="檢討"><h2>分類四：檢討修正</h2>
     <table>
     <thead><tr><th>項目</th><th>本月結果</th><th>下月修正</th></tr></thead>
     <tbody>
@@ -243,11 +289,11 @@
     <tr><td>零命中警示</td><td>無</td><td>維持現行校準</td></tr>
     </tbody></table>
     </section>
-    <section class="band"><h2>分類五：月報資訊</h2>
+    <section class="band" data-tab="月報"><h2>分類五：月報資訊</h2>
     <table>
     <thead><tr><th>項目</th><th>內容</th></tr></thead>
     <tbody>
-    <tr><td>產生時間</td><td>2026-07-01 10:47:15</td></tr>
+    <tr><td>產生時間</td><td>2026-07-01 13:38:51</td></tr>
     <tr><td>整理月份</td><td>2026年06月</td></tr>
     <tr><td>資料規則</td><td>以前一期正式預測對本期實際開獎，不用下期預測冒充命中</td></tr>
     <tr><td>產生方式</td><td>一鍵更新後自動重建，並同步手機雲端</td></tr>
@@ -255,5 +301,27 @@
     </tbody></table>
     </section>
   </main>
+  <script>
+    (() => {
+      const buttons = Array.from(document.querySelectorAll("[data-tab-button]"));
+      const panels = Array.from(document.querySelectorAll("[data-tab]"));
+      const show = (tab) => {
+        buttons.forEach((button) => button.classList.toggle("active", button.dataset.tabButton === tab));
+        panels.forEach((panel) => {
+          panel.hidden = panel.dataset.tab !== tab;
+        });
+        try { localStorage.setItem("香港六合彩預測系統戰報分頁", tab); } catch (error) {}
+      };
+      buttons.forEach((button) => button.addEventListener("click", () => show(button.dataset.tabButton)));
+      let saved = "總覽";
+      try {
+        const value = localStorage.getItem("香港六合彩預測系統戰報分頁");
+        if (buttons.some((button) => button.dataset.tabButton === value)) {
+          saved = value;
+        }
+      } catch (error) {}
+      show(saved);
+    })();
+  </script>
 </body>
 </html>

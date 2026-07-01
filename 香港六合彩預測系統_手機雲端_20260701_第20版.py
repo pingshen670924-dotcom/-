@@ -9,7 +9,7 @@ import zlib
 from pathlib import Path
 
 import importlib
-m = importlib.import_module("香港六合彩預測系統_20260701_第19版")
+m = importlib.import_module("香港六合彩預測系統_20260701_第20版")
 
 
 MOBILE_HTML = "香港六合彩預測系統_手機首頁.html"
@@ -275,6 +275,7 @@ def build_payload(conn, recent_window: int) -> dict:
         },
         "links": {
             "battle_report": m.SITE_BATTLE_REPORT_NAME,
+            "monthly_report": m.MONTHLY_REPORT_LATEST_HTML_NAME,
             "prediction_report": m.SITE_LATEST_PREDICTION_NAME,
             "system_report": m.SITE_SYSTEM_REPORT_NAME,
             "draws_csv": m.SITE_DRAWS_CSV_NAME,
@@ -513,6 +514,7 @@ def render_mobile_html(payload: dict, asset_prefix: str, pwa: bool) -> str:
       <h2>戰報入口</h2>
       <div class="link-grid">
         <a class="action primary" href="{e(asset_prefix + links["battle_report"])}">完整戰報</a>
+        <a class="action primary" href="{e(asset_prefix + links["monthly_report"])}">每月總整理</a>
         <a class="action" href="{e(asset_prefix + links["prediction_report"])}">最新預測</a>
         <a class="action" href="{e(asset_prefix + links["system_report"])}">系統報告</a>
         <a class="action" href="{e(asset_prefix + links["draws_csv"])}">歷史資料</a>
@@ -562,8 +564,8 @@ def manifest() -> dict:
 
 
 def service_worker() -> str:
-    return f"""const CACHE_NAME = "香港六合彩預測系統-20260701-v19-number-audit";
-const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{MOBILE_MANIFEST}","./{MOBILE_ICON_192}","./{MOBILE_ICON_512}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
+    return f"""const CACHE_NAME = "香港六合彩預測系統-20260701-v20-monthly-report";
+const ASSETS = ["./{MOBILE_HTML}","./{MOBILE_STATUS}","./{MOBILE_MANIFEST}","./{MOBILE_ICON_192}","./{MOBILE_ICON_512}","./{m.SITE_BATTLE_REPORT_NAME}","./{m.MONTHLY_REPORT_LATEST_HTML_NAME}","./{m.SITE_LATEST_PREDICTION_NAME}","./{m.SITE_SYSTEM_REPORT_NAME}","./{m.SITE_DRAWS_CSV_NAME}"];
 self.addEventListener("install", event => {{
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)).catch(() => undefined));
   self.skipWaiting();

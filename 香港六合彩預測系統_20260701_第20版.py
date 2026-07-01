@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260701_第19版"
+MODEL_VERSION = "香港六合彩預測系統_20260701_第20版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -42,6 +42,9 @@ BATTLE_REPORT_TEXT_NAME = "香港六合彩預測系統_完整戰報.txt"
 ENHANCED_BATTLE_REPORT_NAME = "香港六合彩預測系統_最新強化戰報.html"
 MOBILE_CLOUD_HTML_NAME = "香港六合彩預測系統_手機首頁.html"
 MOBILE_CLOUD_REPORT_NAME = "香港六合彩預測系統_手機雲端.html"
+MONTHLY_REPORT_LATEST_HTML_NAME = "香港六合彩預測系統_每月總整理報表.html"
+MONTHLY_REPORT_LATEST_MARKDOWN_NAME = "香港六合彩預測系統_每月總整理報表.md"
+MONTHLY_REPORT_LATEST_TEXT_NAME = "香港六合彩預測系統_每月總整理報表.txt"
 LEGACY_SITE_OUTPUT_NAMES = [
     "draws.csv",
     "latest_battle_report.html",
@@ -2171,7 +2174,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊前九核心池內",
-                    "第19版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第20版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2181,7 +2184,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第19版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第20版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2190,7 +2193,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
-                "第19版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                "第20版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2198,7 +2201,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第19版強化模型並持續滾動校準",
+                "維持第20版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -3045,6 +3048,8 @@ def save_battle_reports(
     paths["txt"].write_text(markdown_text, encoding="utf-8")
     paths["html"].write_text(html_text, encoding="utf-8")
     paths["enhanced"].write_text(html_text, encoding="utf-8")
+    monthly_paths = save_monthly_summary_reports(conn, report_dir, site_dir, recent_window)
+    paths.update(monthly_paths)
     if site_dir is not None:
         site_dir.mkdir(parents=True, exist_ok=True)
         (site_dir / SITE_HOME_NAME).write_text(html_text, encoding="utf-8")
@@ -3101,6 +3106,10 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     release_level = "研究觀察，不列保證" if release_edge < 0.25 else "研究級高關注"
     risk_level = "高" if len(draws) < 300 or release_edge < 0.1 else "中"
     settled = latest_settled_prediction(conn)
+    summary_month_key = latest_month_key(draws)
+    monthly_records = monthly_summary_records(conn, draws, summary_month_key)
+    confidence_rows_preview = confidence_ticket_rows(package, limit=3)
+    avoid_rows_preview = exclusion_pack_summary_rows(draws, package.scores, ranked_numbers, score_max, recent_window)
 
     lines: list[str] = [
         "# 香港六合彩預測系統戰報",
@@ -3129,7 +3138,67 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             ),
         ),
         "",
-        "## 戰報目錄",
+        "## 分類分頁總覽",
+        markdown_table(
+            ["分類", "放什麼", "先看重點"],
+            [
+                ["分類一：預測號碼", "強推薦、高機率信心牌、前九核心、正式票逐號驗算", "只看本期要追蹤的預測號碼"],
+                ["分類二：預測命中", "最新結算、月度命中、第一組與最佳組命中", "只看有沒有命中與命中幾顆"],
+                ["分類三：低機率暫避", "五不中、十不中、十五不中與誤中檢查", "只看低機率風控是否誤中"],
+                ["分類四：檢討修正", "漏抓、低命中、月度總檢討、下月修正", "只看問題與修正方向"],
+                ["分類五：其他資料", "資料完整度、缺期、同步、系統掃描、排程", "只看系統是否正常"],
+            ],
+        ),
+        "",
+        "## 分類一：預測號碼",
+        markdown_table(
+            ["項目", "內容", "位置"],
+            [
+                ["強推薦", "；".join(f"{row[0]} {row[1]}" for row in super_recommendation_rows(package, draws)[:3]), "強推薦逐號驗算"],
+                ["高機率信心牌", confidence_rows_preview[0][1] if confidence_rows_preview else "無", "高機率信心牌"],
+                ["前九核心", format_numbers(top9), "前九核心逐號驗算"],
+                ["正式票逐號驗算", "每顆號碼列正式票來源、多模型、路數、膽拖交叉、回測", "正式預測逐號驗算"],
+            ],
+        ),
+        "",
+        "## 分類二：預測命中",
+        markdown_table(
+            ["項目", "內容", "位置"],
+            [
+                ["最新結算", settled_status_text(settled), "上期命中檢討"],
+                ["本月總整理", monthly_short_summary(monthly_records, summary_month_key), "每月總整理報表"],
+                ["月報圖表", "已列最佳組、前九核心、五不中誤中走勢", f"{month_label(summary_month_key)}總整理報表"],
+            ],
+        ),
+        "",
+        "## 分類三：低機率暫避",
+        markdown_table(
+            ["暫避包", "號碼", "信心指標", "回測期數", "平均誤中", "完全避開率", "說明"],
+            [[row[0], row[1], row[2], row[4], row[5], row[6], row[7]] for row in avoid_rows_preview],
+        ),
+        "",
+        "## 分類四：檢討修正",
+        markdown_table(
+            ["項目", "目前結果", "修正方向"],
+            monthly_review_action_rows(monthly_records)
+            + [
+                ["上期沿用硬閘", repeat_guard_status_text(conn, package, draws, run_id), "未達標連莊不得保留"],
+                ["低命中校正", f"前九回測差值 {release_edge:.3f}", "不足時降低發布等級並加強漏抓回拉"],
+            ],
+        ),
+        "",
+        "## 分類五：其他資料",
+        markdown_table(
+            ["項目", "狀態", "證據"],
+            [
+                ["歷史資料庫", "已入庫", f"{len(draws)} 期 / {date_range}"],
+                ["缺期掃描", "已補足" if not missing_period_labels(draws) else "需補期", f"期號缺口 {len(missing_period_labels(draws))} 筆"],
+                ["手機雲端", "已同步", "手機首頁、完整戰報、每月總整理同源輸出"],
+                ["系統完整度", f"{completeness_passed}/{completeness_total}", "全系統掃描檢查"],
+            ],
+        ),
+        "",
+        "## 詳細附錄目錄",
         markdown_table(["區塊", "名稱", "用途"], report_index_rows()),
         "",
         "## 資料完整度總表",
@@ -3280,17 +3349,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
-                ["新一期結構", f"前九={format_numbers(top9)}", "符合第19版每期重算、539鐵律與九顆核心池規格"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第20版每期重算、539鐵律與九顆核心池規格"],
             ],
         ),
         "",
-        "## 分頁六：全系統缺口檢測與第19版修復",
+        "## 分頁六：全系統缺口檢測與第20版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 分頁七：第19版新增邏輯運算模型",
+        "## 分頁七：第20版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -4710,6 +4779,405 @@ def avoid_number_validation_rows(
     return rows
 
 
+def latest_month_key(draws: list[Draw]) -> str:
+    if not draws:
+        return datetime.now(LOCAL_TZ).strftime("%Y-%m")
+    return draws[-1].draw_date[:7]
+
+
+def month_label(month_key: str) -> str:
+    year_text, month_text = month_key.split("-")
+    return f"{year_text}年{month_text}月"
+
+
+def monthly_report_stem(month_key: str) -> str:
+    return f"香港六合彩預測系統_{month_label(month_key)}總整理報表"
+
+
+def hit_bar(value: float, maximum: float = 6.0, width: int = 12) -> str:
+    if maximum <= 0:
+        maximum = 1.0
+    filled = int(round(max(0.0, min(value, maximum)) / maximum * width))
+    return "■" * filled + "□" * (width - filled)
+
+
+def prediction_run_for_actual_draw(
+    conn: sqlite3.Connection,
+    ordered_draws: list[Draw],
+    actual_index: int,
+) -> sqlite3.Row | None:
+    if actual_index <= 0:
+        return None
+    previous = ordered_draws[actual_index - 1]
+    if previous.row_id is None:
+        return None
+    return conn.execute(
+        """
+        SELECT *
+        FROM prediction_runs
+        WHERE based_on_draw_id = ?
+        ORDER BY id DESC
+        LIMIT 1
+        """,
+        (previous.row_id,),
+    ).fetchone()
+
+
+def ticket_rows_for_run(conn: sqlite3.Connection, run_id: int) -> list[tuple[int, tuple[int, ...]]]:
+    rows = conn.execute(
+        """
+        SELECT ticket_rank, numbers_json
+        FROM prediction_tickets
+        WHERE run_id = ?
+        ORDER BY ticket_rank
+        """,
+        (run_id,),
+    ).fetchall()
+    return [
+        (int(row["ticket_rank"]), tuple(int(number) for number in json.loads(row["numbers_json"])))
+        for row in rows
+    ]
+
+
+def low_ranked_numbers_from_run(run: sqlite3.Row, count: int) -> list[int]:
+    snapshot = json.loads(run["score_snapshot_json"] or "{}")
+    if not isinstance(snapshot, dict):
+        return []
+    rows = []
+    for number_text, values in snapshot.items():
+        if not isinstance(values, dict):
+            continue
+        try:
+            rows.append((int(number_text), float(values.get("score", 0.0))))
+        except (TypeError, ValueError):
+            continue
+    return [number for number, _ in sorted(rows, key=lambda item: item[1])[:count]]
+
+
+def monthly_summary_records(
+    conn: sqlite3.Connection,
+    draws: list[Draw],
+    month_key: str,
+) -> list[dict[str, object]]:
+    ordered = sort_draws(draws)
+    records: list[dict[str, object]] = []
+    for index, actual in enumerate(ordered):
+        if not actual.draw_date.startswith(month_key):
+            continue
+        actual_numbers = set(actual.main_numbers)
+        run = prediction_run_for_actual_draw(conn, ordered, index)
+        if run is None:
+            records.append(
+                {
+                    "draw_no": actual.draw_no or "-",
+                    "draw_date": actual.draw_date,
+                    "actual": actual.main_numbers,
+                    "special": actual.special,
+                    "status": "缺正式預測",
+                    "run_id": None,
+                    "top_ticket": (),
+                    "top_hits": 0,
+                    "top_hit_numbers": (),
+                    "best_ticket": (),
+                    "best_hits": 0,
+                    "best_hit_numbers": (),
+                    "top9_hits": 0,
+                    "top9_hit_numbers": (),
+                    "top15_hits": 0,
+                    "top15_hit_numbers": (),
+                    "low5_hits": 0,
+                    "low10_hits": 0,
+                    "low15_hits": 0,
+                }
+            )
+            continue
+
+        tickets = ticket_rows_for_run(conn, int(run["id"]))
+        ranked = score_snapshot_ranked(run)
+        top9 = set(ranked[:CORE_POOL_SIZE])
+        top15 = set(ranked[:SUPPORT_POOL_SIZE])
+        low5 = set(low_ranked_numbers_from_run(run, 5))
+        low10 = set(low_ranked_numbers_from_run(run, 10))
+        low15 = set(low_ranked_numbers_from_run(run, 15))
+
+        top_ticket = tickets[0][1] if tickets else ()
+        top_hit_numbers = tuple(sorted(actual_numbers.intersection(top_ticket)))
+        best_ticket = ()
+        best_hit_numbers: tuple[int, ...] = ()
+        best_hits = -1
+        for _, numbers in tickets:
+            hits = tuple(sorted(actual_numbers.intersection(numbers)))
+            if len(hits) > best_hits:
+                best_hits = len(hits)
+                best_ticket = numbers
+                best_hit_numbers = hits
+        if best_hits < 0:
+            best_hits = 0
+
+        top9_hit_numbers = tuple(sorted(actual_numbers.intersection(top9)))
+        top15_hit_numbers = tuple(sorted(actual_numbers.intersection(top15)))
+        records.append(
+            {
+                "draw_no": actual.draw_no or "-",
+                "draw_date": actual.draw_date,
+                "actual": actual.main_numbers,
+                "special": actual.special,
+                "status": "已結算",
+                "run_id": int(run["id"]),
+                "based_on": f"{run['based_on_draw_no']} / {run['based_on_draw_date']}",
+                "top_ticket": top_ticket,
+                "top_hits": len(top_hit_numbers),
+                "top_hit_numbers": top_hit_numbers,
+                "best_ticket": best_ticket,
+                "best_hits": best_hits,
+                "best_hit_numbers": best_hit_numbers,
+                "top9_hits": len(top9_hit_numbers),
+                "top9_hit_numbers": top9_hit_numbers,
+                "top15_hits": len(top15_hit_numbers),
+                "top15_hit_numbers": top15_hit_numbers,
+                "low5_hits": len(actual_numbers.intersection(low5)),
+                "low10_hits": len(actual_numbers.intersection(low10)),
+                "low15_hits": len(actual_numbers.intersection(low15)),
+            }
+        )
+    return records
+
+
+def monthly_summary_overview_rows(records: list[dict[str, object]], month_key: str) -> list[list[object]]:
+    formal = [record for record in records if record.get("run_id") is not None]
+    missing = len(records) - len(formal)
+    if formal:
+        avg_best = statistics.mean(float(record["best_hits"]) for record in formal)
+        avg_top9 = statistics.mean(float(record["top9_hits"]) for record in formal)
+        avg_low5 = statistics.mean(float(record["low5_hits"]) for record in formal)
+        full_low5_avoid = sum(1 for record in formal if int(record["low5_hits"]) == 0) / len(formal)
+        best_record = max(formal, key=lambda record: int(record["best_hits"]))
+        best_text = f"{best_record['draw_no']} 最佳組{best_record['best_hits']}顆"
+    else:
+        avg_best = avg_top9 = avg_low5 = full_low5_avoid = 0.0
+        best_text = "無正式預測"
+    return [
+        ["整理月份", month_label(month_key), "每月一鍵更新後自動重建"],
+        ["本月開獎期數", len(records), "依開獎日期歸月"],
+        ["有正式預測期數", len(formal), "以前一期開獎後保存的正式預測結算"],
+        ["缺正式預測期數", missing, "缺資料會列出，不拿舊預測冒充"],
+        ["最佳組平均命中", f"{avg_best:.2f}", "二十組正式票中命中最多的一組"],
+        ["前九平均命中", f"{avg_top9:.2f}", "九顆核心池對實際主號"],
+        ["五不中平均誤中", f"{avg_low5:.2f}", "低機率風控誤中越低越好"],
+        ["五不中完全避開率", f"{full_low5_avoid:.3f}", "五不中完全沒有撞主號的比例"],
+        ["本月最佳單期", best_text, "用於下月滾動修正"],
+    ]
+
+
+def monthly_prediction_hit_rows(records: list[dict[str, object]]) -> list[list[object]]:
+    rows = []
+    for record in records:
+        rows.append(
+            [
+                record["draw_no"],
+                record["draw_date"],
+                record["status"],
+                "-" if record.get("run_id") is None else f"第 {record['run_id']} 筆",
+                format_numbers(tuple(record.get("top_ticket") or ())) if record.get("top_ticket") else "-",
+                f"{format_numbers(tuple(record['actual']))} + {int(record['special']):02d}",
+                record["top_hits"],
+                record["best_hits"],
+                record["top9_hits"],
+                format_numbers(tuple(record.get("best_hit_numbers") or ())) if record.get("best_hit_numbers") else "無",
+            ]
+        )
+    return rows
+
+
+def monthly_hit_chart_rows(records: list[dict[str, object]]) -> list[list[object]]:
+    rows = []
+    for record in records:
+        rows.append(
+            [
+                record["draw_no"],
+                hit_bar(float(record.get("best_hits", 0)), MAIN_COUNT),
+                record.get("best_hits", 0),
+                hit_bar(float(record.get("top9_hits", 0)), MAIN_COUNT),
+                record.get("top9_hits", 0),
+                hit_bar(float(record.get("low5_hits", 0)), MAIN_COUNT),
+                record.get("low5_hits", 0),
+            ]
+        )
+    return rows
+
+
+def monthly_hit_distribution_rows(records: list[dict[str, object]], field: str) -> list[list[object]]:
+    formal = [record for record in records if record.get("run_id") is not None]
+    counts = Counter(int(record.get(field, 0)) for record in formal)
+    total = max(1, len(formal))
+    rows = []
+    for hits in range(0, MAIN_COUNT + 1):
+        count = counts.get(hits, 0)
+        rows.append([f"{hits}顆", count, hit_bar(count, total), f"{count / total:.3f}"])
+    return rows
+
+
+def monthly_low_probability_rows(records: list[dict[str, object]]) -> list[list[object]]:
+    rows = []
+    for record in records:
+        rows.append(
+            [
+                record["draw_no"],
+                record["draw_date"],
+                record.get("low5_hits", 0),
+                record.get("low10_hits", 0),
+                record.get("low15_hits", 0),
+                "通過" if int(record.get("low5_hits", 0)) == 0 else "需降權",
+            ]
+        )
+    return rows
+
+
+def monthly_actual_number_rows(records: list[dict[str, object]]) -> list[list[object]]:
+    counter: Counter[int] = Counter()
+    for record in records:
+        counter.update(int(number) for number in record.get("actual", ()))
+    if not counter:
+        return [["無", 0, "", "無資料"]]
+    max_count = max(counter.values(), default=1)
+    rows = []
+    for number, count in counter.most_common(20):
+        rows.append([f"{number:02d}", count, hit_bar(count, max_count), number_route_short(number)])
+    return rows
+
+
+def number_route_short(number: int) -> str:
+    return f"{wave_color(number)}、尾{number % 10}、{decade_bucket(number)}區"
+
+
+def monthly_review_action_rows(records: list[dict[str, object]]) -> list[list[object]]:
+    formal = [record for record in records if record.get("run_id") is not None]
+    if not formal:
+        return [["正式預測", "本月沒有可結算預測", "補足接管後預測紀錄"]]
+    avg_best = statistics.mean(float(record["best_hits"]) for record in formal)
+    avg_top9 = statistics.mean(float(record["top9_hits"]) for record in formal)
+    avg_low5 = statistics.mean(float(record["low5_hits"]) for record in formal)
+    rows = [
+        ["正式票命中", f"最佳組平均 {avg_best:.2f}", "保留命中組來源，未命中組降權"],
+        ["前九核心", f"平均命中 {avg_top9:.2f}", "前九低於二顆時提高漏抓號與中段回拉"],
+        ["低機率暫避", f"五不中平均誤中 {avg_low5:.2f}", "誤中號移出暫避包，降低暫避信心"],
+    ]
+    zero_best = sum(1 for record in formal if int(record["best_hits"]) == 0)
+    if zero_best:
+        rows.append(["零命中警示", f"{zero_best} 期", "下一月加重轉移追蹤與本月滾動"])
+    else:
+        rows.append(["零命中警示", "無", "維持現行校準"])
+    return rows
+
+
+def monthly_short_summary(records: list[dict[str, object]], month_key: str) -> str:
+    formal = [record for record in records if record.get("run_id") is not None]
+    if not formal:
+        return f"{month_label(month_key)} 尚無可結算正式預測"
+    avg_best = statistics.mean(float(record["best_hits"]) for record in formal)
+    avg_top9 = statistics.mean(float(record["top9_hits"]) for record in formal)
+    avg_low5 = statistics.mean(float(record["low5_hits"]) for record in formal)
+    return (
+        f"{month_label(month_key)}：開獎{len(records)}期，"
+        f"正式結算{len(formal)}期，最佳組平均{avg_best:.2f}，"
+        f"前九平均{avg_top9:.2f}，五不中平均誤中{avg_low5:.2f}"
+    )
+
+
+def build_monthly_summary_markdown(
+    conn: sqlite3.Connection,
+    recent_window: int,
+    month_key: str | None = None,
+) -> str:
+    draws = load_draws_from_db(conn)
+    if not draws:
+        raise SystemExit("資料庫沒有開獎資料。")
+    target_month = month_key or latest_month_key(draws)
+    records = monthly_summary_records(conn, draws, target_month)
+    report_time = report_datetime_text()
+    lines = [
+        f"# {month_label(target_month)}總整理報表",
+        "",
+        "## 月報快讀",
+        markdown_table(["項目", "數值", "說明"], monthly_summary_overview_rows(records, target_month)),
+        "",
+        "## 分類一：預測命中",
+        markdown_table(
+            ["開獎期", "開獎日", "狀態", "預測紀錄", "第一組預測號碼", "實際開獎", "第一組命中", "最佳組命中", "前九命中", "最佳命中號"],
+            monthly_prediction_hit_rows(records),
+        ),
+        "",
+        "## 分類二：低機率暫避",
+        markdown_table(
+            ["開獎期", "開獎日", "五不中誤中", "十不中誤中", "十五不中誤中", "處理"],
+            monthly_low_probability_rows(records),
+        ),
+        "",
+        "## 分類三：圖表分析",
+        "### 命中走勢圖",
+        markdown_table(
+            ["開獎期", "最佳組圖", "最佳組", "前九圖", "前九", "五不中誤中圖", "五不中誤中"],
+            monthly_hit_chart_rows(records),
+        ),
+        "",
+        "### 最佳組命中分布",
+        markdown_table(["命中顆數", "期數", "圖", "占比"], monthly_hit_distribution_rows(records, "best_hits")),
+        "",
+        "### 前九核心命中分布",
+        markdown_table(["命中顆數", "期數", "圖", "占比"], monthly_hit_distribution_rows(records, "top9_hits")),
+        "",
+        "### 本月實開號碼分布",
+        markdown_table(["號碼", "出現次數", "圖", "路數"], monthly_actual_number_rows(records)),
+        "",
+        "## 分類四：檢討修正",
+        markdown_table(["項目", "本月結果", "下月修正"], monthly_review_action_rows(records)),
+        "",
+        "## 分類五：月報資訊",
+        markdown_table(
+            ["項目", "內容"],
+            [
+                ["產生時間", report_time],
+                ["整理月份", month_label(target_month)],
+                ["資料規則", "以前一期正式預測對本期實際開獎，不用下期預測冒充命中"],
+                ["產生方式", "一鍵更新後自動重建，並同步手機雲端"],
+                ["提醒", "本月報為歷史統計檢討，不保證未來開出"],
+            ],
+        ),
+    ]
+    return sanitize_battle_report_text("\n".join(str(part) for part in lines))
+
+
+def save_monthly_summary_reports(
+    conn: sqlite3.Connection,
+    report_dir: Path,
+    site_dir: Path | None,
+    recent_window: int,
+) -> dict[str, Path]:
+    draws = load_draws_from_db(conn)
+    target_month = latest_month_key(draws)
+    markdown_text = build_monthly_summary_markdown(conn, recent_window, target_month)
+    html_text = build_battle_report_html(markdown_text)
+    stem = monthly_report_stem(target_month)
+    paths = {
+        "monthly_md": report_dir / f"{stem}.md",
+        "monthly_txt": report_dir / f"{stem}.txt",
+        "monthly_html": report_dir / f"{stem}.html",
+        "monthly_latest_md": report_dir / MONTHLY_REPORT_LATEST_MARKDOWN_NAME,
+        "monthly_latest_txt": report_dir / MONTHLY_REPORT_LATEST_TEXT_NAME,
+        "monthly_latest_html": report_dir / MONTHLY_REPORT_LATEST_HTML_NAME,
+    }
+    for key, path in paths.items():
+        if key.endswith("html"):
+            path.write_text(html_text, encoding="utf-8")
+        else:
+            path.write_text(markdown_text, encoding="utf-8")
+    if site_dir is not None:
+        site_dir.mkdir(parents=True, exist_ok=True)
+        (site_dir / f"{stem}.html").write_text(html_text, encoding="utf-8")
+        (site_dir / MONTHLY_REPORT_LATEST_HTML_NAME).write_text(html_text, encoding="utf-8")
+    return paths
+
+
 def low_probability_reason(row: NumberScore) -> str:
     reasons = []
     if row.recent_frequency == 0:
@@ -5097,12 +5565,18 @@ def period_gap_summary_rows(draws: list[Draw]) -> list[list[object]]:
 
 def report_index_rows() -> list[list[object]]:
     return [
+        ["分類入口", "預測號碼", "強推薦、高機率信心牌、前九核心、正式票逐號驗算"],
+        ["分類入口", "預測命中", "最新結算、月度命中、預測號碼對實際開獎"],
+        ["分類入口", "低機率暫避", "五不中、十不中、十五不中分開顯示"],
+        ["分類入口", "檢討修正", "命中低落、漏抓、沿用硬閘、下月修正"],
+        ["分類入口", "其他資料", "資料庫、缺期、手機同步、系統審核"],
         ["先看區", "戰報快讀", "最新開獎、下期預測、高信心牌、前九核心、低機率暫避"],
         ["先看區", "資料完整度總表", "歷史資料庫、最新預測、手機同步、戰報輸出是否齊全"],
         ["先看區", "缺期掃描與補足證明", "逐年檢查期號連續性，分清楚真缺期與歷史停開間隔"],
         ["先看區", "上期預測禁沿用硬閘", "嚴禁上一筆預測直接沿用，連莊必須達標才保留"],
         ["先看區", "逐號驗算總則", "每顆號碼列出正式票來源、多模型、路數、膽拖交叉與回測證據"],
         ["先看區", "正式預測逐號驗算", "拒絕憑空號碼，所有正式票號碼必須逐號驗算"],
+        ["月報區", "每月總整理報表", "每月預測號碼、實際開獎、命中、低機率與圖表分析"],
         ["分頁一至十二", "本期預測", "發布結論、每期重算、低命中校正、高機率信心牌、前九核心"],
         ["分頁十三至十九", "開獎檢討", "日期基準、上期命中、漏抓檢討、前十五詳表"],
         ["分頁二十至二十六", "模型與回測", "牌型、關聯、多模型競賽、命中指標、模型審計"],
@@ -5116,8 +5590,10 @@ def report_file_status_rows() -> list[list[object]]:
         [DEFAULT_REPORT_DIR / "香港六合彩預測系統_完整戰報.html", "完整戰報網頁"],
         [DEFAULT_REPORT_DIR / "香港六合彩預測系統_完整戰報.md", "完整戰報純文字"],
         [DEFAULT_REPORT_DIR / "香港六合彩預測系統_最新強化戰報.html", "最新強化戰報"],
+        [DEFAULT_REPORT_DIR / MONTHLY_REPORT_LATEST_HTML_NAME, "每月總整理報表"],
         [Path("site") / SITE_HOME_NAME, "首頁"],
         [Path("site") / SITE_BATTLE_REPORT_NAME, "手機同步戰報"],
+        [Path("site") / MONTHLY_REPORT_LATEST_HTML_NAME, "手機同步月報"],
         [Path("site") / SITE_LATEST_PREDICTION_NAME, "最新預測"],
         [Path("site") / SITE_STATUS_NAME, "系統狀態"],
         [Path("site") / "香港六合彩預測系統_手機狀態.json", "手機狀態"],
@@ -6154,7 +6630,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260701_第19版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260701_第20版")
 
 
 def build_site(

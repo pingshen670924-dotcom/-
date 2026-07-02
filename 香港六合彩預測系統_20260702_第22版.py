@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260701_第21版"
+MODEL_VERSION = "香港六合彩預測系統_20260702_第22版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -86,6 +86,12 @@ TRANSITION_FOLLOW_WEIGHT = 0.065
 TAIL_TRANSITION_WEIGHT = 0.050
 CALENDAR_PHASE_WEIGHT = 0.040
 SPECIAL_CROSSOVER_WEIGHT = 0.045
+DIRICHLET_MULTINOMIAL_WEIGHT = 0.070
+HYPERGEOMETRIC_BASELINE_WEIGHT = 0.055
+ENTROPY_BALANCE_WEIGHT = 0.050
+COOCCURRENCE_GRAPH_WEIGHT = 0.060
+MARKOV_STATE_WEIGHT = 0.055
+FORMULA_CONSENSUS_WEIGHT = 0.065
 _SCORE_RANK_BACKTEST_CACHE: dict[tuple[int, str, str, str, int, int], dict[str, float | int]] = {}
 
 RED_WAVE = {1, 2, 7, 8, 12, 13, 18, 19, 23, 24, 29, 30, 34, 35, 40, 45, 46}
@@ -809,6 +815,24 @@ def build_scores(
     tail_transition_scores = calculate_tail_transition_scores(draws)
     calendar_phase_scores = calculate_calendar_phase_scores(draws)
     special_crossover_scores = calculate_special_crossover_scores(draws)
+    dirichlet_multinomial_scores = calculate_dirichlet_multinomial_scores(draws, recent_window)
+    hypergeometric_baseline_scores = calculate_hypergeometric_baseline_scores(draws, recent_window)
+    entropy_balance_scores = calculate_entropy_balance_scores(draws, recent_window)
+    cooccurrence_graph_scores = calculate_cooccurrence_graph_scores(draws, recent_window)
+    markov_state_scores = calculate_markov_state_scores(draws)
+    formula_consensus_scores = calculate_formula_consensus_scores(
+        all_counts,
+        recent_counts,
+        miss_gaps,
+        pair_strength,
+        momentum_scores,
+        cycle_scores,
+        dirichlet_multinomial_scores,
+        hypergeometric_baseline_scores,
+        entropy_balance_scores,
+        cooccurrence_graph_scores,
+        markov_state_scores,
+    )
 
     max_total = max(all_counts.values(), default=1)
     max_recent = max(recent_counts.values(), default=1)
@@ -856,6 +880,12 @@ def build_scores(
             "tail_transition": tail_transition_scores[number],
             "calendar_phase": calendar_phase_scores[number],
             "special_crossover": special_crossover_scores[number],
+            "dirichlet_multinomial": dirichlet_multinomial_scores[number],
+            "hypergeometric_baseline": hypergeometric_baseline_scores[number],
+            "entropy_balance": entropy_balance_scores[number],
+            "cooccurrence_graph": cooccurrence_graph_scores[number],
+            "markov_state": markov_state_scores[number],
+            "formula_consensus": formula_consensus_scores[number],
         }
 
         score = sum(weights[name] * model_scores[name] for name in weights)
@@ -867,6 +897,12 @@ def build_scores(
         score += model_scores["tail_transition"] * TAIL_TRANSITION_WEIGHT
         score += model_scores["calendar_phase"] * CALENDAR_PHASE_WEIGHT
         score += model_scores["special_crossover"] * SPECIAL_CROSSOVER_WEIGHT
+        score += model_scores["dirichlet_multinomial"] * DIRICHLET_MULTINOMIAL_WEIGHT
+        score += model_scores["hypergeometric_baseline"] * HYPERGEOMETRIC_BASELINE_WEIGHT
+        score += model_scores["entropy_balance"] * ENTROPY_BALANCE_WEIGHT
+        score += model_scores["cooccurrence_graph"] * COOCCURRENCE_GRAPH_WEIGHT
+        score += model_scores["markov_state"] * MARKOV_STATE_WEIGHT
+        score += model_scores["formula_consensus"] * FORMULA_CONSENSUS_WEIGHT
 
         score_rows[number] = NumberScore(
             number=number,
@@ -1309,6 +1345,205 @@ def calculate_special_crossover_scores(draws: list[Draw]) -> dict[int, float]:
     }
     if max(raw.values(), default=0.0) <= 0:
         return {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    return normalized_values(raw)
+
+
+def calculate_dirichlet_multinomial_scores(draws: list[Draw], recent_window: int) -> dict[int, float]:
+    if not draws:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    alpha = 0.5
+    full_counts = Counter(number for draw in draws for number in draw.main_numbers)
+    recent = draws[-max(1, recent_window):]
+    half_life = max(6.0, recent_window / 2.0)
+    decay = math.log(2) / half_life
+    decayed_counts = Counter()
+    for age, draw in enumerate(reversed(recent)):
+        weight = math.exp(-decay * age)
+        for number in draw.main_numbers:
+            decayed_counts[number] += weight
+    raw = {
+        number: alpha + full_counts[number] * 0.28 + decayed_counts[number] * 0.72
+        for number in range(MIN_NUMBER, MAX_NUMBER + 1)
+    }
+    return normalized_values(raw)
+
+
+def calculate_hypergeometric_baseline_scores(draws: list[Draw], recent_window: int) -> dict[int, float]:
+    recent = draws[-max(1, recent_window):]
+    if len(recent) < 5:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+
+    def z_score(observed: float, group_size: int, sample_count: int) -> float:
+        p = group_size / MAX_NUMBER
+        finite_population = (MAX_NUMBER - MAIN_COUNT) / (MAX_NUMBER - 1)
+        variance = max(sample_count * MAIN_COUNT * p * (1.0 - p) * finite_population, 1e-9)
+        expected = sample_count * MAIN_COUNT * p
+        return (observed - expected) / math.sqrt(variance)
+
+    tail_counts = Counter(number % 10 for draw in recent for number in draw.main_numbers)
+    decade_counts = Counter(decade_bucket(number) for draw in recent for number in draw.main_numbers)
+    color_counts = Counter(wave_color(number) for draw in recent for number in draw.main_numbers)
+    tail_sizes = Counter(number % 10 for number in range(MIN_NUMBER, MAX_NUMBER + 1))
+    decade_sizes = Counter(decade_bucket(number) for number in range(MIN_NUMBER, MAX_NUMBER + 1))
+    color_sizes = Counter(wave_color(number) for number in range(MIN_NUMBER, MAX_NUMBER + 1))
+    raw: dict[int, float] = {}
+    for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+        tail = number % 10
+        decade = decade_bucket(number)
+        color = wave_color(number)
+        tail_score = 1.0 / (1.0 + math.exp(-z_score(tail_counts[tail], tail_sizes[tail], len(recent)) / 1.6))
+        decade_score = 1.0 / (1.0 + math.exp(-z_score(decade_counts[decade], decade_sizes[decade], len(recent)) / 1.6))
+        color_score = 1.0 / (1.0 + math.exp(-z_score(color_counts[color], color_sizes[color], len(recent)) / 1.6))
+        raw[number] = tail_score * 0.38 + decade_score * 0.34 + color_score * 0.28
+    return normalized_values(raw)
+
+
+def calculate_entropy_balance_scores(draws: list[Draw], recent_window: int) -> dict[int, float]:
+    recent = draws[-max(1, recent_window):]
+    if len(recent) < 5:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+
+    def entropy_ratio(counts: Counter, keys: list[object]) -> float:
+        total = sum(counts[key] for key in keys)
+        if total <= 0 or len(keys) <= 1:
+            return 1.0
+        entropy = 0.0
+        for key in keys:
+            probability = counts[key] / total
+            if probability > 0:
+                entropy -= probability * math.log(probability)
+        return entropy / math.log(len(keys))
+
+    tail_keys = list(range(10))
+    decade_keys = sorted({decade_bucket(number) for number in range(MIN_NUMBER, MAX_NUMBER + 1)})
+    color_keys = ["紅波", "藍波", "綠波"]
+    tail_counts = Counter(number % 10 for draw in recent for number in draw.main_numbers)
+    decade_counts = Counter(decade_bucket(number) for draw in recent for number in draw.main_numbers)
+    color_counts = Counter(wave_color(number) for draw in recent for number in draw.main_numbers)
+    tail_sizes = Counter(number % 10 for number in range(MIN_NUMBER, MAX_NUMBER + 1))
+    decade_sizes = Counter(decade_bucket(number) for number in range(MIN_NUMBER, MAX_NUMBER + 1))
+    color_sizes = Counter(wave_color(number) for number in range(MIN_NUMBER, MAX_NUMBER + 1))
+    tail_entropy = entropy_ratio(tail_counts, tail_keys)
+    decade_entropy = entropy_ratio(decade_counts, decade_keys)
+    color_entropy = entropy_ratio(color_counts, color_keys)
+    total_slots = len(recent) * MAIN_COUNT
+
+    def balance_score(observed: float, group_size: int, entropy_value: float) -> float:
+        expected = total_slots * group_size / MAX_NUMBER
+        deficit = (expected - observed) / max(expected, 1.0)
+        strength = 0.72 if entropy_value < 0.92 else 0.48
+        return clamp01(0.5 + deficit * strength)
+
+    raw: dict[int, float] = {}
+    for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+        tail = number % 10
+        decade = decade_bucket(number)
+        color = wave_color(number)
+        raw[number] = (
+            balance_score(tail_counts[tail], tail_sizes[tail], tail_entropy) * 0.36
+            + balance_score(decade_counts[decade], decade_sizes[decade], decade_entropy) * 0.34
+            + balance_score(color_counts[color], color_sizes[color], color_entropy) * 0.30
+        )
+    return normalized_values(raw)
+
+
+def calculate_cooccurrence_graph_scores(draws: list[Draw], recent_window: int) -> dict[int, float]:
+    recent = draws[-max(1, recent_window * 2):]
+    if len(recent) < 8:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    pair_counts: dict[int, Counter[int]] = defaultdict(Counter)
+    latest_numbers = set(draws[-1].main_numbers)
+    half_life = max(10.0, recent_window)
+    decay = math.log(2) / half_life
+    for age, draw in enumerate(reversed(recent)):
+        weight = math.exp(-decay * age)
+        for left, right in itertools.combinations(draw.main_numbers, 2):
+            pair_counts[left][right] += weight
+            pair_counts[right][left] += weight
+    raw: dict[int, float] = {}
+    for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+        centrality = sum(count for _, count in pair_counts[number].most_common(8))
+        bridge = sum(pair_counts[number][source] for source in latest_numbers if source != number)
+        raw[number] = centrality * 0.58 + bridge * 0.42
+    if max(raw.values(), default=0.0) <= 0:
+        return {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    return normalized_values(raw)
+
+
+def calculate_markov_state_scores(draws: list[Draw]) -> dict[int, float]:
+    if len(draws) < 20:
+        return {number: 0.5 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    latest = draws[-1]
+
+    def draw_state(draw: Draw) -> dict[str, object]:
+        return {
+            "tails": {number % 10 for number in draw.main_numbers},
+            "decades": {decade_bucket(number) for number in draw.main_numbers},
+            "colors": Counter(wave_color(number) for number in draw.main_numbers),
+            "odd": sum(1 for number in draw.main_numbers if number % 2),
+            "small": sum(1 for number in draw.main_numbers if number <= 24),
+        }
+
+    latest_state = draw_state(latest)
+    counts = Counter()
+    for previous, current in zip(draws, draws[1:]):
+        state = draw_state(previous)
+        tail_overlap = len(latest_state["tails"].intersection(state["tails"])) / 6.0
+        decade_overlap = len(latest_state["decades"].intersection(state["decades"])) / 5.0
+        color_gap = sum(abs(latest_state["colors"][color] - state["colors"][color]) for color in ("紅波", "藍波", "綠波"))
+        color_similarity = 1.0 - min(color_gap / 12.0, 1.0)
+        odd_similarity = 1.0 - abs(int(latest_state["odd"]) - int(state["odd"])) / MAIN_COUNT
+        small_similarity = 1.0 - abs(int(latest_state["small"]) - int(state["small"])) / MAIN_COUNT
+        similarity = (
+            tail_overlap * 0.28
+            + decade_overlap * 0.24
+            + color_similarity * 0.20
+            + odd_similarity * 0.14
+            + small_similarity * 0.14
+        )
+        if similarity < 0.42:
+            continue
+        for number in current.main_numbers:
+            counts[number] += similarity
+    raw = {number: counts[number] for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    if max(raw.values(), default=0.0) <= 0:
+        return {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    return normalized_values(raw)
+
+
+def calculate_formula_consensus_scores(
+    all_counts: Counter,
+    recent_counts: Counter,
+    miss_gaps: dict[int, int],
+    pair_strength: dict[int, float],
+    momentum_scores: dict[int, float],
+    cycle_scores: dict[int, float],
+    dirichlet_multinomial_scores: dict[int, float],
+    hypergeometric_baseline_scores: dict[int, float],
+    entropy_balance_scores: dict[int, float],
+    cooccurrence_graph_scores: dict[int, float],
+    markov_state_scores: dict[int, float],
+) -> dict[int, float]:
+    components = [
+        normalized_values({number: float(all_counts[number]) for number in range(MIN_NUMBER, MAX_NUMBER + 1)}),
+        normalized_values({number: float(recent_counts[number]) for number in range(MIN_NUMBER, MAX_NUMBER + 1)}),
+        normalized_values({number: float(miss_gaps[number]) for number in range(MIN_NUMBER, MAX_NUMBER + 1)}),
+        normalized_values({number: float(pair_strength[number]) for number in range(MIN_NUMBER, MAX_NUMBER + 1)}),
+        normalized_values({number: float(momentum_scores[number]) for number in range(MIN_NUMBER, MAX_NUMBER + 1)}),
+        cycle_scores,
+        dirichlet_multinomial_scores,
+        hypergeometric_baseline_scores,
+        entropy_balance_scores,
+        cooccurrence_graph_scores,
+        markov_state_scores,
+    ]
+    raw: dict[int, float] = {}
+    for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+        values = [component.get(number, 0.0) for component in components]
+        mean_strength = statistics.mean(values)
+        high_vote_rate = sum(1 for value in values if value >= 0.62) / len(values)
+        top_vote_rate = sum(1 for value in values if value >= 0.78) / len(values)
+        raw[number] = clamp01(mean_strength * 0.58 + high_vote_rate * 0.28 + top_vote_rate * 0.14)
     return normalized_values(raw)
 
 
@@ -2174,7 +2409,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊前九核心池內",
-                    "第21版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
+                    "第22版結算回饋 + 轉移追蹤會直接提高漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2184,7 +2419,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第21版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
+                    "第22版區間修復 + 尾數轉移提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2193,7 +2428,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
-                "第21版本月滾動 + 日曆相位共同前移，不再只當防守補位",
+                "第22版本月滾動 + 日曆相位共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2201,7 +2436,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第21版強化模型並持續滾動校準",
+                "維持第22版強化模型並持續滾動校準",
             ]
         )
     return rows
@@ -2438,6 +2673,12 @@ def top_ticket_models(numbers: tuple[int, ...], scores: dict[int, NumberScore]) 
         "tail_transition": "尾數轉移",
         "calendar_phase": "日曆相位",
         "special_crossover": "特別號交叉",
+        "dirichlet_multinomial": "狄利克雷平滑",
+        "hypergeometric_baseline": "超幾何基準",
+        "entropy_balance": "熵平衡校正",
+        "cooccurrence_graph": "共現圖中心",
+        "markov_state": "狀態馬可夫",
+        "formula_consensus": "公式共識",
     }
     if not scores:
         return []
@@ -3361,17 +3602,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
-                ["新一期結構", f"前九={format_numbers(top9)}", "符合第21版每期重算、539鐵律與九顆核心池規格"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第22版每期重算、539鐵律與九顆核心池規格"],
             ],
         ),
         "",
-        "## 分頁六：全系統缺口檢測與第21版修復",
+        "## 分頁六：全系統缺口檢測與第22版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 分頁七：第21版新增邏輯運算模型",
+        "## 分頁七：第22版新增邏輯運算模型",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -3379,6 +3620,12 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["尾數轉移", "追蹤最新尾數、區間到下一期尾數與區間的轉換", "把 9顆核心池壓得更集中"],
                 ["日曆相位", "依下一期目標日的星期、月內相位與歷史同相位樣本校準", "修正月內節奏與開獎日型態"],
                 ["特別號交叉", "把最新特別號同尾、同區間、鄰近號與歷史轉主號樣本交叉", "補強特別號滲透主號的捕捉"],
+                ["狄利克雷平滑", "以先驗假數修正長期與近期次數，降低零次數與短期暴衝失真", "補強單號機率穩定性"],
+                ["超幾何基準", "用不放回抽樣期望值檢查尾數、區間、波色偏離程度", "防止只看熱冷而忽略基本盤"],
+                ["熵平衡校正", "檢查近期分布集中或分散，對過度失衡的尾數、區間、波色做回拉", "降低結構偏斜造成的漏抓"],
+                ["共現圖中心", "用號碼同開網路計算中心性與最新一期橋接關係", "補強拖牌與聯動號"],
+                ["狀態馬可夫", "比對最新一期尾數、區間、波色、奇偶、大小狀態後追蹤下一期落點", "補強開獎後重新運算"],
+                ["公式共識", "把頻率、近期、遺漏、配對、動能、週期與第22版新增公式交叉投票", "只前移多公式同時支持的號碼"],
             ],
         ),
         "",
@@ -4455,6 +4702,12 @@ def model_label(name: str) -> str:
         "tail_transition": "尾數轉移",
         "calendar_phase": "日曆相位",
         "special_crossover": "特別號交叉",
+        "dirichlet_multinomial": "狄利克雷平滑",
+        "hypergeometric_baseline": "超幾何基準",
+        "entropy_balance": "熵平衡校正",
+        "cooccurrence_graph": "共現圖中心",
+        "markov_state": "狀態馬可夫",
+        "formula_consensus": "公式共識",
     }
     return labels.get(name, name)
 
@@ -6467,6 +6720,20 @@ def render_model_cards(scores: dict[int, NumberScore]) -> str:
         "cycle": "週期",
         "structure": "結構",
         "rolling_month": "本月滾動",
+        "zone_repair": "區間修復",
+        "breakout_capture": "冷爆捕捉",
+        "neighbor_bridge": "鄰近橋接",
+        "settlement_feedback": "結算回饋",
+        "transition_follow": "轉移追蹤",
+        "tail_transition": "尾數轉移",
+        "calendar_phase": "日曆相位",
+        "special_crossover": "特別號交叉",
+        "dirichlet_multinomial": "狄利克雷平滑",
+        "hypergeometric_baseline": "超幾何基準",
+        "entropy_balance": "熵平衡校正",
+        "cooccurrence_graph": "共現圖中心",
+        "markov_state": "狀態馬可夫",
+        "formula_consensus": "公式共識",
     }
     if not scores:
         return ""
@@ -6645,6 +6912,12 @@ def model_report_text(
         "tail_transition": "尾數轉移",
         "calendar_phase": "日曆相位",
         "special_crossover": "特別號交叉",
+        "dirichlet_multinomial": "狄利克雷平滑",
+        "hypergeometric_baseline": "超幾何基準",
+        "entropy_balance": "熵平衡校正",
+        "cooccurrence_graph": "共現圖中心",
+        "markov_state": "狀態馬可夫",
+        "formula_consensus": "公式共識",
     }
     lines = [
         "多模型運算",
@@ -6652,7 +6925,7 @@ def model_report_text(
         f"策略: {strategy}",
         f"近期視窗: {recent_window}",
         "",
-        "Ensemble 綜合排行:",
+        "綜合排行:",
         " ".join(f"{row.number:02d}({row.score:.3f})" for row in sorted(scores.values(), key=lambda row: row.score, reverse=True)[:top]),
     ]
     model_names = list(next(iter(scores.values())).model_scores)
@@ -6822,7 +7095,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260701_第21版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260702_第22版")
 
 
 def build_site(

@@ -2592,6 +2592,17 @@ def confidence_ticket_rows(package: PredictionPackage, limit: int = 6) -> list[l
     return rows
 
 
+def confidence_ticket_status(package: PredictionPackage, limit: int = 6) -> tuple[str, str]:
+    rows = confidence_ticket_rows(package, limit=limit)
+    high_rows = [row for row in rows if "高機率信心牌" in str(row[2])]
+    if high_rows:
+        return "達高機率門檻", "；".join(f"{row[1]} {row[2]}" for row in high_rows)
+    observed = rows[0] if rows else None
+    if observed:
+        return "未達第23版高機率門檻", f"{observed[1]} {observed[2]}，只列觀察"
+    return "未達第23版高機率門檻", "無可列候選"
+
+
 def system_gap_review_rows(
     conn: sqlite3.Connection,
     draws: list[Draw],
@@ -2688,6 +2699,7 @@ def system_completeness_rows(
         parent_launcher = Path("..") / "香港六合彩預測系統_一鍵啟動.bat"
         if parent_launcher.exists():
             launcher_path = parent_launcher
+    confidence_status, confidence_text = confidence_ticket_status(package)
     checks = [
         (
             "歷史資料庫",
@@ -2716,8 +2728,8 @@ def system_completeness_rows(
         (
             "高機率信心牌",
             len(package.tickets) >= 6,
-            "前 6 組獨立標註",
-            "已特別強調",
+            confidence_text,
+            confidence_status,
         ),
         (
             "策略成熟度",
@@ -2781,11 +2793,11 @@ def battle_summary_rows(
     completeness_passed: int,
     completeness_total: int,
 ) -> list[list[object]]:
-    top_confidence = [format_numbers(ticket.numbers) for ticket in package.tickets[:3]]
+    confidence_status, confidence_text = confidence_ticket_status(package, limit=3)
     return [
         ["最新開獎", f"{latest.draw_no} / {latest.draw_date}", f"{format_numbers(latest.main_numbers)} + {latest.special:02d}"],
         ["預測目標", target_date, f"第 {run_id if run_id is not None else '-'} 筆預測"],
-        ["高信心主牌", "前三組", " / ".join(top_confidence)],
+        ["高信心主牌", confidence_status, confidence_text],
         ["膽碼", "前九核心", format_numbers(package.bankers)],
         ["拖碼", "前九補強", format_numbers(package.drags)],
         ["特別號", "獨立候選", format_numbers(package.special_candidates)],
@@ -3579,7 +3591,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
     settled = latest_settled_prediction(conn)
     summary_month_key = latest_month_key(draws)
     monthly_records = monthly_summary_records(conn, draws, summary_month_key)
-    confidence_rows_preview = confidence_ticket_rows(package, limit=3)
+    confidence_status_preview, confidence_text_preview = confidence_ticket_status(package, limit=3)
     avoid_rows_preview = exclusion_pack_summary_rows(draws, package.scores, ranked_numbers, score_max, recent_window)
 
     lines: list[str] = [
@@ -3627,7 +3639,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             ["項目", "內容", "位置"],
             [
                 ["強推薦", "；".join(f"{row[0]} {row[1]}" for row in super_recommendation_rows(package, draws)[:3]), "強推薦逐號驗算"],
-                ["高機率信心牌", confidence_rows_preview[0][1] if confidence_rows_preview else "無", "高機率信心牌"],
+                ["高機率信心牌", f"{confidence_status_preview}：{confidence_text_preview}", "高機率信心牌"],
                 ["前九核心", format_numbers(top9), "前九核心逐號驗算"],
                 ["正式票逐號驗算", "每顆號碼列正式票來源、多模型、路數、膽拖交叉、回測", "正式預測逐號驗算"],
             ],
@@ -6153,6 +6165,7 @@ def data_completeness_overview_rows(
     )
     latest = draws[-1]
     missing_periods = missing_period_labels(draws)
+    confidence_status, confidence_text = confidence_ticket_status(package)
     return [
         ["歷史資料庫", "已入庫", f"{len(draws)} 期 / {draws[0].draw_date} 到 {draws[-1].draw_date}"],
         ["缺期掃描", "已補足" if not missing_periods else "需補期", f"期號缺口 {len(missing_periods)} 筆" if not missing_periods else " ".join(missing_periods[:50])],
@@ -6160,7 +6173,7 @@ def data_completeness_overview_rows(
         ["最新預測", "已重算" if run_id is not None else "臨時計算", f"第 {run_id if run_id is not None else '-'} 筆 / 依據 {based_draw_no or '-'} / {based_draw_date} / 目標 {target_date}"],
         ["正式預測紀錄", "已累積", f"{prediction_count} 筆預測 / {result_count} 筆結算"],
         ["系統接管點", "已標示", first_base_text],
-        ["高機率信心牌", "已加註", f"{min(6, len(package.tickets))} 組列入特別標註"],
+        ["高機率信心牌", confidence_status, confidence_text],
         ["前九核心池", "已限制", format_numbers(top9)],
         ["上期沿用硬閘", "已啟用", repeat_guard_status_text(conn, package, draws, current_run_id)],
         ["低機率暫避", "已補足", "五不中、十不中、十五不中各自列信心與回測成效"],
@@ -6219,10 +6232,9 @@ def quick_report_rows(
     current_run_id: int | None = None,
 ) -> list[list[object]]:
     super_rows = super_recommendation_rows(package, draws)
-    confidence_rows = confidence_ticket_rows(package, limit=3)
+    confidence_status, confidence_text = confidence_ticket_status(package, limit=3)
     avoid_rows = exclusion_pack_summary_rows(draws, package.scores, ranked_numbers, score_max, recent_window)
     missing_periods = missing_period_labels(draws)
-    top_confidence = confidence_rows[0][1] if confidence_rows else "-"
     top_super = "；".join(f"{row[0]} {row[1]}" for row in super_rows[:3])
     avoid_text = "；".join(f"{row[0]} {row[1]} 信心{row[2]}" for row in avoid_rows[:3])
     return [
@@ -6231,7 +6243,7 @@ def quick_report_rows(
         ["上期沿用硬閘", "已啟用", repeat_guard_status_text(conn, package, draws, current_run_id)],
         ["下期預測", "已重算", f"目標 {target_date} / 第 {run_id if run_id is not None else '-'} 筆 / 依據 {based_draw_no or '-'} {based_draw_date}"],
         ["強推薦", "先看這裡", top_super],
-        ["高機率信心牌", "特別加註", top_confidence],
+        ["高機率信心牌", confidence_status, confidence_text],
         ["九顆核心池", "正式主池", format_numbers(top9)],
         ["低機率暫避", "分包顯示", avoid_text],
         ["發布狀態", release_level, f"風險等級 {risk_level} / 完整度 {completeness_passed}/{completeness_total}"],

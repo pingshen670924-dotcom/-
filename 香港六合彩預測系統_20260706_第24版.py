@@ -28,7 +28,7 @@ MAIN_COUNT = 6
 DEFAULT_RECENT_WINDOW = 30
 DEFAULT_DB = Path("香港六合彩預測系統.db")
 DEFAULT_REPORT_DIR = Path("reports")
-MODEL_VERSION = "香港六合彩預測系統_20260703_第23版"
+MODEL_VERSION = "香港六合彩預測系統_20260706_第24版"
 BUNDLED_SEED_CSV = Path("data/香港六合彩預測系統_種子資料_20260622.csv")
 SITE_HOME_NAME = "香港六合彩預測系統_首頁.html"
 SITE_BATTLE_REPORT_NAME = "香港六合彩預測系統_完整戰報.html"
@@ -94,10 +94,15 @@ MARKOV_STATE_WEIGHT = 0.055
 FORMULA_CONSENSUS_WEIGHT = 0.065
 WALK_FORWARD_VALIDATION_WEIGHT = 0.260
 FAILURE_COOLDOWN_WEIGHT = 0.220
+ROLLING_SETTLEMENT_MEMORY_WEIGHT = 0.210
+ROLLING_OVEREXPOSURE_PENALTY_WEIGHT = 0.240
 STRICT_TICKET_VALIDATION_WEIGHT = 0.550
 STRICT_TICKET_COOLDOWN_WEIGHT = 0.720
+STRICT_TICKET_MEMORY_WEIGHT = 0.520
+STRICT_TICKET_OVEREXPOSURE_WEIGHT = 0.660
 _SCORE_RANK_BACKTEST_CACHE: dict[tuple[int, str, str, str, int, int], dict[str, float | int]] = {}
 _WALK_FORWARD_VALIDATION_CACHE: dict[tuple[int, str, str, int, int], dict[int, float]] = {}
+_ROLLING_SETTLEMENT_MEMORY_CACHE: dict[tuple[int, str, str, int], tuple[dict[int, float], dict[int, float]]] = {}
 
 RED_WAVE = {1, 2, 7, 8, 12, 13, 18, 19, 23, 24, 29, 30, 34, 35, 40, 45, 46}
 BLUE_WAVE = {3, 4, 9, 10, 14, 15, 20, 25, 26, 31, 36, 37, 41, 42, 47, 48}
@@ -1712,6 +1717,7 @@ def build_auto_scores(
     feedback_scores = calculate_settlement_feedback_scores(conn, draws)
     validation_scores = calculate_walk_forward_validation_scores(draws, recent_window)
     cooldown_scores = calculate_failure_cooldown_scores(conn, draws)
+    memory_scores, overexposure_scores = calculate_rolling_settlement_memory_scores(conn, draws)
     for number in range(MIN_NUMBER, MAX_NUMBER + 1):
         normalized_parts = []
         raw_parts = []
@@ -1730,12 +1736,16 @@ def build_auto_scores(
         model_scores["settlement_feedback"] = feedback_scores[number]
         model_scores["walk_forward_validation"] = validation_scores[number]
         model_scores["failure_cooldown"] = 1.0 - cooldown_scores[number]
+        model_scores["settlement_memory"] = memory_scores[number]
+        model_scores["overexposure_guard"] = 1.0 - overexposure_scores[number]
         adjusted_score = (
             maturity_score * 0.72
             + validation_scores[number] * WALK_FORWARD_VALIDATION_WEIGHT
             + raw_score * 0.08
             + feedback_scores[number] * SETTLEMENT_FEEDBACK_WEIGHT
+            + memory_scores[number] * ROLLING_SETTLEMENT_MEMORY_WEIGHT
             - cooldown_scores[number] * FAILURE_COOLDOWN_WEIGHT
+            - overexposure_scores[number] * ROLLING_OVEREXPOSURE_PENALTY_WEIGHT
         )
         auto_scores[number] = NumberScore(
             number=base.number,
@@ -1763,6 +1773,7 @@ def generate_auto_tickets(
     weights = calibrated_strategy_weights(draws, recent_window, conn)
     validation_scores = calculate_walk_forward_validation_scores(draws, recent_window)
     cooldown_scores = calculate_failure_cooldown_scores(conn, draws)
+    memory_scores, overexposure_scores = calculate_rolling_settlement_memory_scores(conn, draws)
     generation_count = max(ticket_count * 3, ticket_count + len(strategy_names()) * 6)
     allocation = allocate_tickets(generation_count, weights)
     tickets: dict[tuple[int, ...], Ticket] = {}
@@ -1795,12 +1806,16 @@ def generate_auto_tickets(
             maturity = ticket_maturity_score(ticket.numbers, scores, draws[-1])
             validation = statistics.mean(validation_scores[number] for number in ticket.numbers)
             cooldown = statistics.mean(cooldown_scores[number] for number in ticket.numbers)
+            memory = statistics.mean(memory_scores[number] for number in ticket.numbers)
+            overexposure = statistics.mean(overexposure_scores[number] for number in ticket.numbers)
             adjusted_score = (
                 strategy_weight * 1.15
                 + normalized_score * 0.85
                 + maturity * 0.42
                 + validation * STRICT_TICKET_VALIDATION_WEIGHT
+                + memory * STRICT_TICKET_MEMORY_WEIGHT
                 - cooldown * STRICT_TICKET_COOLDOWN_WEIGHT
+                - overexposure * STRICT_TICKET_OVEREXPOSURE_WEIGHT
                 - (rank - 1) * 0.003
             )
             reasons = tuple(
@@ -1810,6 +1825,8 @@ def generate_auto_tickets(
                     f"票組成熟分 {maturity:.2f}",
                     f"回測驗證 {validation:.2f}",
                     f"冷卻扣分 {cooldown:.2f}",
+                    f"結算記憶 {memory:.2f}",
+                    f"過曝扣分 {overexposure:.2f}",
                 ]
             )
             adjusted_ticket = Ticket(
@@ -2353,6 +2370,124 @@ def calculate_failure_cooldown_scores(
         return empty
 
 
+def calculate_rolling_settlement_memory_scores(
+    conn: sqlite3.Connection | None,
+    draws: list[Draw],
+    lookback: int = 8,
+) -> tuple[dict[int, float], dict[int, float]]:
+    empty = {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+    if conn is None or not draws:
+        return empty, empty
+    latest = draws[-1]
+    cache_key = (len(draws), latest.draw_date, latest.draw_no, lookback)
+    cached = _ROLLING_SETTLEMENT_MEMORY_CACHE.get(cache_key)
+    if cached is not None:
+        return dict(cached[0]), dict(cached[1])
+
+    try:
+        init_db(conn)
+        rows = conn.execute(
+            """
+            SELECT r.id AS run_id,
+                   r.score_snapshot_json AS score_snapshot_json,
+                   d.n1, d.n2, d.n3, d.n4, d.n5, d.n6,
+                   d.draw_date, d.draw_no
+            FROM prediction_runs r
+            JOIN prediction_results res ON res.run_id = r.id
+            JOIN draws d ON d.id = res.actual_draw_id
+            GROUP BY r.id, res.actual_draw_id
+            ORDER BY d.draw_date DESC, r.id DESC
+            LIMIT ?
+            """,
+            (lookback,),
+        ).fetchall()
+        if not rows:
+            return empty, empty
+
+        raw_boost = {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+        raw_penalty = {number: 0.0 for number in range(MIN_NUMBER, MAX_NUMBER + 1)}
+        for age, row in enumerate(rows):
+            recency_weight = math.exp(-age / 4.5)
+            actual_numbers = {int(row[f"n{index}"]) for index in range(1, MAIN_COUNT + 1)}
+            snapshot = json.loads(row["score_snapshot_json"] or "{}")
+            snapshot_items: list[dict[str, object]] = []
+            if isinstance(snapshot, dict):
+                for key, value in snapshot.items():
+                    if isinstance(value, dict):
+                        item = dict(value)
+                        item["number"] = int(item.get("number", key))
+                        snapshot_items.append(item)
+            elif isinstance(snapshot, list):
+                snapshot_items = [item for item in snapshot if isinstance(item, dict)]
+            ranked_snapshot = sorted(
+                snapshot_items,
+                key=lambda item: float(item.get("score", 0.0)),
+                reverse=True,
+            )
+            snapshot_ranks = {
+                int(item.get("number")): rank
+                for rank, item in enumerate(ranked_snapshot, start=1)
+                if item.get("number") is not None
+            }
+
+            ticket_rows = conn.execute(
+                """
+                SELECT ticket_rank, numbers_json
+                FROM prediction_tickets
+                WHERE run_id = ?
+                ORDER BY ticket_rank
+                LIMIT 8
+                """,
+                (int(row["run_id"]),),
+            ).fetchall()
+            exposure: Counter[int] = Counter()
+            for ticket in ticket_rows:
+                ticket_weight = max(0.18, 1.0 - (int(ticket["ticket_rank"]) - 1) * 0.09)
+                for number in json.loads(ticket["numbers_json"]):
+                    exposure[int(number)] += ticket_weight
+            exposure_max = max(exposure.values(), default=1.0) or 1.0
+            exposure_denominator = max(1.0, sum(exposure.values()) / MAIN_COUNT)
+
+            for actual in actual_numbers:
+                previous_rank = snapshot_ranks.get(actual, MAX_NUMBER)
+                rank_gap = 1.0 if previous_rank > SUPPORT_POOL_SIZE else (0.64 if previous_rank > CORE_POOL_SIZE else 0.22)
+                exposure_gap = 1.0 - min(exposure[actual] / exposure_denominator, 1.0)
+                base = recency_weight * clamp01(rank_gap * 0.70 + exposure_gap * 0.30)
+                for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+                    similarity = 0.0
+                    if number == actual:
+                        similarity += 1.0
+                    if abs(number - actual) <= 2:
+                        similarity += 0.25
+                    if number % 10 == actual % 10:
+                        similarity += 0.18
+                    if decade_bucket(number) == decade_bucket(actual):
+                        similarity += 0.16
+                    if wave_color(number) == wave_color(actual):
+                        similarity += 0.08
+                    raw_boost[number] += base * min(similarity, 1.30)
+
+            for number in range(MIN_NUMBER, MAX_NUMBER + 1):
+                if number in actual_numbers:
+                    continue
+                rank = snapshot_ranks.get(number, MAX_NUMBER)
+                if rank <= CORE_POOL_SIZE:
+                    rank_penalty = 0.92
+                elif rank <= SUPPORT_POOL_SIZE:
+                    rank_penalty = 0.58
+                else:
+                    rank_penalty = 0.0
+                exposure_penalty = exposure[number] / exposure_max if exposure else 0.0
+                raw_penalty[number] += recency_weight * clamp01(rank_penalty * 0.56 + exposure_penalty * 0.44)
+
+        boost = normalized_values(raw_boost) if max(raw_boost.values(), default=0.0) > 0 else empty
+        penalty = normalized_values(raw_penalty) if max(raw_penalty.values(), default=0.0) > 0 else empty
+        _ROLLING_SETTLEMENT_MEMORY_CACHE[cache_key] = (boost, penalty)
+        return dict(boost), dict(penalty)
+    except Exception:
+        return empty, empty
+
+
 def ticket_reason_float(ticket: Ticket, prefix: str, default: float = 0.0) -> float:
     for reason in ticket.reasons:
         if reason.startswith(prefix):
@@ -2559,7 +2694,18 @@ def ticket_confidence_index(ticket: Ticket, max_score: float, rank: int) -> floa
     maturity = ticket_reason_float(ticket, "票組成熟分", 0.55)
     validation = ticket_reason_float(ticket, "回測驗證", 0.50)
     cooldown = ticket_reason_float(ticket, "冷卻扣分", 0.0)
-    value = 50.0 + ratio * 28.0 + rank_bonus + maturity * 7.0 + validation * 9.0 - cooldown * 14.0
+    memory = ticket_reason_float(ticket, "結算記憶", 0.0)
+    overexposure = ticket_reason_float(ticket, "過曝扣分", 0.0)
+    value = (
+        50.0
+        + ratio * 28.0
+        + rank_bonus
+        + maturity * 7.0
+        + validation * 9.0
+        + memory * 5.0
+        - cooldown * 14.0
+        - overexposure * 11.0
+    )
     return max(50.0, min(95.0, value))
 
 
@@ -2568,9 +2714,19 @@ def ticket_confidence_label(ticket: Ticket, max_score: float, rank: int) -> str:
     maturity = ticket_reason_float(ticket, "票組成熟分", 0.0)
     validation = ticket_reason_float(ticket, "回測驗證", 0.0)
     cooldown = ticket_reason_float(ticket, "冷卻扣分", 0.0)
-    if rank <= 3 and value >= 88.0 and maturity >= 0.86 and validation >= 0.58 and cooldown <= 0.24:
+    memory = ticket_reason_float(ticket, "結算記憶", 0.0)
+    overexposure = ticket_reason_float(ticket, "過曝扣分", 0.0)
+    if (
+        rank <= 3
+        and value >= 88.0
+        and maturity >= 0.86
+        and validation >= 0.58
+        and memory >= 0.18
+        and cooldown <= 0.24
+        and overexposure <= 0.30
+    ):
         return f"高機率信心牌 {value:.1f}"
-    if rank <= 6 and value >= 82.0 and maturity >= 0.78 and validation >= 0.52 and cooldown <= 0.34:
+    if rank <= 6 and value >= 82.0 and maturity >= 0.78 and validation >= 0.52 and cooldown <= 0.34 and overexposure <= 0.42:
         return f"中高信心牌 {value:.1f}"
     return f"觀察牌 {value:.1f}"
 
@@ -2599,8 +2755,8 @@ def confidence_ticket_status(package: PredictionPackage, limit: int = 6) -> tupl
         return "達高機率門檻", "；".join(f"{row[1]} {row[2]}" for row in high_rows)
     observed = rows[0] if rows else None
     if observed:
-        return "未達第23版高機率門檻", f"{observed[1]} {observed[2]}，只列觀察"
-    return "未達第23版高機率門檻", "無可列候選"
+        return "未達第24版高機率門檻", f"{observed[1]} {observed[2]}，只列觀察"
+    return "未達第24版高機率門檻", "無可列候選"
 
 
 def system_gap_review_rows(
@@ -2648,7 +2804,7 @@ def system_gap_review_rows(
                 [
                     "上期實際漏抓",
                     f"{format_numbers(missed)} 未在舊前九核心池內",
-                    "第23版結算回饋 + 敗戰冷卻 + 轉移追蹤會重新校正漏抓號、鄰近號、同尾號、同區間號",
+                    "第24版結算記憶 + 過曝控管 + 轉移追蹤會重新校正漏抓號、鄰近號、同尾號、同區間號",
                 ]
             )
         actual_decades = Counter(decade_bucket(number) for number in actual.main_numbers)
@@ -2658,7 +2814,7 @@ def system_gap_review_rows(
                 [
                     "中段區間捕捉不足",
                     f"上期 11-30 區間開出 {mid_hits} 顆",
-                    "第23版區間修復 + 回測驗證提高 11-30 中段與同尾橋接權重",
+                    "第24版區間修復 + 回測驗證提高 11-30 中段與同尾橋接權重",
                 ]
             )
     missing_hot = month_review.get("missing_hot", [])
@@ -2667,7 +2823,7 @@ def system_gap_review_rows(
             [
                 "月內熱點未前移",
                 f"本月熱點仍在前九外：{format_numbers(missing_hot)}",
-                "第23版本月滾動 + 日曆相位 + 回測驗證共同前移，不再只當防守補位",
+                "第24版本月滾動 + 日曆相位 + 回測驗證共同前移，不再只當防守補位",
             ]
         )
     if not rows:
@@ -2675,7 +2831,7 @@ def system_gap_review_rows(
             [
                 "未發現重大缺口",
                 "資料、回測、結算、手機同步均正常",
-                "維持第23版重整模型並持續滾動校準",
+                "維持第24版重整模型並持續滾動校準",
             ]
         )
     return rows
@@ -2921,6 +3077,8 @@ def top_ticket_models(numbers: tuple[int, ...], scores: dict[int, NumberScore]) 
         "formula_consensus": "公式共識",
         "walk_forward_validation": "回測驗證",
         "failure_cooldown": "敗戰冷卻",
+        "settlement_memory": "結算記憶",
+        "overexposure_guard": "過曝控管",
     }
     if not scores:
         return []
@@ -3844,17 +4002,17 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["9顆核心池覆蓋", f"{month_review['overlap']} / 9，覆蓋率 {float(month_review['coverage']):.3f}", "核心池固定 9 顆，第十至第十五名只留補位"],
                 ["本月熱點", format_numbers(month_review["hottest"]), "已納入本月滾動修正分數"],
                 ["熱點未納入前九", format_numbers(month_review["missing_hot"]) if month_review["missing_hot"] else "無", "若連續落在第十至第十五名，下一輪前移校準"],
-                ["新一期結構", f"前九={format_numbers(top9)}", "符合第23版每期重算、539鐵律與九顆核心池規格"],
+                ["新一期結構", f"前九={format_numbers(top9)}", "符合第24版每期重算、539鐵律與九顆核心池規格"],
             ],
         ),
         "",
-        "## 分頁六：全系統缺口檢測與第23版修復",
+        "## 分頁六：全系統缺口檢測與第24版修復",
         markdown_table(
             ["缺口", "目前問題", "已接上的修復模型"],
             system_gap_review_rows(conn, draws, package, rank_backtest, month_review, settled),
         ),
         "",
-        "## 分頁七：第23版重整預測模式",
+        "## 分頁七：第24版重整預測模式",
         markdown_table(
             ["新增模型", "運算重點", "強化目的"],
             [
@@ -3867,9 +4025,11 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
                 ["熵平衡校正", "檢查近期分布集中或分散，對過度失衡的尾數、區間、波色做回拉", "降低結構偏斜造成的漏抓"],
                 ["共現圖中心", "用號碼同開網路計算中心性與最新一期橋接關係", "補強拖牌與聯動號"],
                 ["狀態馬可夫", "比對最新一期尾數、區間、波色、奇偶、大小狀態後追蹤下一期落點", "補強開獎後重新運算"],
-                ["公式共識", "把頻率、近期、遺漏、配對、動能、週期與第23版新增公式交叉投票", "只前移多公式同時支持的號碼"],
+                ["公式共識", "把頻率、近期、遺漏、配對、動能、週期與第24版新增公式交叉投票", "只前移多公式同時支持的號碼"],
                 ["回測驗證", "近36期逐期回推，檢查號碼被模型列入核心後是否真的命中", "只讓被實測支持的號碼提高主推權重"],
                 ["敗戰冷卻", "上一輪高曝光但落空的號碼會暫時降權", "避免同一批低效號碼連續占住高信心位置"],
+                ["結算記憶", "近8筆正式結算回看漏抓號、相鄰號、同尾號、同區間號", "把真實漏抓路線拉回主模型"],
+                ["過曝控管", "連續高曝光但落空的號碼與票組降權", "避免低效號碼反覆占住主推位置"],
             ],
         ),
         "",
@@ -4495,6 +4655,8 @@ def build_super_precision_metrics(
         pair_score = row.pair_strength / max_pair if max_pair else 0.0
         validation_score = row.model_scores.get("walk_forward_validation", 0.50)
         cooldown_score = 1.0 - row.model_scores.get("failure_cooldown", 1.0)
+        memory_score = row.model_scores.get("settlement_memory", 0.0)
+        overexposure_score = 1.0 - row.model_scores.get("overexposure_guard", 1.0)
         precision = clamp01(
             ensemble * 0.19
             + model_support * 0.16
@@ -4502,11 +4664,13 @@ def build_super_precision_metrics(
             + float(bayes_scores[row.number]) * 0.11
             + float(recent_scores[row.number]) * 0.10
             + validation_score * 0.19
+            + memory_score * 0.12
             + pair_score * 0.07
             + row.model_scores.get("cycle", 0.0) * 0.03
             + row.model_scores.get("rolling_month", 0.0) * 0.02
             + rank_focus * 0.02
             - cooldown_score * 0.14
+            - overexposure_score * 0.12
         )
         if rank <= CORE_POOL_SIZE:
             precision = clamp01(precision + 0.045)
@@ -4526,6 +4690,8 @@ def build_super_precision_metrics(
             "ensemble": ensemble,
             "validation": validation_score,
             "cooldown": cooldown_score,
+            "memory": memory_score,
+            "overexposure": overexposure_score,
         }
     return metrics
 
@@ -4542,28 +4708,33 @@ def super_combo_score(
     recent = statistics.mean(float(metrics[number]["recent"]) for number in numbers)
     validation = statistics.mean(float(metrics[number].get("validation", 0.50)) for number in numbers)
     cooldown = statistics.mean(float(metrics[number].get("cooldown", 0.0)) for number in numbers)
+    memory = statistics.mean(float(metrics[number].get("memory", 0.0)) for number in numbers)
+    overexposure = statistics.mean(float(metrics[number].get("overexposure", 0.0)) for number in numbers)
     core_rate = sum(1 for number in numbers if int(metrics[number]["rank"]) <= CORE_POOL_SIZE) / len(numbers)
     pairs = [tuple(sorted(pair)) for pair in itertools.combinations(numbers, 2)]
     pair_score = statistics.mean(pair_synergy.get(pair, 0.0) for pair in pairs) if pairs else 0.0
     triple_score = triple_synergy.get(tuple(sorted(numbers)), 0.0) if len(numbers) == 3 else pair_score
     structure = super_structure_score(tuple(sorted(numbers)))
     if len(numbers) == 1:
-        total = precision * 0.54 + validation * 0.18 + stability * 0.12 + support * 0.09 + recent * 0.07 - cooldown * 0.13
+        total = precision * 0.50 + validation * 0.17 + memory * 0.12 + stability * 0.10 + support * 0.08 + recent * 0.06 - cooldown * 0.12 - overexposure * 0.11
     elif len(numbers) == 2:
         total = (
-            precision * 0.43
-            + validation * 0.16
+            precision * 0.39
+            + validation * 0.15
+            + memory * 0.10
             + stability * 0.10
             + support * 0.08
             + recent * 0.06
             + pair_score * 0.11
             + structure * 0.06
             - cooldown * 0.12
+            - overexposure * 0.10
         )
     else:
         total = (
-            precision * 0.38
-            + validation * 0.15
+            precision * 0.34
+            + validation * 0.14
+            + memory * 0.09
             + stability * 0.09
             + support * 0.07
             + recent * 0.06
@@ -4572,6 +4743,7 @@ def super_combo_score(
             + structure * 0.05
             + core_rate * 0.03
             - cooldown * 0.11
+            - overexposure * 0.09
         )
     return {
         "score": clamp01(total),
@@ -4585,6 +4757,8 @@ def super_combo_score(
         "core_rate": core_rate,
         "validation": validation,
         "cooldown": cooldown,
+        "memory": memory,
+        "overexposure": overexposure,
     }
 
 
@@ -4668,7 +4842,9 @@ def refined_super_pick_sets(
             f"模型共識 {detail['support']:.2f}",
             f"近況 {detail['recent']:.2f}",
             f"回測驗證 {detail['validation']:.2f}",
+            f"結算記憶 {detail['memory']:.2f}",
             f"冷卻扣分 {detail['cooldown']:.2f}",
+            f"過曝扣分 {detail['overexposure']:.2f}",
         ]
         if len(numbers) >= 2:
             reason_parts.append(f"配對共振 {detail['pair']:.2f}")
@@ -4977,6 +5153,8 @@ def model_label(name: str) -> str:
         "formula_consensus": "公式共識",
         "walk_forward_validation": "回測驗證",
         "failure_cooldown": "敗戰冷卻",
+        "settlement_memory": "結算記憶",
+        "overexposure_guard": "過曝控管",
     }
     return labels.get(name, name)
 
@@ -7005,6 +7183,8 @@ def render_model_cards(scores: dict[int, NumberScore]) -> str:
         "formula_consensus": "公式共識",
         "walk_forward_validation": "回測驗證",
         "failure_cooldown": "敗戰冷卻",
+        "settlement_memory": "結算記憶",
+        "overexposure_guard": "過曝控管",
     }
     if not scores:
         return ""
@@ -7191,6 +7371,8 @@ def model_report_text(
         "formula_consensus": "公式共識",
         "walk_forward_validation": "回測驗證",
         "failure_cooldown": "敗戰冷卻",
+        "settlement_memory": "結算記憶",
+        "overexposure_guard": "過曝控管",
     }
     lines = [
         "多模型運算",
@@ -7368,7 +7550,7 @@ def backup_database(db_path: Path, backup_dir: Path) -> Path:
 def load_mobile_cloud_module():
     import importlib
 
-    return importlib.import_module("香港六合彩預測系統_手機雲端_20260703_第23版")
+    return importlib.import_module("香港六合彩預測系統_手機雲端_20260706_第24版")
 
 
 def build_site(

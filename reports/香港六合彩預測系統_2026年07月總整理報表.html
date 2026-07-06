@@ -75,17 +75,16 @@
       margin-right: 8px;
       letter-spacing: 0;
     }
-    .overview-band h2::before { content: "總覽"; background: #2563eb; }
+    .overview-band h2::before { content: "預測"; background: #2563eb; }
     .prediction-band h2::before { content: "預測"; background: #b42318; }
-    .control-band h2::before { content: "檢查"; background: #15803d; }
-    .appendix-band h2::before { content: "附錄"; background: #64748b; }
-    .band[data-tab="總覽"] h2::before { content: "總覽"; background: #2563eb; }
-    .band[data-tab="預測"] h2::before { content: "預測"; background: #b42318; }
-    .band[data-tab="命中"] h2::before { content: "命中"; background: #15803d; }
+    .control-band h2::before { content: "檢討"; background: #15803d; }
+    .appendix-band h2::before { content: "稽核"; background: #64748b; }
+    .band[data-tab="下期預測"] h2::before { content: "下期預測"; background: #b42318; min-width: 72px; }
+    .band[data-tab="命中檢討"] h2::before { content: "命中檢討"; background: #15803d; min-width: 72px; }
+    .band[data-tab="每月總整理"] h2::before { content: "每月總整理"; background: #0f766e; min-width: 92px; }
     .band[data-tab="低機率"] h2::before { content: "低機率"; background: #7c3aed; min-width: 64px; }
-    .band[data-tab="檢討"] h2::before { content: "檢討"; background: #c2410c; }
-    .band[data-tab="月報"] h2::before { content: "月報"; background: #0f766e; }
-    .band[data-tab="其他"] h2::before { content: "其他"; background: #64748b; }
+    .band[data-tab="模型回測"] h2::before { content: "模型回測"; background: #c2410c; min-width: 72px; }
+    .band[data-tab="其他稽核"] h2::before { content: "其他稽核"; background: #64748b; min-width: 72px; }
     .confidence-band {
       border: 3px solid #b42318;
       background: #fff7f5;
@@ -145,22 +144,21 @@
 </head>
 <body>
   <header>
-    <h1>香港六合彩預測系統戰報</h1>
-    <div class="meta">539同規格強化戰報 / 自動更新、自動結算、自動預測</div>
+    <h1>香港六合彩精算預測戰報</h1>
+    <div class="meta">539同規格分類分頁戰報 / 自動更新、自動結算、自動預測</div>
   </header>
   <nav class="report-tabs" aria-label="戰報分類">
-      <button type="button" class="report-tab active" data-tab-button="總覽">總覽</button>
-      <button type="button" class="report-tab" data-tab-button="預測">預測</button>
-      <button type="button" class="report-tab" data-tab-button="命中">命中</button>
+      <button type="button" class="report-tab active" data-tab-button="下期預測">下期預測</button>
+      <button type="button" class="report-tab" data-tab-button="命中檢討">命中檢討</button>
+      <button type="button" class="report-tab" data-tab-button="每月總整理">每月總整理</button>
       <button type="button" class="report-tab" data-tab-button="低機率">低機率</button>
-      <button type="button" class="report-tab" data-tab-button="檢討">檢討</button>
-      <button type="button" class="report-tab" data-tab-button="月報">月報</button>
-      <button type="button" class="report-tab" data-tab-button="其他">其他</button>
+      <button type="button" class="report-tab" data-tab-button="模型回測">模型回測</button>
+      <button type="button" class="report-tab" data-tab-button="其他稽核">其他稽核</button>
   </nav>
   <main>
-    <section class="band lead" data-tab="其他"><h1>2026年07月總整理報表</h1>
+    <section class="band lead" data-tab="其他稽核"><h1>2026年07月總整理報表</h1>
     </section>
-    <section class="band" data-tab="總覽"><h2>月報快讀</h2>
+    <section class="band" data-tab="每月總整理"><h2>月報快讀</h2>
     <table>
     <thead><tr><th>項目</th><th>數值</th><th>說明</th></tr></thead>
     <tbody>
@@ -175,7 +173,7 @@
     <tr><td>本月最佳單期</td><td>2026/071 最佳組2顆</td><td>用於下月滾動修正</td></tr>
     </tbody></table>
     </section>
-    <section class="band" data-tab="命中"><h2>分類一：預測命中</h2>
+    <section class="band" data-tab="命中檢討"><h2>分類一：預測命中</h2>
     <table>
     <thead><tr><th>開獎期</th><th>開獎日</th><th>狀態</th><th>預測紀錄</th><th>第一組預測號碼</th><th>實際開獎</th><th>第一組命中</th><th>最佳組命中</th><th>前九命中</th><th>最佳命中號</th></tr></thead>
     <tbody>
@@ -183,7 +181,7 @@
     <tr><td>2026/072</td><td>2026-07-05</td><td>缺正式預測</td><td>-</td><td>-</td><td>03 14 19 20 31 38 + 44</td><td>0</td><td>0</td><td>0</td><td>無</td></tr>
     </tbody></table>
     </section>
-    <section class="band appendix-band" data-tab="其他"><h2>分類二：低機率暫避</h2>
+    <section class="band appendix-band" data-tab="低機率"><h2>分類二：低機率暫避</h2>
     <table>
     <thead><tr><th>開獎期</th><th>開獎日</th><th>五不中誤中</th><th>十不中誤中</th><th>十五不中誤中</th><th>處理</th></tr></thead>
     <tbody>
@@ -191,7 +189,7 @@
     <tr><td>2026/072</td><td>2026-07-05</td><td>0</td><td>0</td><td>0</td><td>通過</td></tr>
     </tbody></table>
     </section>
-    <section class="band" data-tab="月報"><h2>分類三：圖表分析</h2>
+    <section class="band" data-tab="每月總整理"><h2>分類三：圖表分析</h2>
     <h3>命中走勢圖</h3>
     <table>
     <thead><tr><th>開獎期</th><th>最佳組圖</th><th>最佳組</th><th>前九圖</th><th>前九</th><th>五不中誤中圖</th><th>五不中誤中</th></tr></thead>
@@ -240,7 +238,7 @@
     <tr><td>38</td><td>1</td><td>■■■■■■□□□□□□</td><td>綠波、尾8、31-40區</td></tr>
     </tbody></table>
     </section>
-    <section class="band" data-tab="檢討"><h2>分類四：檢討修正</h2>
+    <section class="band" data-tab="命中檢討"><h2>分類四：檢討修正</h2>
     <table>
     <thead><tr><th>項目</th><th>本月結果</th><th>下月修正</th></tr></thead>
     <tbody>
@@ -250,11 +248,11 @@
     <tr><td>零命中警示</td><td>無</td><td>維持現行校準</td></tr>
     </tbody></table>
     </section>
-    <section class="band" data-tab="月報"><h2>分類五：月報資訊</h2>
+    <section class="band" data-tab="每月總整理"><h2>分類五：月報資訊</h2>
     <table>
     <thead><tr><th>項目</th><th>內容</th></tr></thead>
     <tbody>
-    <tr><td>產生時間</td><td>2026-07-06 10:06:30</td></tr>
+    <tr><td>產生時間</td><td>2026-07-06 10:39:03</td></tr>
     <tr><td>整理月份</td><td>2026年07月</td></tr>
     <tr><td>資料規則</td><td>以前一期正式預測對本期實際開獎，不用下期預測冒充命中</td></tr>
     <tr><td>產生方式</td><td>一鍵更新後自動重建，並同步手機雲端</td></tr>
@@ -274,7 +272,7 @@
         try { localStorage.setItem("香港六合彩預測系統戰報分頁", tab); } catch (error) {}
       };
       buttons.forEach((button) => button.addEventListener("click", () => show(button.dataset.tabButton)));
-      let saved = "總覽";
+      let saved = "下期預測";
       try {
         const value = localStorage.getItem("香港六合彩預測系統戰報分頁");
         if (buttons.some((button) => button.dataset.tabButton === value)) {

@@ -3854,6 +3854,18 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             ],
         ),
         "",
+        f"## 命中檢討：最新開獎{latest.draw_date}命中檢討",
+        markdown_table(
+            ["項目", "結果", "內容"],
+            latest_actual_hit_review_rows(conn, draws),
+        ),
+        "",
+        f"## 低機率：最新開獎{latest.draw_date}誤中檢討",
+        markdown_table(
+            ["暫避包", "低機率號碼", "實際誤中", "誤中數", "檢討結論"],
+            latest_low_probability_review_rows(conn, draws),
+        ),
+        "",
         "## 戰報快讀",
         markdown_table(
             ["項目", "狀態", "內容"],
@@ -4445,9 +4457,10 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
         ]
     )
 
-    body = "\n".join(str(part) for part in lines)
+    body = compact_battle_report_text("\n".join(str(part) for part in lines))
     output_hash = report_numeric_fingerprint(body)
-    lines.extend(
+    compact_lines = body.splitlines()
+    compact_lines.extend(
         [
             "",
             "## 其他稽核：運算審核",
@@ -4459,7 +4472,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
             f"- 發布治理：{release_level}",
         ]
     )
-    return sanitize_battle_report_text("\n".join(str(part) for part in lines))
+    return sanitize_battle_report_text(compact_battle_report_text("\n".join(str(part) for part in compact_lines)))
 
 
 def latest_prediction_run(conn: sqlite3.Connection) -> sqlite3.Row | None:
@@ -5286,6 +5299,40 @@ def sanitize_battle_report_text(text: str) -> str:
     return text
 
 
+COMPACT_REPORT_SKIP_HEADINGS = {
+    "戰報快讀",
+    "下期預測：預測號碼總表",
+    "命中檢討：預測命中",
+    "低機率：5不中10不中15不中",
+    "命中檢討：檢討修正",
+    "每月總整理：月報入口",
+    "其他稽核：系統資料",
+    "詳細附錄目錄",
+    "逐號驗算總則",
+    "強推薦逐號驗算",
+    "前九核心逐號驗算",
+    "正式預測逐號驗算",
+    "下期預測：候選前十五詳表",
+    "命中檢討：全部正式預測歷史對比",
+    "下期預測：下期預測號碼池",
+}
+
+
+def compact_battle_report_text(text: str) -> str:
+    output: list[str] = []
+    skip_section = False
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if line.startswith("## "):
+            title = line[3:].strip()
+            skip_section = title in COMPACT_REPORT_SKIP_HEADINGS
+        if not skip_section:
+            output.append(raw_line)
+    compacted = "\n".join(output)
+    compacted = re.sub(r"\n{3,}", "\n\n", compacted)
+    return compacted.strip() + "\n"
+
+
 def model_validation_summary(row: NumberScore, threshold: float = 0.56) -> str:
     model_items = sorted(row.model_scores.items(), key=lambda item: item[1], reverse=True)
     passed = [(name, value) for name, value in model_items if value >= threshold]
@@ -5811,6 +5858,78 @@ def monthly_summary_records(
             }
         )
     return records
+
+
+def latest_actual_hit_review_rows(conn: sqlite3.Connection, draws: list[Draw]) -> list[list[object]]:
+    ordered = sort_draws(draws)
+    if len(ordered) < 2:
+        return [["檢討狀態", "資料不足", "至少需要兩期開獎才能檢討"]]
+    actual = ordered[-1]
+    actual_numbers = set(actual.main_numbers)
+    run = prediction_run_for_actual_draw(conn, ordered, len(ordered) - 1)
+    if run is None:
+        return [
+            ["檢討開獎", f"{actual.draw_no or '-'} / {actual.draw_date}", f"{format_numbers(actual.main_numbers)} + 特別號 {actual.special:02d}"],
+            ["對應預測", "缺正式預測", "找不到上一期開獎後保存的正式預測，不能拿其他期冒充檢討"],
+        ]
+    tickets = ticket_rows_for_run(conn, int(run["id"]))
+    ranked = score_snapshot_ranked(run)
+    top9_hit_numbers = tuple(sorted(actual_numbers.intersection(ranked[:CORE_POOL_SIZE])))
+    top15_hit_numbers = tuple(sorted(actual_numbers.intersection(ranked[:SUPPORT_POOL_SIZE])))
+    top_ticket = tickets[0][1] if tickets else ()
+    top_hit_numbers = tuple(sorted(actual_numbers.intersection(top_ticket)))
+    best_rank = "-"
+    best_ticket: tuple[int, ...] = ()
+    best_hit_numbers: tuple[int, ...] = ()
+    for rank, numbers in tickets:
+        hits = tuple(sorted(actual_numbers.intersection(numbers)))
+        if len(hits) > len(best_hit_numbers):
+            best_rank = rank
+            best_ticket = numbers
+            best_hit_numbers = hits
+    conclusion = (
+        "命中偏低，下一輪提高漏抓號同尾、同區、補位回拉"
+        if len(top9_hit_numbers) < 2
+        else "核心池達到基本檢討門檻，保留有效來源"
+    )
+    return [
+        ["檢討開獎", f"{actual.draw_no or '-'} / {actual.draw_date}", f"{format_numbers(actual.main_numbers)} + 特別號 {actual.special:02d}"],
+        ["對應預測", f"第 {run['id']} 筆", f"依據 {run['based_on_draw_no']} / {run['based_on_draw_date']} 產生"],
+        ["第一組命中", f"{len(top_hit_numbers)}顆", f"第一組 {format_numbers(top_ticket)} / 命中 {format_numbers(top_hit_numbers) if top_hit_numbers else '無'}"],
+        ["最佳組命中", f"{len(best_hit_numbers)}顆", f"第 {best_rank} 組 {format_numbers(best_ticket)} / 命中 {format_numbers(best_hit_numbers) if best_hit_numbers else '無'}"],
+        ["前九核心命中", f"{len(top9_hit_numbers)}顆", format_numbers(top9_hit_numbers) if top9_hit_numbers else "無"],
+        ["前十五補位命中", f"{len(top15_hit_numbers)}顆", format_numbers(top15_hit_numbers) if top15_hit_numbers else "無"],
+        ["修正結論", "已檢討", conclusion],
+    ]
+
+
+def latest_low_probability_review_rows(conn: sqlite3.Connection, draws: list[Draw]) -> list[list[object]]:
+    ordered = sort_draws(draws)
+    if len(ordered) < 2:
+        return [["-", "-", "-", "-", "資料不足"]]
+    actual = ordered[-1]
+    actual_numbers = set(actual.main_numbers)
+    run = prediction_run_for_actual_draw(conn, ordered, len(ordered) - 1)
+    if run is None:
+        return [["低機率檢討", "-", "-", "-", "缺上一期正式預測，不能檢討低機率誤中"]]
+    rows = []
+    for count, label in ((5, "5不中"), (10, "10不中"), (15, "15不中")):
+        low_numbers = tuple(low_ranked_numbers_from_run(run, count))
+        hits = tuple(sorted(actual_numbers.intersection(low_numbers)))
+        if hits:
+            conclusion = f"誤中{len(hits)}顆，下輪把誤中號移出暫避包並降低同型排除權重"
+        else:
+            conclusion = "完全避開，暫避包本期通過"
+        rows.append(
+            [
+                label,
+                format_numbers(low_numbers),
+                format_numbers(hits) if hits else "無",
+                len(hits),
+                conclusion,
+            ]
+        )
+    return rows
 
 
 def monthly_summary_overview_rows(records: list[dict[str, object]], month_key: str) -> list[list[object]]:
@@ -7811,8 +7930,10 @@ def daily_update(args: argparse.Namespace) -> str:
             prediction_html = args.site_dir / SITE_LATEST_PREDICTION_NAME
             should_refresh, refresh_reason = prediction_needs_refresh(conn, draws)
             if args.force_prediction and not should_refresh:
-                should_refresh = True
-                refresh_reason = f"每日一鍵強制重新運算 {now_text()}"
+                refresh_reason = (
+                    f"{refresh_reason}；資料未新增，禁止同一開獎期新增假新預測，"
+                    f"只重建戰報與同步手機 {now_text()}"
+                )
             if should_refresh:
                 package = generate_prediction_package(
                     draws,

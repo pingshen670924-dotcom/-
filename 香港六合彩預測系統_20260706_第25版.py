@@ -3983,7 +3983,7 @@ def build_battle_report_markdown(conn: sqlite3.Connection, recent_window: int) -
         markdown_table(["期號", "日期區間", "間隔天數", "判定"], long_date_gap_rows(draws)),
         "",
         "## 上期預測禁沿用硬閘",
-        "- 鐵律：上期正式預測不得直接變成本期正式主推；若有連莊，必須同時達到排名前三、相對分數、前九核心覆蓋、成熟度門檻。",
+        "- 鐵律：上期正式預測不得直接變成本期正式主推；連莊必須達標，必須同時達到排名前三、相對分數、前九核心覆蓋、成熟度門檻。",
         markdown_table(
             ["本期排名", "號碼", "狀態", "上期來源", "判定證據"],
             repeat_guard_audit_rows(conn, package, draws, run_id),

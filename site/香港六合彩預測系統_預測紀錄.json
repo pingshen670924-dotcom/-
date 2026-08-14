@@ -1,5 +1,14 @@
 [
   {
+    "id": 47,
+    "created_at": "2026-08-14T09:50:47+08:00",
+    "based_on_draw_date": "2026-08-13",
+    "based_on_draw_no": "2026/088",
+    "strategy": "auto",
+    "ticket_count": 20,
+    "report_path": "C:\\Users\\MSI\\Documents\\Codex\\2026-06-20\\new-chat\\系統檔案\\site\\香港六合彩預測系統_最新預測.html"
+  },
+  {
     "id": 46,
     "created_at": "2026-08-12T09:50:54+08:00",
     "based_on_draw_date": "2026-08-11",

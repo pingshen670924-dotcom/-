@@ -1,27 +1,27 @@
 {
-  "generated_at": "2026-09-04T10:03:29+08:00",
+  "generated_at": "2026-09-07T10:03:13+08:00",
   "model_version": "香港六合彩預測系統_20260707_第26版",
-  "draw_count": 2593,
-  "date_range": "2008-01-03 -> 2026-08-29",
+  "draw_count": 2594,
+  "date_range": "2008-01-03 -> 2026-09-05",
   "latest": {
-    "draw_no": "2026/095",
-    "date": "2026-08-29",
+    "draw_no": "2026/096",
+    "date": "2026-09-05",
     "main_numbers": [
-      4,
-      7,
-      8,
-      11,
+      9,
+      18,
       26,
-      30
+      30,
+      33,
+      45
     ],
-    "special": 42
+    "special": 28
   },
   "prediction": {
-    "run_id": 52,
-    "created_at": "2026-08-31T12:51:02+08:00",
-    "based_on_draw_no": "2026/095",
-    "based_on_draw_date": "2026-08-29",
-    "target_date": "待官方更新（原排程推估 2026-09-01）",
+    "run_id": 53,
+    "created_at": "2026-09-07T09:50:56+08:00",
+    "based_on_draw_no": "2026/096",
+    "based_on_draw_date": "2026-09-05",
+    "target_date": "2026-09-08",
     "strategy": "自動融合",
     "ticket_count": 20
   },
@@ -31,9 +31,9 @@
     "release_level": "研究觀察，不列保證",
     "completeness": "12/12",
     "champion": "均衡",
-    "auto_weights": "均衡:0.55 / 冷遺漏:1.55 / 分散:1.23 / 熱度:0.29 / 趨勢:0.22",
-    "settled_status": "第 51 筆 -> 2026-08-29 2026/095: 前五/前九/前十/前十五 1/2/2/2",
-    "consensus": 0.352,
+    "auto_weights": "均衡:0.29 / 冷遺漏:1.55 / 分散:0.80 / 熱度:0.36 / 趨勢:0.27",
+    "settled_status": "第 52 筆 -> 2026-09-05 2026/096: 前五/前九/前十/前十五 0/2/2/3",
+    "consensus": 0.335,
     "missing_period_status": "期號缺口 0 筆",
     "repeat_guard_status": "通過，0 組沿用"
   },
@@ -47,49 +47,49 @@
     },
     {
       "rank": 1,
-      "numbers": "02 06 20 21 28 49",
+      "numbers": "06 20 28 29 32 49",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 2,
-      "numbers": "02 06 20 28 29 49",
+      "numbers": "06 20 22 29 32 49",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 3,
-      "numbers": "02 05 06 20 28 29",
+      "numbers": "05 20 28 29 32 49",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 4,
-      "numbers": "02 05 20 28 29 49",
+      "numbers": "05 06 20 29 32 49",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 5,
-      "numbers": "02 05 06 20 28 49",
+      "numbers": "06 20 22 28 35 49",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 6,
-      "numbers": "02 05 20 28 29 32",
+      "numbers": "06 13 20 28 29 49",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
     },
     {
       "rank": 7,
-      "numbers": "02 06 20 21 29 49",
+      "numbers": "05 06 20 22 29 49",
       "status": "新票組",
       "previous": "-",
       "proof": "未與上一筆正式預測重複"
@@ -110,7 +110,7 @@
       {
         "item": "最新入庫",
         "status": "已確認",
-        "proof": "2026/095 / 2026-08-29"
+        "proof": "2026/096 / 2026-09-05"
       },
       {
         "item": "外部更新",
@@ -247,8 +247,8 @@
       },
       {
         "year": 2026,
-        "range": "2026/001 -> 2026/095",
-        "draw_count": 95,
+        "range": "2026/001 -> 2026/096",
+        "draw_count": 96,
         "missing_count": 0,
         "missing": "無"
       }
@@ -270,109 +270,109 @@
   },
   "accuracy": {
     "sample": 48,
-    "top5_avg": 0.667,
+    "top5_avg": 0.646,
     "top5_random": 0.612,
-    "top5_edge": 0.054,
-    "top9_avg": 1.083,
+    "top5_edge": 0.034,
+    "top9_avg": 1.042,
     "top9_random": 1.102,
-    "top9_edge": -0.019,
-    "top10_avg": 1.229,
+    "top9_edge": -0.06,
+    "top10_avg": 1.188,
     "top10_random": 1.224,
-    "top10_edge": 0.005,
-    "top15_avg": 1.875,
+    "top10_edge": -0.037,
+    "top15_avg": 1.833,
     "top15_random": 1.837,
-    "top15_edge": 0.038
+    "top15_edge": -0.003
   },
   "confidence_tickets": [
     {
       "rank": 1,
       "numbers": [
-        2,
         6,
         20,
-        21,
         28,
+        29,
+        32,
         49
       ],
-      "label": "觀察牌 83.8",
+      "label": "觀察牌 79.6",
       "strategy": "冷遺漏",
-      "score": 2.925,
-      "reasons": "結算記憶 0.29；過曝扣分 0.53"
+      "score": 2.645,
+      "reasons": "結算記憶 0.30；過曝扣分 0.79"
     },
     {
       "rank": 2,
       "numbers": [
-        2,
         6,
         20,
-        28,
+        22,
         29,
+        32,
         49
       ],
-      "label": "觀察牌 83.0",
+      "label": "觀察牌 79.5",
       "strategy": "冷遺漏",
-      "score": 2.925,
-      "reasons": "結算記憶 0.31；過曝扣分 0.56"
+      "score": 2.487,
+      "reasons": "結算記憶 0.22；過曝扣分 0.71"
     },
     {
       "rank": 3,
       "numbers": [
-        2,
         5,
-        6,
         20,
         28,
-        29
+        29,
+        32,
+        49
       ],
-      "label": "觀察牌 84.7",
+      "label": "觀察牌 75.5",
       "strategy": "冷遺漏",
-      "score": 2.888,
-      "reasons": "結算記憶 0.38；過曝扣分 0.47"
+      "score": 2.458,
+      "reasons": "結算記憶 0.29；過曝扣分 0.82"
     },
     {
       "rank": 4,
       "numbers": [
-        2,
         5,
+        6,
         20,
-        28,
         29,
+        32,
         49
       ],
-      "label": "觀察牌 81.7",
+      "label": "觀察牌 75.8",
       "strategy": "冷遺漏",
-      "score": 2.827,
-      "reasons": "結算記憶 0.30；過曝扣分 0.54"
+      "score": 2.455,
+      "reasons": "結算記憶 0.25；過曝扣分 0.80"
     },
     {
       "rank": 5,
       "numbers": [
-        2,
-        5,
         6,
         20,
+        22,
         28,
+        35,
         49
       ],
-      "label": "觀察牌 79.9",
+      "label": "觀察牌 76.7",
       "strategy": "冷遺漏",
-      "score": 2.811,
-      "reasons": "結算記憶 0.30；過曝扣分 0.56"
+      "score": 2.37,
+      "reasons": "結算記憶 0.27；過曝扣分 0.64"
     },
     {
       "rank": 6,
       "numbers": [
-        2,
-        5,
+        6,
+        13,
         20,
         28,
         29,
-        32
+        49
       ],
-      "label": "觀察牌 79.2",
+      "label": "觀察牌 74.3",
       "strategy": "冷遺漏",
-      "score": 2.777,
-      "reasons": "結算記憶 0.33；過曝扣分 0.55"
+      "score": 2.357,
+      "reasons": "結算記憶 0.31；過曝扣分 0.70"
     }
   ],
   "super_picks": [
@@ -380,228 +380,228 @@
       "label": "超強獨隻",
       "target": "獨隻1中1",
       "numbers": [
-        7
+        30
       ],
-      "confidence": "94.1",
-      "probability": "1中1 12.245%；近180期校準 1中1 15.6%",
-      "reason": "強推精算層 0.854；穩定 1.00；模型共識 0.55；近況 1.00；回測驗證 1.00；結算記憶 0.70；冷卻扣分 0.00；過曝扣分 0.65；前1遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、共現圖中心、敗戰冷卻"
+      "confidence": "92.5",
+      "probability": "1中1 12.245%；近180期校準 1中1 10.0%",
+      "reason": "強推精算層 0.801；穩定 0.97；模型共識 0.61；近況 0.60；回測驗證 0.77；結算記憶 0.69；冷卻扣分 0.00；過曝扣分 0.38；前1遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、狄利克雷平滑"
     },
     {
       "label": "超強2碼",
       "target": "2中1~2",
       "numbers": [
-        1,
-        7
+        7,
+        30
       ],
-      "confidence": "89.5",
-      "probability": "至少1中 23.214%；2中2 1.276%；近180期校準 至少1中 23.3%、2中2 1.7%",
-      "reason": "強推精算層 0.724；穩定 0.81；模型共識 0.48；近況 0.67；回測驗證 0.88；結算記憶 0.52；冷卻扣分 0.00；過曝扣分 0.48；配對共振 0.66；前2遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、共現圖中心、敗戰冷卻"
+      "confidence": "91.1",
+      "probability": "至少1中 23.214%；2中2 1.276%；近180期校準 至少1中 23.3%、2中2 2.2%",
+      "reason": "強推精算層 0.775；穩定 0.97；模型共識 0.52；近況 0.80；回測驗證 0.88；結算記憶 0.64；冷卻扣分 0.16；過曝扣分 0.56；配對共振 0.70；前2遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、狄利克雷平滑"
     },
     {
       "label": "超強3碼",
       "target": "3中1~3",
       "numbers": [
-        1,
         7,
-        28
+        26,
+        30
       ],
-      "confidence": "86.8",
-      "probability": "至少1中 33.017%；2中以上 3.609%；3中3 0.109%；近180期校準 至少1中 43.3%、2中以上 1.7%、3中3 0.0%",
-      "reason": "強推精算層 0.652；穩定 0.81；模型共識 0.47；近況 0.52；回測驗證 0.71；結算記憶 0.50；冷卻扣分 0.00；過曝扣分 0.42；配對共振 0.49；三碼共振 0.28；前3遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、共現圖中心、敗戰冷卻"
+      "confidence": "88.3",
+      "probability": "至少1中 33.017%；2中以上 3.609%；3中3 0.109%；近180期校準 至少1中 33.3%、2中以上 4.4%、3中3 1.1%",
+      "reason": "強推精算層 0.700；穩定 0.43；模型共識 0.44；近況 0.72；回測驗證 0.78；結算記憶 0.76；冷卻扣分 0.11；過曝扣分 0.46；配對共振 0.77；三碼共振 0.76；前3遞進式核心；核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、狄利克雷平滑"
     }
   ],
   "core_numbers": [
     {
       "rank": 1,
-      "number": 7,
-      "confidence": "高信心（研究） 95.0",
-      "score": 0.987,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、共現圖中心、敗戰冷卻"
+      "number": 30,
+      "confidence": "高信心（研究） 94.5",
+      "score": 0.834,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、狄利克雷平滑"
     },
     {
       "rank": 2,
-      "number": 28,
-      "confidence": "高信心（研究） 89.7",
-      "score": 0.86,
-      "reason": "核心高分、近期熱度、共現配對、特別號歷史、日曆相位、敗戰冷卻"
+      "number": 7,
+      "confidence": "高信心（研究） 89.3",
+      "score": 0.722,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、共現圖中心、超幾何基準"
     },
     {
       "rank": 3,
-      "number": 1,
-      "confidence": "中高信心 84.2",
-      "score": 0.725,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、超幾何基準"
+      "number": 28,
+      "confidence": "中高信心 87.9",
+      "score": 0.681,
+      "reason": "核心高分、近期熱度、共現配對、特別號歷史、日曆相位、公式共識"
     },
     {
       "rank": 4,
-      "number": 2,
-      "confidence": "中高信心 82.9",
-      "score": 0.704,
-      "reason": "近期熱度、遺漏補償、共現配對、特別號歷史、敗戰冷卻、貝葉斯平滑"
+      "number": 26,
+      "confidence": "中高信心 86.4",
+      "score": 0.673,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、結算回饋"
     },
     {
       "rank": 5,
-      "number": 5,
-      "confidence": "中高信心 81.9",
-      "score": 0.69,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、鄰近橋接"
+      "number": 25,
+      "confidence": "中高信心 86.2",
+      "score": 0.671,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、結算記憶"
     },
     {
       "rank": 6,
-      "number": 24,
-      "confidence": "中高信心 82.3",
-      "score": 0.674,
-      "reason": "共現配對、特別號歷史、長期頻率、尾數轉移"
+      "number": 35,
+      "confidence": "中高信心 84.5",
+      "score": 0.634,
+      "reason": "遺漏補償、共現配對、特別號歷史、敗戰冷卻、長期頻率"
     },
     {
       "rank": 7,
-      "number": 9,
-      "confidence": "中高信心 81.8",
-      "score": 0.671,
-      "reason": "近期熱度、共現配對、特別號歷史、敗戰冷卻、過曝控管"
+      "number": 24,
+      "confidence": "中高信心 84.6",
+      "score": 0.626,
+      "reason": "共現配對、特別號歷史、轉移追蹤、狀態馬可夫"
     },
     {
       "rank": 8,
-      "number": 21,
-      "confidence": "中高信心 82.0",
-      "score": 0.665,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、配對圖譜"
+      "number": 46,
+      "confidence": "中高信心 82.7",
+      "score": 0.588,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、貝葉斯平滑"
     },
     {
       "rank": 9,
-      "number": 30,
-      "confidence": "中高信心 81.6",
-      "score": 0.652,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、貝葉斯平滑"
+      "number": 34,
+      "confidence": "中高信心 82.6",
+      "score": 0.582,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     }
   ],
   "top_numbers": [
     {
       "rank": 1,
-      "number": 7,
+      "number": 30,
       "bucket": "9隻內核心",
-      "confidence": "高信心（研究） 95.0",
-      "score": 0.987,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、共現圖中心、敗戰冷卻"
+      "confidence": "高信心（研究） 94.5",
+      "score": 0.834,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、狄利克雷平滑"
     },
     {
       "rank": 2,
-      "number": 28,
+      "number": 7,
       "bucket": "9隻內核心",
-      "confidence": "高信心（研究） 89.7",
-      "score": 0.86,
-      "reason": "核心高分、近期熱度、共現配對、特別號歷史、日曆相位、敗戰冷卻"
+      "confidence": "高信心（研究） 89.3",
+      "score": 0.722,
+      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、共現圖中心、超幾何基準"
     },
     {
       "rank": 3,
-      "number": 1,
+      "number": 28,
       "bucket": "9隻內核心",
-      "confidence": "中高信心 84.2",
-      "score": 0.725,
-      "reason": "核心高分、近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、超幾何基準"
+      "confidence": "中高信心 87.9",
+      "score": 0.681,
+      "reason": "核心高分、近期熱度、共現配對、特別號歷史、日曆相位、公式共識"
     },
     {
       "rank": 4,
-      "number": 2,
+      "number": 26,
       "bucket": "9隻內核心",
-      "confidence": "中高信心 82.9",
-      "score": 0.704,
-      "reason": "近期熱度、遺漏補償、共現配對、特別號歷史、敗戰冷卻、貝葉斯平滑"
+      "confidence": "中高信心 86.4",
+      "score": 0.673,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、結算回饋"
     },
     {
       "rank": 5,
-      "number": 5,
+      "number": 25,
       "bucket": "9隻內核心",
-      "confidence": "中高信心 81.9",
-      "score": 0.69,
-      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、鄰近橋接"
+      "confidence": "中高信心 86.2",
+      "score": 0.671,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、結算記憶"
     },
     {
       "rank": 6,
-      "number": 24,
+      "number": 35,
       "bucket": "9隻內核心",
-      "confidence": "中高信心 82.3",
-      "score": 0.674,
-      "reason": "共現配對、特別號歷史、長期頻率、尾數轉移"
+      "confidence": "中高信心 84.5",
+      "score": 0.634,
+      "reason": "遺漏補償、共現配對、特別號歷史、敗戰冷卻、長期頻率"
     },
     {
       "rank": 7,
-      "number": 9,
+      "number": 24,
       "bucket": "9隻內核心",
-      "confidence": "中高信心 81.8",
-      "score": 0.671,
-      "reason": "近期熱度、共現配對、特別號歷史、敗戰冷卻、過曝控管"
+      "confidence": "中高信心 84.6",
+      "score": 0.626,
+      "reason": "共現配對、特別號歷史、轉移追蹤、狀態馬可夫"
     },
     {
       "rank": 8,
-      "number": 21,
+      "number": 46,
       "bucket": "9隻內核心",
-      "confidence": "中高信心 82.0",
-      "score": 0.665,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、配對圖譜"
+      "confidence": "中高信心 82.7",
+      "score": 0.588,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、貝葉斯平滑"
     },
     {
       "rank": 9,
-      "number": 30,
+      "number": 34,
       "bucket": "9隻內核心",
-      "confidence": "中高信心 81.6",
-      "score": 0.652,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、貝葉斯平滑"
+      "confidence": "中高信心 82.6",
+      "score": 0.582,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、長期頻率"
     },
     {
       "rank": 10,
       "number": 16,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 81.0",
-      "score": 0.639,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、滾動方向、長期頻率"
+      "confidence": "中高信心 82.3",
+      "score": 0.577,
+      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、長期頻率、貝葉斯平滑"
     },
     {
       "rank": 11,
-      "number": 4,
+      "number": 13,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 80.4",
-      "score": 0.615,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、貝葉斯平滑"
+      "confidence": "中高信心 81.6",
+      "score": 0.574,
+      "reason": "遺漏補償、共現配對、特別號歷史、敗戰冷卻"
     },
     {
       "rank": 12,
-      "number": 34,
+      "number": 48,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 80.0",
-      "score": 0.612,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、貝葉斯平滑、狄利克雷平滑"
+      "confidence": "中高信心 81.0",
+      "score": 0.569,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、敗戰冷卻、過曝控管"
     },
     {
       "rank": 13,
-      "number": 29,
+      "number": 22,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 79.2",
-      "score": 0.607,
-      "reason": "遺漏補償、共現配對、特別號歷史、長期頻率、貝葉斯平滑"
+      "confidence": "中高信心 81.1",
+      "score": 0.567,
+      "reason": "遺漏補償、共現配對、特別號歷史、敗戰冷卻、長期頻率"
     },
     {
       "rank": 14,
-      "number": 33,
+      "number": 29,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 78.7",
-      "score": 0.594,
-      "reason": "近期熱度、共現配對、特別號歷史、敗戰冷卻、長期頻率"
+      "confidence": "中高信心 81.8",
+      "score": 0.566,
+      "reason": "遺漏補償、共現配對、特別號歷史、長期頻率、貝葉斯平滑"
     },
     {
       "rank": 15,
-      "number": 14,
+      "number": 32,
       "bucket": "第十至第十五補位",
-      "confidence": "中高信心 78.4",
-      "score": 0.587,
-      "reason": "近期熱度、趨勢升溫、共現配對、特別號歷史、敗戰冷卻"
+      "confidence": "中高信心 81.3",
+      "score": 0.558,
+      "reason": "近期熱度、遺漏補償、趨勢升溫、共現配對、特別號歷史、長期頻率、貝葉斯平滑"
     }
   ],
   "strong_packs": [
     {
       "title": "最強單支",
       "numbers": [
-        7
+        30
       ],
       "target_hits": 1,
       "probability": 0.122449
@@ -609,8 +609,8 @@
     {
       "title": "最強2中1",
       "numbers": [
-        1,
-        7
+        7,
+        30
       ],
       "target_hits": 1,
       "probability": 0.232143
@@ -618,9 +618,9 @@
     {
       "title": "最強3中1",
       "numbers": [
-        1,
         7,
-        28
+        26,
+        30
       ],
       "target_hits": 1,
       "probability": 0.330167
@@ -628,12 +628,12 @@
     {
       "title": "最強6中2",
       "numbers": [
-        1,
-        2,
-        5,
         7,
-        24,
-        28
+        25,
+        26,
+        28,
+        30,
+        35
       ],
       "target_hits": 2,
       "probability": 0.151016
@@ -641,15 +641,15 @@
     {
       "title": "最強9中3",
       "numbers": [
-        1,
-        2,
-        5,
         7,
-        9,
-        21,
         24,
+        25,
+        26,
         28,
-        30
+        30,
+        34,
+        35,
+        46
       ],
       "target_hits": 3,
       "probability": 0.066743
@@ -658,19 +658,26 @@
       "title": "特別號候選",
       "numbers": [
         2,
-        5,
         6,
         7,
         13,
-        14,
         20,
-        27
+        24,
+        27,
+        35
       ],
       "target_hits": 1,
       "probability": 0.678458
     }
   ],
   "recalculation_audit": [
+    {
+      "draw_no": "2026/096",
+      "date": "2026-09-05",
+      "status": "已重算",
+      "run": "第 53 筆",
+      "proof": "2026-09-07T09:50:56+08:00 / 香港六合彩預測系統_20260707_第26版"
+    },
     {
       "draw_no": "2026/095",
       "date": "2026-08-29",
@@ -705,287 +712,280 @@
       "status": "未重算",
       "run": "-",
       "proof": "缺少該期重算紀錄"
-    },
-    {
-      "draw_no": "2026/090",
-      "date": "2026-08-18",
-      "status": "已重算",
-      "run": "第 49 筆",
-      "proof": "2026-08-20T09:50:40+08:00 / 香港六合彩預測系統_20260707_第26版"
     }
   ],
   "recommendation_gate": [
     {
       "rank": 1,
-      "numbers": "02 06 20 21 28 49",
-      "confidence": "觀察牌 83.8",
+      "numbers": "06 20 28 29 32 49",
+      "confidence": "觀察牌 79.6",
       "score": "100.0",
       "gate": "允許推薦"
     },
     {
       "rank": 2,
-      "numbers": "02 06 20 28 29 49",
-      "confidence": "觀察牌 83.0",
-      "score": "100.0",
+      "numbers": "06 20 22 29 32 49",
+      "confidence": "觀察牌 79.5",
+      "score": "94.0",
       "gate": "允許推薦"
     },
     {
       "rank": 3,
-      "numbers": "02 05 06 20 28 29",
-      "confidence": "觀察牌 84.7",
-      "score": "98.7",
+      "numbers": "05 20 28 29 32 49",
+      "confidence": "觀察牌 75.5",
+      "score": "92.9",
       "gate": "允許推薦"
     },
     {
       "rank": 4,
-      "numbers": "02 05 20 28 29 49",
-      "confidence": "觀察牌 81.7",
-      "score": "96.6",
+      "numbers": "05 06 20 29 32 49",
+      "confidence": "觀察牌 75.8",
+      "score": "92.8",
       "gate": "保留觀察"
     },
     {
       "rank": 5,
-      "numbers": "02 05 06 20 28 49",
-      "confidence": "觀察牌 79.9",
-      "score": "96.1",
+      "numbers": "06 20 22 28 35 49",
+      "confidence": "觀察牌 76.7",
+      "score": "89.6",
       "gate": "保留觀察"
     },
     {
       "rank": 6,
-      "numbers": "02 05 20 28 29 32",
-      "confidence": "觀察牌 79.2",
-      "score": "94.9",
+      "numbers": "06 13 20 28 29 49",
+      "confidence": "觀察牌 74.3",
+      "score": "89.1",
       "gate": "保留觀察"
     },
     {
       "rank": 7,
-      "numbers": "02 06 20 21 29 49",
-      "confidence": "觀察牌 77.8",
-      "score": "94.9",
+      "numbers": "05 06 20 22 29 49",
+      "confidence": "觀察牌 74.1",
+      "score": "88.8",
       "gate": "不列主推"
     },
     {
       "rank": 8,
-      "numbers": "02 05 20 21 28 49",
-      "confidence": "觀察牌 79.5",
-      "score": "94.7",
+      "numbers": "02 20 28 29 32 49",
+      "confidence": "觀察牌 70.8",
+      "score": "88.3",
       "gate": "不列主推"
     }
   ],
   "exclusion_groups": {
     "five": [
       {
+        "number": "06",
+        "confidence": "觀察排除 59.1",
+        "rank": 32,
+        "low_score": "0.471",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "02",
+        "confidence": "觀察排除 59.3",
+        "rank": 48,
+        "low_score": "0.618",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
         "number": "23",
-        "confidence": "觀察排除 64.4",
-        "rank": 41,
-        "low_score": "0.633",
+        "confidence": "觀察排除 55.8",
+        "rank": 30,
+        "low_score": "0.461",
         "reason": "遺漏冷卻足夠、短線趨勢偏弱"
       },
       {
         "number": "49",
-        "confidence": "觀察排除 59.9",
-        "rank": 47,
-        "low_score": "0.738",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "06",
-        "confidence": "觀察排除 55.2",
-        "rank": 22,
-        "low_score": "0.486",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "43",
-        "confidence": "觀察排除 51.3",
-        "rank": 40,
-        "low_score": "0.616",
+        "confidence": "觀察排除 53.5",
+        "rank": 42,
+        "low_score": "0.551",
         "reason": "遺漏冷卻足夠、短線趨勢偏弱"
       },
       {
         "number": "42",
-        "confidence": "觀察排除 49.1",
-        "rank": 33,
-        "low_score": "0.546",
+        "confidence": "觀察排除 54.2",
+        "rank": 41,
+        "low_score": "0.542",
         "reason": "遺漏冷卻足夠、短線趨勢偏弱"
       }
     ],
     "ten": [
       {
-        "number": "23",
-        "confidence": "觀察排除 64.4",
-        "rank": 41,
-        "low_score": "0.633",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "49",
-        "confidence": "觀察排除 59.9",
-        "rank": 47,
-        "low_score": "0.738",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
         "number": "06",
-        "confidence": "觀察排除 55.2",
-        "rank": 22,
-        "low_score": "0.486",
+        "confidence": "觀察排除 59.1",
+        "rank": 32,
+        "low_score": "0.471",
         "reason": "遺漏冷卻足夠、短線趨勢偏弱"
       },
       {
-        "number": "43",
-        "confidence": "觀察排除 51.3",
-        "rank": 40,
-        "low_score": "0.616",
+        "number": "02",
+        "confidence": "觀察排除 59.3",
+        "rank": 48,
+        "low_score": "0.618",
         "reason": "遺漏冷卻足夠、短線趨勢偏弱"
       },
-      {
-        "number": "42",
-        "confidence": "觀察排除 49.1",
-        "rank": 33,
-        "low_score": "0.546",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "22",
-        "confidence": "觀察排除 44.7",
-        "rank": 21,
-        "low_score": "0.467",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "36",
-        "confidence": "觀察排除 45.8",
-        "rank": 24,
-        "low_score": "0.514",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "20",
-        "confidence": "觀察排除 41.8",
-        "rank": 19,
-        "low_score": "0.448",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "35",
-        "confidence": "觀察排除 44.0",
-        "rank": 35,
-        "low_score": "0.558",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "39",
-        "confidence": "觀察排除 42.4",
-        "rank": 36,
-        "low_score": "0.572",
-        "reason": "短線趨勢偏弱"
-      }
-    ],
-    "fifteen": [
       {
         "number": "23",
-        "confidence": "觀察排除 64.4",
-        "rank": 41,
-        "low_score": "0.633",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "49",
-        "confidence": "觀察排除 59.9",
-        "rank": 47,
-        "low_score": "0.738",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "06",
-        "confidence": "觀察排除 55.2",
-        "rank": 22,
-        "low_score": "0.486",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "43",
-        "confidence": "觀察排除 51.3",
-        "rank": 40,
-        "low_score": "0.616",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "42",
-        "confidence": "觀察排除 49.1",
-        "rank": 33,
-        "low_score": "0.546",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "22",
-        "confidence": "觀察排除 44.7",
-        "rank": 21,
-        "low_score": "0.467",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "36",
-        "confidence": "觀察排除 45.8",
-        "rank": 24,
-        "low_score": "0.514",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "20",
-        "confidence": "觀察排除 41.8",
-        "rank": 19,
-        "low_score": "0.448",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "35",
-        "confidence": "觀察排除 44.0",
-        "rank": 35,
-        "low_score": "0.558",
-        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
-      },
-      {
-        "number": "39",
-        "confidence": "觀察排除 42.4",
-        "rank": 36,
-        "low_score": "0.572",
-        "reason": "短線趨勢偏弱"
-      },
-      {
-        "number": "13",
-        "confidence": "觀察排除 39.9",
-        "rank": 20,
+        "confidence": "觀察排除 55.8",
+        "rank": 30,
         "low_score": "0.461",
         "reason": "遺漏冷卻足夠、短線趨勢偏弱"
       },
       {
+        "number": "49",
+        "confidence": "觀察排除 53.5",
+        "rank": 42,
+        "low_score": "0.551",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "42",
+        "confidence": "觀察排除 54.2",
+        "rank": 41,
+        "low_score": "0.542",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "36",
+        "confidence": "觀察排除 47.8",
+        "rank": 29,
+        "low_score": "0.458",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "43",
+        "confidence": "觀察排除 44.4",
+        "rank": 31,
+        "low_score": "0.471",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
         "number": "37",
-        "confidence": "觀察排除 37.5",
-        "rank": 28,
+        "confidence": "觀察排除 41.7",
+        "rank": 35,
+        "low_score": "0.487",
+        "reason": "遺漏冷卻足夠、短窗偏熱，暫避降權"
+      },
+      {
+        "number": "05",
+        "confidence": "觀察排除 45.5",
+        "rank": 39,
         "low_score": "0.526",
         "reason": "遺漏冷卻足夠、短窗偏熱，暫避降權"
       },
       {
-        "number": "47",
-        "confidence": "觀察排除 39.3",
-        "rank": 26,
-        "low_score": "0.520",
+        "number": "22",
+        "confidence": "觀察排除 39.0",
+        "rank": 13,
+        "low_score": "0.320",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      }
+    ],
+    "fifteen": [
+      {
+        "number": "06",
+        "confidence": "觀察排除 59.1",
+        "rank": 32,
+        "low_score": "0.471",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "02",
+        "confidence": "觀察排除 59.3",
+        "rank": 48,
+        "low_score": "0.618",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "23",
+        "confidence": "觀察排除 55.8",
+        "rank": 30,
+        "low_score": "0.461",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "49",
+        "confidence": "觀察排除 53.5",
+        "rank": 42,
+        "low_score": "0.551",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "42",
+        "confidence": "觀察排除 54.2",
+        "rank": 41,
+        "low_score": "0.542",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "36",
+        "confidence": "觀察排除 47.8",
+        "rank": 29,
+        "low_score": "0.458",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "43",
+        "confidence": "觀察排除 44.4",
+        "rank": 31,
+        "low_score": "0.471",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "37",
+        "confidence": "觀察排除 41.7",
+        "rank": 35,
+        "low_score": "0.487",
+        "reason": "遺漏冷卻足夠、短窗偏熱，暫避降權"
+      },
+      {
+        "number": "05",
+        "confidence": "觀察排除 45.5",
+        "rank": 39,
+        "low_score": "0.526",
+        "reason": "遺漏冷卻足夠、短窗偏熱，暫避降權"
+      },
+      {
+        "number": "22",
+        "confidence": "觀察排除 39.0",
+        "rank": 13,
+        "low_score": "0.320",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "20",
+        "confidence": "觀察排除 39.0",
+        "rank": 16,
+        "low_score": "0.356",
         "reason": "遺漏冷卻足夠、短線趨勢偏弱"
       },
       {
         "number": "03",
-        "confidence": "觀察排除 35.5",
-        "rank": 16,
-        "low_score": "0.419",
+        "confidence": "觀察排除 37.2",
+        "rank": 18,
+        "low_score": "0.379",
         "reason": "遺漏冷卻足夠、短線趨勢偏弱"
       },
       {
-        "number": "29",
-        "confidence": "觀察排除 33.9",
-        "rank": 13,
-        "low_score": "0.384",
+        "number": "47",
+        "confidence": "觀察排除 38.6",
+        "rank": 25,
+        "low_score": "0.448",
+        "reason": "遺漏冷卻足夠、短線趨勢偏弱"
+      },
+      {
+        "number": "38",
+        "confidence": "觀察排除 40.7",
+        "rank": 47,
+        "low_score": "0.598",
+        "reason": "短線趨勢偏弱"
+      },
+      {
+        "number": "39",
+        "confidence": "觀察排除 37.0",
+        "rank": 27,
+        "low_score": "0.449",
         "reason": "遺漏冷卻足夠、短線趨勢偏弱"
       }
     ]
@@ -995,35 +995,42 @@
       {
         "window": "近60期",
         "sample": 60,
-        "avg_hit": "1.150",
+        "avg_hit": "1.133",
         "random": "1.102",
-        "edge": "0.048",
-        "zero_rate": "0.283",
+        "edge": "0.031",
+        "zero_rate": "0.300",
         "ge2_rate": "0.333",
         "status": "觀察"
       },
       {
         "window": "近120期",
         "sample": 120,
-        "avg_hit": "1.183",
+        "avg_hit": "1.158",
         "random": "1.102",
-        "edge": "0.081",
-        "zero_rate": "0.250",
-        "ge2_rate": "0.333",
+        "edge": "0.056",
+        "zero_rate": "0.258",
+        "ge2_rate": "0.325",
         "status": "觀察"
       },
       {
         "window": "近360期",
         "sample": 360,
-        "avg_hit": "1.208",
+        "avg_hit": "1.203",
         "random": "1.102",
-        "edge": "0.106",
-        "zero_rate": "0.256",
-        "ge2_rate": "0.358",
+        "edge": "0.101",
+        "zero_rate": "0.258",
+        "ge2_rate": "0.356",
         "status": "觀察"
       }
     ],
     "formal_records": [
+      {
+        "draw_no": "2026/096",
+        "date": "2026-09-05",
+        "status": "通過",
+        "run": "第 52 筆",
+        "proof": "依據 2026/095 / 2026-08-31T12:51:02+08:00 / 香港六合彩預測系統_20260707_第26版"
+      },
       {
         "draw_no": "2026/095",
         "date": "2026-08-29",
@@ -1058,20 +1065,13 @@
         "status": "通過",
         "run": "第 49 筆",
         "proof": "依據 2026/090 / 2026-08-20T09:50:40+08:00 / 香港六合彩預測系統_20260707_第26版"
-      },
-      {
-        "draw_no": "2026/090",
-        "date": "2026-08-18",
-        "status": "通過",
-        "run": "第 48 筆",
-        "proof": "依據 2026/089 / 2026-08-17T12:50:40+08:00 / 香港六合彩預測系統_20260707_第26版"
       }
     ],
     "avoid_packs": [
       {
         "label": "5不中",
-        "numbers": "23 49 06 43 42",
-        "confidence": "高暫避 56.0",
+        "numbers": "06 02 23 49 42",
+        "confidence": "高暫避 56.4",
         "avoid_score": "0.326",
         "sample": 48,
         "avg_wrong": "0.604",
@@ -1080,9 +1080,9 @@
       },
       {
         "label": "10不中",
-        "numbers": "23 49 06 43 42 22 36 20 35 39",
-        "confidence": "觀察暫避 49.9",
-        "avoid_score": "0.320",
+        "numbers": "06 02 23 49 42 36 43 37 05 22",
+        "confidence": "觀察暫避 50.0",
+        "avoid_score": "0.319",
         "sample": 48,
         "avg_wrong": "1.333",
         "full_avoid_rate": "0.188",
@@ -1090,9 +1090,9 @@
       },
       {
         "label": "15不中",
-        "numbers": "23 49 06 43 42 22 36 20 35 39 13 37 47 03 29",
-        "confidence": "觀察暫避 45.6",
-        "avoid_score": "0.310",
+        "numbers": "06 02 23 49 42 36 43 37 05 22 20 03 47 38 39",
+        "confidence": "觀察暫避 46.2",
+        "avoid_score": "0.309",
         "sample": 48,
         "avg_wrong": "1.875",
         "full_avoid_rate": "0.104",

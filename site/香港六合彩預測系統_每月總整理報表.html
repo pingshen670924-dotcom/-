@@ -163,14 +163,14 @@
     <thead><tr><th>項目</th><th>數值</th><th>說明</th></tr></thead>
     <tbody>
     <tr><td>整理月份</td><td>2026年09月</td><td>每月一鍵更新後自動重建</td></tr>
-    <tr><td>本月開獎期數</td><td>1</td><td>依開獎日期歸月</td></tr>
-    <tr><td>有正式預測期數</td><td>1</td><td>以前一期開獎後保存的正式預測結算</td></tr>
-    <tr><td>缺正式預測期數</td><td>0</td><td>缺資料會列出，不拿舊預測冒充</td></tr>
-    <tr><td>最佳組平均命中</td><td>0.00</td><td>二十組正式票中命中最多的一組</td></tr>
+    <tr><td>本月開獎期數</td><td>4</td><td>依開獎日期歸月</td></tr>
+    <tr><td>有正式預測期數</td><td>2</td><td>以前一期開獎後保存的正式預測結算</td></tr>
+    <tr><td>缺正式預測期數</td><td>2</td><td>缺資料會列出，不拿舊預測冒充</td></tr>
+    <tr><td>最佳組平均命中</td><td>1.50</td><td>二十組正式票中命中最多的一組</td></tr>
     <tr><td>前九平均命中</td><td>2.00</td><td>九顆核心池對實際主號</td></tr>
-    <tr><td>五不中平均誤中</td><td>0.00</td><td>低機率風控誤中越低越好</td></tr>
-    <tr><td>五不中完全避開率</td><td>1.000</td><td>五不中完全沒有撞主號的比例</td></tr>
-    <tr><td>本月最佳單期</td><td>2026/096 最佳組0顆</td><td>用於下月滾動修正</td></tr>
+    <tr><td>五不中平均誤中</td><td>0.50</td><td>低機率風控誤中越低越好</td></tr>
+    <tr><td>五不中完全避開率</td><td>0.500</td><td>五不中完全沒有撞主號的比例</td></tr>
+    <tr><td>本月最佳單期</td><td>2026/097 最佳組3顆</td><td>用於下月滾動修正</td></tr>
     </tbody></table>
     </section>
     <section class="band" data-tab="命中檢討"><h2>分類一：預測命中</h2>
@@ -178,6 +178,9 @@
     <thead><tr><th>開獎期</th><th>開獎日</th><th>狀態</th><th>預測紀錄</th><th>第一組預測號碼</th><th>實際開獎</th><th>第一組命中</th><th>最佳組命中</th><th>前九命中</th><th>最佳命中號</th></tr></thead>
     <tbody>
     <tr><td>2026/096</td><td>2026-09-05</td><td>已結算</td><td>第 52 筆</td><td>02 06 20 21 28 49</td><td>09 18 26 30 33 45 + 28</td><td>0</td><td>0</td><td>2</td><td>無</td></tr>
+    <tr><td>2026/097</td><td>2026-09-08</td><td>已結算</td><td>第 53 筆</td><td>06 20 28 29 32 49</td><td>09 23 28 29 35 41 + 38</td><td>2</td><td>3</td><td>2</td><td>28 29 35</td></tr>
+    <tr><td>2026/098</td><td>2026-09-10</td><td>缺正式預測</td><td>-</td><td>-</td><td>22 23 31 32 35 45 + 34</td><td>0</td><td>0</td><td>0</td><td>無</td></tr>
+    <tr><td>2026/099</td><td>2026-09-12</td><td>缺正式預測</td><td>-</td><td>-</td><td>09 18 24 33 40 47 + 11</td><td>0</td><td>0</td><td>0</td><td>無</td></tr>
     </tbody></table>
     </section>
     <section class="band appendix-band" data-tab="低機率"><h2>分類二：低機率暫避</h2>
@@ -185,6 +188,9 @@
     <thead><tr><th>開獎期</th><th>開獎日</th><th>五不中誤中</th><th>十不中誤中</th><th>十五不中誤中</th><th>處理</th></tr></thead>
     <tbody>
     <tr><td>2026/096</td><td>2026-09-05</td><td>0</td><td>0</td><td>0</td><td>通過</td></tr>
+    <tr><td>2026/097</td><td>2026-09-08</td><td>1</td><td>1</td><td>1</td><td>需降權</td></tr>
+    <tr><td>2026/098</td><td>2026-09-10</td><td>0</td><td>0</td><td>0</td><td>通過</td></tr>
+    <tr><td>2026/099</td><td>2026-09-12</td><td>0</td><td>0</td><td>0</td><td>通過</td></tr>
     </tbody></table>
     </section>
     <section class="band" data-tab="每月總整理"><h2>分類三：圖表分析</h2>
@@ -193,15 +199,18 @@
     <thead><tr><th>開獎期</th><th>最佳組圖</th><th>最佳組</th><th>前九圖</th><th>前九</th><th>五不中誤中圖</th><th>五不中誤中</th></tr></thead>
     <tbody>
     <tr><td>2026/096</td><td>□□□□□□□□□□□□</td><td>0</td><td>■■■■□□□□□□□□</td><td>2</td><td>□□□□□□□□□□□□</td><td>0</td></tr>
+    <tr><td>2026/097</td><td>■■■■■■□□□□□□</td><td>3</td><td>■■■■□□□□□□□□</td><td>2</td><td>■■□□□□□□□□□□</td><td>1</td></tr>
+    <tr><td>2026/098</td><td>□□□□□□□□□□□□</td><td>0</td><td>□□□□□□□□□□□□</td><td>0</td><td>□□□□□□□□□□□□</td><td>0</td></tr>
+    <tr><td>2026/099</td><td>□□□□□□□□□□□□</td><td>0</td><td>□□□□□□□□□□□□</td><td>0</td><td>□□□□□□□□□□□□</td><td>0</td></tr>
     </tbody></table>
     <h3>最佳組命中分布</h3>
     <table>
     <thead><tr><th>命中顆數</th><th>期數</th><th>圖</th><th>占比</th></tr></thead>
     <tbody>
-    <tr><td>0顆</td><td>1</td><td>■■■■■■■■■■■■</td><td>1.000</td></tr>
+    <tr><td>0顆</td><td>1</td><td>■■■■■■□□□□□□</td><td>0.500</td></tr>
     <tr><td>1顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
     <tr><td>2顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
-    <tr><td>3顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
+    <tr><td>3顆</td><td>1</td><td>■■■■■■□□□□□□</td><td>0.500</td></tr>
     <tr><td>4顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
     <tr><td>5顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
     <tr><td>6顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
@@ -212,7 +221,7 @@
     <tbody>
     <tr><td>0顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
     <tr><td>1顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
-    <tr><td>2顆</td><td>1</td><td>■■■■■■■■■■■■</td><td>1.000</td></tr>
+    <tr><td>2顆</td><td>2</td><td>■■■■■■■■■■■■</td><td>1.000</td></tr>
     <tr><td>3顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
     <tr><td>4顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
     <tr><td>5顆</td><td>0</td><td>□□□□□□□□□□□□</td><td>0.000</td></tr>
@@ -222,21 +231,32 @@
     <table>
     <thead><tr><th>號碼</th><th>出現次數</th><th>圖</th><th>路數</th></tr></thead>
     <tbody>
-    <tr><td>09</td><td>1</td><td>■■■■■■■■■■■■</td><td>藍波、尾9、01-10區</td></tr>
-    <tr><td>18</td><td>1</td><td>■■■■■■■■■■■■</td><td>紅波、尾8、11-20區</td></tr>
-    <tr><td>26</td><td>1</td><td>■■■■■■■■■■■■</td><td>藍波、尾6、21-30區</td></tr>
-    <tr><td>30</td><td>1</td><td>■■■■■■■■■■■■</td><td>紅波、尾0、21-30區</td></tr>
-    <tr><td>33</td><td>1</td><td>■■■■■■■■■■■■</td><td>綠波、尾3、31-40區</td></tr>
-    <tr><td>45</td><td>1</td><td>■■■■■■■■■■■■</td><td>紅波、尾5、41-49區</td></tr>
+    <tr><td>09</td><td>3</td><td>■■■■■■■■■■■■</td><td>藍波、尾9、01-10區</td></tr>
+    <tr><td>18</td><td>2</td><td>■■■■■■■■□□□□</td><td>紅波、尾8、11-20區</td></tr>
+    <tr><td>33</td><td>2</td><td>■■■■■■■■□□□□</td><td>綠波、尾3、31-40區</td></tr>
+    <tr><td>45</td><td>2</td><td>■■■■■■■■□□□□</td><td>紅波、尾5、41-49區</td></tr>
+    <tr><td>23</td><td>2</td><td>■■■■■■■■□□□□</td><td>紅波、尾3、21-30區</td></tr>
+    <tr><td>35</td><td>2</td><td>■■■■■■■■□□□□</td><td>紅波、尾5、31-40區</td></tr>
+    <tr><td>26</td><td>1</td><td>■■■■□□□□□□□□</td><td>藍波、尾6、21-30區</td></tr>
+    <tr><td>30</td><td>1</td><td>■■■■□□□□□□□□</td><td>紅波、尾0、21-30區</td></tr>
+    <tr><td>28</td><td>1</td><td>■■■■□□□□□□□□</td><td>綠波、尾8、21-30區</td></tr>
+    <tr><td>29</td><td>1</td><td>■■■■□□□□□□□□</td><td>紅波、尾9、21-30區</td></tr>
+    <tr><td>41</td><td>1</td><td>■■■■□□□□□□□□</td><td>藍波、尾1、41-49區</td></tr>
+    <tr><td>22</td><td>1</td><td>■■■■□□□□□□□□</td><td>綠波、尾2、21-30區</td></tr>
+    <tr><td>31</td><td>1</td><td>■■■■□□□□□□□□</td><td>藍波、尾1、31-40區</td></tr>
+    <tr><td>32</td><td>1</td><td>■■■■□□□□□□□□</td><td>綠波、尾2、31-40區</td></tr>
+    <tr><td>24</td><td>1</td><td>■■■■□□□□□□□□</td><td>紅波、尾4、21-30區</td></tr>
+    <tr><td>40</td><td>1</td><td>■■■■□□□□□□□□</td><td>紅波、尾0、31-40區</td></tr>
+    <tr><td>47</td><td>1</td><td>■■■■□□□□□□□□</td><td>藍波、尾7、41-49區</td></tr>
     </tbody></table>
     </section>
     <section class="band" data-tab="命中檢討"><h2>分類四：檢討修正</h2>
     <table>
     <thead><tr><th>項目</th><th>本月結果</th><th>下月修正</th></tr></thead>
     <tbody>
-    <tr><td>正式票命中</td><td>最佳組平均 0.00</td><td>保留命中組來源，未命中組降權</td></tr>
+    <tr><td>正式票命中</td><td>最佳組平均 1.50</td><td>保留命中組來源，未命中組降權</td></tr>
     <tr><td>前九核心</td><td>平均命中 2.00</td><td>前九低於二顆時提高漏抓號與中段回拉</td></tr>
-    <tr><td>低機率暫避</td><td>五不中平均誤中 0.00</td><td>誤中號移出暫避包，降低暫避信心</td></tr>
+    <tr><td>低機率暫避</td><td>五不中平均誤中 0.50</td><td>誤中號移出暫避包，降低暫避信心</td></tr>
     <tr><td>零命中警示</td><td>1 期</td><td>下一月加重轉移追蹤與本月滾動</td></tr>
     </tbody></table>
     </section>
@@ -244,7 +264,7 @@
     <table>
     <thead><tr><th>項目</th><th>內容</th></tr></thead>
     <tbody>
-    <tr><td>產生時間</td><td>2026-09-07 10:03:06</td></tr>
+    <tr><td>產生時間</td><td>2026-09-15 10:04:28</td></tr>
     <tr><td>整理月份</td><td>2026年09月</td></tr>
     <tr><td>資料規則</td><td>以前一期正式預測對本期實際開獎，不用下期預測冒充命中</td></tr>
     <tr><td>產生方式</td><td>一鍵更新後自動重建，並同步手機雲端</td></tr>

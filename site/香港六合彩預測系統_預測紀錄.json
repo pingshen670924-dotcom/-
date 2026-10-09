@@ -1,5 +1,23 @@
 [
   {
+    "id": 63,
+    "created_at": "2026-10-08T21:45:31+08:00",
+    "based_on_draw_date": "2026-10-08",
+    "based_on_draw_no": "2026/107",
+    "strategy": "auto",
+    "ticket_count": 20,
+    "report_path": "C:\\Users\\MSI\\Documents\\Codex\\2026-06-20\\new-chat\\系統檔案\\site\\香港六合彩預測系統_最新預測.html"
+  },
+  {
+    "id": 62,
+    "created_at": "2026-10-08T21:44:02+08:00",
+    "based_on_draw_date": "2026-10-08",
+    "based_on_draw_no": "2026/107",
+    "strategy": "auto",
+    "ticket_count": 20,
+    "report_path": "site\\香港六合彩預測系統_最新預測.html"
+  },
+  {
     "id": 61,
     "created_at": "2026-10-07T09:50:49+08:00",
     "based_on_draw_date": "2026-10-06",
@@ -427,24 +445,6 @@
     "created_at": "2026-06-29T12:17:22+08:00",
     "based_on_draw_date": "2026-06-28",
     "based_on_draw_no": "2026/069",
-    "strategy": "auto",
-    "ticket_count": 20,
-    "report_path": "site\\香港六合彩預測系統_最新預測.html"
-  },
-  {
-    "id": 13,
-    "created_at": "2026-06-26T16:17:13+08:00",
-    "based_on_draw_date": "2026-06-25",
-    "based_on_draw_no": "2026/068",
-    "strategy": "auto",
-    "ticket_count": 20,
-    "report_path": "site\\香港六合彩預測系統_最新預測.html"
-  },
-  {
-    "id": 12,
-    "created_at": "2026-06-26T15:44:17+08:00",
-    "based_on_draw_date": "2026-06-25",
-    "based_on_draw_no": "2026/068",
     "strategy": "auto",
     "ticket_count": 20,
     "report_path": "site\\香港六合彩預測系統_最新預測.html"

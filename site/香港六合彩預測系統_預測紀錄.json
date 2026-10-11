@@ -1,5 +1,14 @@
 [
   {
+    "id": 64,
+    "created_at": "2026-10-10T21:44:43+08:00",
+    "based_on_draw_date": "2026-10-10",
+    "based_on_draw_no": "2026/108",
+    "strategy": "auto",
+    "ticket_count": 20,
+    "report_path": "C:\\Users\\MSI\\Documents\\Codex\\2026-06-20\\new-chat\\系統檔案\\site\\香港六合彩預測系統_最新預測.html"
+  },
+  {
     "id": 63,
     "created_at": "2026-10-08T21:45:31+08:00",
     "based_on_draw_date": "2026-10-08",
@@ -434,15 +443,6 @@
   {
     "id": 15,
     "created_at": "2026-06-29T12:25:08+08:00",
-    "based_on_draw_date": "2026-06-28",
-    "based_on_draw_no": "2026/069",
-    "strategy": "auto",
-    "ticket_count": 20,
-    "report_path": "site\\香港六合彩預測系統_最新預測.html"
-  },
-  {
-    "id": 14,
-    "created_at": "2026-06-29T12:17:22+08:00",
     "based_on_draw_date": "2026-06-28",
     "based_on_draw_no": "2026/069",
     "strategy": "auto",
